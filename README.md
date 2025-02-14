@@ -1,1 +1,1 @@
-# CESI-NK-Tournament
+# CESI-Local-NK-Tournament
