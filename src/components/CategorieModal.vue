@@ -27,7 +27,7 @@
         <!-- BBaarre de recherche globale -->
         <VaInput v-model="globalSearch" clearable label="rechercher un participant"
           placeholder="rechercher par nom, club, grade, etc..." class="search-bar">
-        </VaInput>/>
+        </VaInput>
 
                 <!-- secction pour afficher le nombre de participants sélectionnés -->
                 <div class="selected-participants">
@@ -100,9 +100,9 @@
 
       <!-- acctions de la modale -->
       <VaCardActions align="right" class="modal-actions">
-        <VaButton color="secondary" outline @click="close">annuler</VaButton>
+        <VaButton color="secondary" outline @click="close">Annuler</VaButton>
         <VaButton color="primary" :disabled="!isFormValid" @click="saveCategory">
-          {{ isEditMode ? "Modifier" : "Ajouter" }}
+          {{ isEditMode ? "Modifier la catégorie" : "Ajouter la catégorie" }}
         </VaButton>
       </VaCardActions>
       

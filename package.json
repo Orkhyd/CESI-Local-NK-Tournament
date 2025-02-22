@@ -22,6 +22,7 @@
     "indexeddb": "^0.0.0",
     "material-design-icons-iconfont": "^6.7.0",
     "pinia": "^2.3.1",
+    "replicache": "^15.0.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
     "vuestic-ui": "^1.10.3"

@@ -7,16 +7,16 @@
     <VaCard class="modal-card">
       <VaCardTitle class="modal-title">
         <VaIcon name="emoji_events" class="modal-icon" />
-        creer un tournoi
+        Créer un tournoi
       </VaCardTitle>
 
       <VaCardContent>
         <VaInput
           v-model="tournoiNom"
-          label="nom du tournoi"
-          placeholder="entrez le nom du tournoi"
+          label="Nom du tournoi"
+          placeholder="Entrez le nom du tournoi"
           class="input-field"
-          :rules="[v => !!v || 'le nom du tournoi est requis']"
+          :rules="[v => !!v || 'Le nom du tournoi est requis']"
         >
           <template #prependInner>
             <VaIcon name="sports_martial_arts" class="input-icon" />
@@ -25,10 +25,10 @@
 
         <VaInput
           v-model="dateDebut"
-          label="date de debut"
+          label="Date de debut"
           type="date"
           class="input-field"
-          :rules="[v => !!v || 'la date de debut est requise']"
+          :rules="[v => !!v || 'La date de debut est requise']"
         >
           <template #prependInner>
             <VaIcon name="event" class="input-icon" />
@@ -37,13 +37,13 @@
       </VaCardContent>
 
       <VaCardActions align="right" class="modal-actions">
-        <VaButton color="danger" outline @click="closeModal">annuler</VaButton>
+        <VaButton color="danger" outline @click="closeModal">Annuler</VaButton>
         <VaButton
           color="primary"
           :disabled="!isFormValid"
           @click="createTournoi"
         >
-          creer
+          Créer
         </VaButton>
       </VaCardActions>
     </VaCard>

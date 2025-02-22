@@ -1,4 +1,8 @@
 <template>
+  <VaButton color="secondary" icon="home" @click="$router.push('/home-page')" class="back-home-button">
+    Retournez à l'accueil
+  </VaButton>
+
   <div class="manage-wrapper">
     <!-- bloc des categories -->
     <div class="manage-section categories-section">
@@ -6,12 +10,8 @@
         <h2 class="section-title">Catégories</h2>
         <VaButton color="primary" icon="add" @click="openCategoryModal">Créer une categorie</VaButton>
       </div>
-      <CategoriesList 
-        :categories="categories" 
-        @add="openCategoryModal" 
-        @edit="openEditCategoryModal" 
-        @delete="deleteCategory" 
-      />
+      <CategoriesList :categories="categories" @add="openCategoryModal" @edit="openEditCategoryModal"
+        @delete="deleteCategory" />
     </div>
 
     <!-- bloc des participants -->
@@ -20,11 +20,7 @@
         <h2 class="section-title">Participants</h2>
         <VaButton color="primary" icon="add" @click="openParticipantModal">Ajouter un participant</VaButton>
       </div>
-      <ParticipantsList 
-        :participants="participants" 
-        @edit="openEditParticipant" 
-        @delete="deleteParticipantFromDB" 
-      />
+      <ParticipantsList :participants="participants" @edit="openEditParticipant" @delete="deleteParticipantFromDB" />
     </div>
 
     <!-- modales -->
@@ -126,6 +122,12 @@ const deleteCategory = async (categoryId) => {
 </script>
 
 <style scoped>
+.back-home-button {
+  width: 200px;
+  margin: 10px;
+  margin-bottom: 15px;
+}
+
 .manage-wrapper {
   display: flex;
   flex-direction: column;
