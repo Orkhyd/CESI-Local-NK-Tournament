@@ -1,4 +1,8 @@
 <template>
+
+  <VaButton color="secondary" class="test-btn" @click="goToTableau">Test Tableau</VaButton>
+
+
   <div class="home-wrapper">
     <!-- titre principal -->
     <h1 class="title">Accueil du Tournoi</h1>
@@ -62,6 +66,7 @@ import { useRouter } from "vue-router";
 import { getLastTournoi, saveTournoi, deleteTournoi } from "@/store/tournoiStore";
 import TournamentCard from "@/components/TournamentCard.vue";
 import TournamentModal from "@/components/TournamentModal.vue";
+import { generateBracket } from "@/functions/generateBracket.js";
 
 // ------------------------------------------------------------------------------------
 // initialisation des variables
@@ -77,9 +82,12 @@ const isDeleting = ref(false); // état de chargement lors de la suppression
 // hooks
 // ------------------------------------------------------------------------------------
 
+
+
 // au montage du composant, récupère le dernier tournoi
 onMounted(async () => {
   tournoi.value = await getLastTournoi();
+
 });
 
 // ------------------------------------------------------------------------------------
@@ -90,6 +98,12 @@ onMounted(async () => {
 const openModal = () => {
   tournamentModal.value.open();
 };
+
+// pour dev test la page de tableau
+const goToTableau = () => {
+  router.push("/bracket-page");
+};
+
 
 // gère la création d'un nouveau tournoi
 const handleCreateTournoi = async (newTournoi) => {
@@ -180,6 +194,14 @@ const resetTournoi = async () => {
   font-size: 18px;
   padding: 10px 20px;
 }
+
+.test-btn {
+  margin: 20px;
+  font-size: 16px;
+  width: 200px;
+  padding: 8px 16px;
+}
+
 
 /* ------------------------------------------------------------------------------------ */
 /* styles de la modale de suppression */

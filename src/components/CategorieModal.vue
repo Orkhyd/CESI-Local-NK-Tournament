@@ -100,9 +100,9 @@
 
       <!-- acctions de la modale -->
       <VaCardActions align="right" class="modal-actions">
-        <VaButton color="secondary" outline @click="close">annuler</VaButton>
+        <VaButton color="secondary" outline @click="close">Annuler</VaButton>
         <VaButton color="primary" :disabled="!isFormValid" @click="saveCategory">
-          {{ isEditMode ? "Modifier" : "Ajouter" }}
+          {{ isEditMode ? "Modifier la catégorie" : "Ajouter la catégorie" }}
         </VaButton>
       </VaCardActions>
       
