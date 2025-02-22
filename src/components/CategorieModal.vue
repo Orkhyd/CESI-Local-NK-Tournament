@@ -27,7 +27,7 @@
         <!-- BBaarre de recherche globale -->
         <VaInput v-model="globalSearch" clearable label="rechercher un participant"
           placeholder="rechercher par nom, club, grade, etc..." class="search-bar">
-        </VaInput>/>
+        </VaInput>
 
                 <!-- secction pour afficher le nombre de participants sélectionnés -->
                 <div class="selected-participants">

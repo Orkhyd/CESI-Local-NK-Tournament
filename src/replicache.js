@@ -136,7 +136,15 @@ async function addInitialParticipants() {
     { id: 6, nom: "Moreau", prenom: "Julie" },
     { id: 7, nom: "Guerrin", prenom: "Florian" },
     { id: 8, nom: "Donah", prenom: "Hector" },
-    { id: 9, nom: "Guit", prenom: "Thomas" }
+    { id: 9, nom: "Guit", prenom: "Thomas" },
+    { id: 10, nom: "Guit", prenom: "Thomas" },
+    { id: 11, nom: "Guit", prenom: "Thomas" },
+    { id: 12, nom: "Guit", prenom: "Thomas" },
+    { id: 13, nom: "Guit", prenom: "Thomas" },
+    { id: 14, nom: "Guit", prenom: "Thomas" },
+    { id: 15, nom: "Guit", prenom: "Thomas" },
+    { id: 16, nom: "Guit", prenom: "Thomas" },
+    { id: 17, nom: "Guit", prenom: "Thomas" },
   ];
 
   for (const participant of participants) {

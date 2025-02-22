@@ -105,6 +105,7 @@ export function generateBracket(participants) {
       });
       
       roundNumber++;
+
   }
   
   return {

@@ -42,8 +42,8 @@ const isDisabled = computed(() => {
     props.match.winner !== null ||
     props.match.player1?.nom === "BYE" ||
     props.match.player2?.nom === "BYE" ||
-    props.match.player1?.nom?.startsWith("Gagnant de") ||
-    props.match.player2?.nom?.startsWith("Gagnant de")
+    props.match.player1?.nom?.startsWith("*Gagnant de") ||
+    props.match.player2?.nom?.startsWith("*Gagnant de")
   );
 });
 
