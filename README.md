@@ -45,3 +45,4 @@ L'application utilise **IndexedDB** pour stocker les participants, catégories e
 ✅ Stockage des données en local avec IndexedDB  
 ✅ Interface dynamique et réactive  
  
+ 
