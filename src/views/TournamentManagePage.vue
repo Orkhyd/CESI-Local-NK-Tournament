@@ -1,176 +1,139 @@
 <template>
-  <VaButton color="secondary" icon="home" @click="$router.push('/home-page')" class="back-home-button">
-    Retournez à l'accueil
-  </VaButton>
+  <div>
+    <!-- Titre -->
+    <h1 class="va-h1">Gestion du Tournoi</h1>
 
-  <div class="manage-wrapper">
-    <!-- bloc des categories -->
-    <div class="manage-section categories-section">
-      <div class="section-header">
-        <h2 class="section-title">Catégories</h2>
-        <VaButton color="primary" icon="add" @click="openCategoryModal">Créer une categorie</VaButton>
-      </div>
-      <CategoriesList :categories="categories" @add="openCategoryModal" @edit="openEditCategoryModal"
-        @delete="deleteCategory" />
-    </div>
+    <!-- Bouton pour ouvrir la modale de création -->
+    <VaButton @click="openParticipantModal" class="mb-6">
+      Créer un participant
+    </VaButton>
 
-    <!-- bloc des participants -->
-    <div class="manage-section participants-section">
-      <div class="section-header">
-        <h2 class="section-title">Participants</h2>
-        <VaButton color="primary" icon="add" @click="openParticipantModal">Ajouter un participant</VaButton>
-      </div>
-      <ParticipantsList :participants="participants" @edit="openEditParticipant" @delete="deleteParticipantFromDB" />
-    </div>
+    <!-- Modale de création/modification (affichée uniquement si selectedParticipant est défini) -->
+    <ParticipantModal
+      v-if="selectedParticipant !== null"
+      :modelValue="selectedParticipant !== null"
+      :participant="selectedParticipant"
+      @save="handleSaveParticipant"
+      @update:modelValue="closeParticipantModal"
+    />
 
-    <!-- modales -->
-    <ParticipantModal ref="participantModal" @save="handleAddParticipant" />
-    <CategorieModal ref="categoryModal" @save="handleSaveCategory" />
+    <!-- Affichage des participants -->
+    <ParticipantList
+      :participants="formattedParticipants"
+      @edit="editParticipant"
+      @delete="deleteParticipant"
+    />
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
-import ParticipantsList from "@/components/ParticipantsList.vue";
-import CategoriesList from "@/components/CategoriesList.vue";
-import ParticipantModal from "@/components/ParticipantModal.vue";
-import CategorieModal from "@/components/CategorieModal.vue";
-import { 
-  addCategorie, 
-  deleteCategorie, 
-  addParticipant, 
-  deleteParticipantFromDB,
-  addParticipantToTournoi, 
-  getLastTournoi ,
-  getAllParticipants,
-  addParticipantToCategorie,
-  getAllCategories,
-  removeParticipantsFromCategorie 
-} from "@/store/tournoiStore";
+<script>
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
+import { VaButton } from 'vuestic-ui';
+import ParticipantModal from '../components/ParticipantModal.vue';
+import ParticipantList from '../components/ParticipantList.vue';
+import { getParticipantsByTournament } from '../replicache/stores/participantStore';
+import { ParticipantService } from '../replicache/services/participantService';
+import { genders, grades } from '../replicache/models/constants';
 
-const participants = ref([]);
-const categories = ref([]);
-const participantModal = ref(null);
-const categoryModal = ref(null);
-const currentTournoi = ref(null);
+export default {
+  components: {
+    ParticipantModal,
+    ParticipantList,
+  },
+  setup() {
+    // recup id tournoi depuis url
+    const route = useRoute();
+    const tournamentId = computed(() => route.params.id);
 
-// charge les donnees au montage du composant
-onMounted(async () => {
-  currentTournoi.value = await getLastTournoi(); // charge le tournoi actif
-  if (currentTournoi.value) {
-    participants.value = await getAllParticipants();
-    categories.value = await getAllCategories();
-  }
-});
+    // liste participants
+    const participants = ref([]);
 
-// ouvre la modale d edition d un participant
-const openEditParticipant = (participant) => {
-  participantModal.value.openEdit(participant);
-};
+    // participant selectionne pr edit ou crea
+    const selectedParticipant = ref(null);
 
-// ouvre la modale d ajout de participant
-const openParticipantModal = () => participantModal.value.open();
+    // charge participants depuis bdd
+    const refreshParticipants = async () => {
+      if (tournamentId.value) {
+        participants.value = await getParticipantsByTournament(tournamentId.value);
+      }
+    };
 
-// ouvre la modale d ajout de categorie
-const openCategoryModal = () => categoryModal.value.open();
+    // charge participants au montage
+    onMounted(refreshParticipants);
 
-// ouvre la modale d edition de categorie
-const openEditCategoryModal = (category) => categoryModal.value.openEdit(category);
+    // formate participants en ajoutant nom genre et grade
+    const formattedParticipants = computed(() =>
+      participants.value.map((p) => ({
+        ...p,
+        gender: genders.find((g) => Number(g.id) === Number(p.genderId))?.nom || "inconnu",
+        grade: grades.find((g) => Number(g.id) === Number(p.gradeId))?.nom || "inconnu",
+      }))
+    );
 
-// ajoute un participant et l associe au tournoi actif
-const handleAddParticipant = async (participant) => {
-    const savedParticipant = await addParticipant(participant);
-    participants.value.push(savedParticipant);
+    // ouvre modale pr crea participant
+    const openParticipantModal = () => {
+      selectedParticipant.value = {}; // mode crea
+    };
 
-    if (!currentTournoi.value) {
-      console.error("aucun tournoi actif trouve");
-      return;
-    }
-    
-    await addParticipantToTournoi(currentTournoi.value.id, savedParticipant.id);
-};
+    // ouvre modale pr edit participant
+    const editParticipant = (participant) => {
+      selectedParticipant.value = participant; // mode edit
+    };
 
-// supprime un participant et met a jour la liste
-const removeParticipant = async (participantId) => {
-  await deleteParticipantFromDB(participantId);
-  participants.value = participants.value.filter(p => p.id !== participantId);
-};
+    // ferme modale participant
+    const closeParticipantModal = () => {
+      selectedParticipant.value = null;
+    };
 
-// enregistre une categorie avec mise a jour des participants associes
-const handleSaveCategory = async (category) => {
-  const index = categories.value.findIndex(c => c.id === category.id);
+    // supprime un participant
+    const deleteParticipant = async (participant) => {
+      await ParticipantService.delete(participant.id);
+      await refreshParticipants();
+    };
 
-  if (index !== -1) {
-    categories.value[index] = category; // maj si existe deja
-  } else {
-    await addCategorie(category); // ajout d une nouvelle categorie
-    categories.value = await getAllCategories(); // recharge la liste
-  }
+    // sauvegarde participant modifie ou cree
+    const handleSaveParticipant = async (participantData) => {
+      const formattedData = {
+        ...participantData,
+        birthDate: participantData.birthDate ? participantData.birthDate.toISOString().split('T')[0] : null,
+        genderId: participantData.genderId?.value || null,
+        gradeId: participantData.gradeId?.value || null,
+      };
 
-  await removeParticipantsFromCategorie(category.id); // supprime anciennes associations
+      if (participantData.id) {
+        // maj participant existant
+        await ParticipantService.update(participantData.id, formattedData);
+      } else {
+        // cree nouveau participant
+        if (!tournamentId.value) {
+          return;
+        }
+        await ParticipantService.create(tournamentId.value, formattedData);
+      }
 
-  for (const participantId of category.selectedParticipants) {
-    await addParticipantToCategorie(category.id, participantId); // associe les participants
-  }
-};
+      // rafraichit liste participants
+      await refreshParticipants();
 
-// supprime une categorie et met a jour la liste
-const deleteCategory = async (categoryId) => {
-  await deleteCategorie(categoryId);
-  categories.value = categories.value.filter(c => c.id !== categoryId);
+      // ferme modale apres sauvegarde
+      closeParticipantModal();
+    };
+
+    return {
+      tournamentId,
+      participants,
+      formattedParticipants,
+      selectedParticipant,
+      openParticipantModal,
+      editParticipant,
+      deleteParticipant,
+      handleSaveParticipant,
+      closeParticipantModal,
+    };
+  },
 };
 </script>
 
 <style scoped>
-.back-home-button {
-  width: 200px;
-  margin: 10px;
-  margin-bottom: 15px;
-}
 
-.manage-wrapper {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100vh;
-}
-
-.manage-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 20px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.categories-section {
-  flex: 1;
-  border-bottom: 2px solid var(--va-background-border);
-}
-
-.participants-section {
-  flex: 1;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.section-title {
-  font-size: 22px;
-  font-weight: bold;
-  color: var(--va-text-primary);
-}
-
-.va-button {
-  font-size: 14px;
-  font-weight: 600;
-}
 </style>

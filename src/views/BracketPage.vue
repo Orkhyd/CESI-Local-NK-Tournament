@@ -18,7 +18,7 @@
 
 <script setup> 
 import { ref, onMounted } from "vue";
-import { replicache } from "@/replicache.js";
+//import { replicache } from "@/replicache/replicache.js";
 import Bracket from '../components/Bracket/Bracket.vue';
 
 // ref reactive pour stocker le bracket

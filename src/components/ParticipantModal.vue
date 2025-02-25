@@ -1,204 +1,292 @@
 <template>
-  <VaModal v-model="isOpen" hide-default-actions class="modal">
-    <div class="modal-card">
-      <h2 class="modal-title">
-        <VaIcon name="person_add" class="modal-icon" />
-        {{ isEditMode ? "Modifier le Participant" : "Ajouter un Participant" }}
-      </h2>
-
-      <VaCardContent>
-        <div class="form-grid">
-          <!-- NOM -->
-          <VaInput v-model="nom" clearable label="Nom *" class="input-field" placeholder="Ex: Dupont" />
-
-          <!-- Prénom -->
-          <VaInput v-model="prenom" clearable label="Prénom *" class="input-field" placeholder="Ex: Jean" />
-
-          <!-- Clube -->
-          <VaInput v-model="club" clearable label="Club *" class="input-field" placeholder="Ex: Paris Judo" />
-
-          <!-- Sexe/genre -->
-          <VaSelect
-            v-model="sexe"
-            clearable
-            label="Sexe *"
-            :options="sexes"
-            class="input-field"
-            placeholder="Sélectionnez un sexe"
-          />
-
-          <!-- grade -->
-          <VaSelect
-            v-model="grade"
-            clearable
-            label="Grade *"
-            :options="grades"
-            class="input-field"
-            placeholder="Sélectionnez un grade"
-          />
-
-          <!-- Poids -->
-          <VaInput v-model="poids" clearable label="Poids * (kg)" type="number" class="input-field" placeholder="Ex: 70" />
-
-          <!-- date de naissance -->
-          <VaInput v-model="dateNaissance" label="Date de naissance *" type="date" class="input-field wide" />
+    <VaModal v-model="isModalOpen" no-padding>
+      <template #content>
+        <div class="modal-container">
+          <h2 class="modal-title">
+            {{ isEditMode ? 'Modifier un participant' : 'Créer un participant' }}
+          </h2>
+  
+          <VaForm ref="formRef">
+            <div class="form-container">
+              <div class="form-row">
+                <div class="form-item">
+                  <VaInput v-model="form.firstName" label="Nom *" clearable placeholder="Entrez le nom"
+                    :error-messages="errors.firstName" @input="validateForm" />
+                </div>
+                <div class="form-item">
+                  <VaInput v-model="form.lastName" label="Prénom *" clearable placeholder="Entrez le prénom"
+                    :error-messages="errors.lastName" @input="validateForm" />
+                </div>
+              </div>
+  
+              <div class="form-row">
+                <div class="form-item">
+                  <VaDateInput v-model="form.birthDate" label="Date de naissance *" clearable :aria-hidden="false"
+                    :error-messages="errors.birthDate" @update:modelValue="validateForm" />
+                </div>
+                <div class="form-item">
+                  <VaInput v-model="form.weight" label="Poids *" type="number" clearable placeholder="Entrez le poids"
+                    :error-messages="errors.weight" @input="validateForm" />
+                </div>
+              </div>
+  
+              <div class="form-row">
+                <div class="form-item">
+                  <VaInput v-model="form.nationality" clearable label="Nationalité *" placeholder="Entrez la nationalité"
+                    :error-messages="errors.nationality" @input="validateForm" />
+                </div>
+                <div class="form-item">
+                  <VaInput v-model="form.clubName" label="Nom du club *" clearable placeholder="Entrez le nom du club"
+                    :error-messages="errors.clubName" @input="validateForm" />
+                </div>
+              </div>
+  
+              <div class="form-row">
+                <div class="form-item">
+                  <VaSelect v-model="form.genderId" :options="genderOptions" label="Genre *" clearable
+                    :error-messages="errors.genderId" @update:modelValue="validateForm" />
+                </div>
+                <div class="form-item">
+                  <VaSelect v-model="form.gradeId" :options="gradeOptions" label="Grade *" clearable
+                    :error-messages="errors.gradeId" @update:modelValue="validateForm" />
+                </div>
+              </div>
+            </div>
+          </VaForm>
+  
+          <div class="modal-actions">
+            <VaButton @click="closeModal" color="danger">
+              Fermer
+            </VaButton>
+            <VaButton @click="showConfirmation = true" color="primary" :disabled="!isFormValid">
+              {{ isEditMode ? 'Enregistrer' : 'Créer' }}
+            </VaButton>
+          </div>
         </div>
-      </VaCardContent>
-
-      <VaCardActions align="right" class="modal-actions">
-        <VaButton color="secondary" outline @click="close">Annuler</VaButton>
-        <VaButton color="primary" :disabled="!isFormValid" @click="saveParticipant">
-          {{ isEditMode ? "Modifier" : "Ajouter" }}
-        </VaButton>
-      </VaCardActions>
-    </div>
-  </VaModal>
-</template>
-
-<script setup>
-import { ref, computed, defineEmits, onMounted } from "vue";
-import { getAllGrades } from "@/store/tournoiStore";
-
-const isOpen = ref(false);
-const isEditMode = ref(false);
-const editingParticipantId = ref(null);
-
-const nom = ref("");
-const prenom = ref("");
-const club = ref("");
-const sexe = ref(null);
-const grade = ref(null);
-const poids = ref(null);
-const dateNaissance = ref("");
-
-const grades = ref([]);
-const sexes = ref([
-  { text: "Homme", value: "Homme" },
-  { text: "Femme", value: "Femme" },
-]);
-
-const emit = defineEmits(["save"]);
-
-// charge les grades au montage
-const loadData = async () => {
-  const gradesRaw = await getAllGrades();
-  grades.value = gradesRaw.map((g) => ({ text: g.label || g.nom, value: g.value || g.id }));
-};
-onMounted(loadData);
-
-// verif du formulaire
-const isFormValid = computed(() => 
-  nom.value &&
-  prenom.value &&
-  club.value &&
-  sexe.value &&
-  grade.value &&
-  poids.value &&
-  dateNaissance.value
-);
-
-// save du participant
-const saveParticipant = () => {
-  const newParticipant = {
-    id: editingParticipantId.value || Date.now(),
-    nom: nom.value,
-    prenom: prenom.value,
-    club: club.value,
-    sexe: sexe.value,
-    grade: grade.value ? { text: grade.value.text, value: grade.value.value } : null,
-    poids: poids.value,
-    dateNaissance: dateNaissance.value,
+      </template>
+    </VaModal>
+  
+    <!-- modale de confirmation -->
+    <VaModal v-model="showConfirmation" size="small" hide-default-actions>
+      <template #content>
+        <div class="confirmation-container">
+          <p class="modal-text">
+            Êtes-vous sûr de vouloir {{ isEditMode ? 'modifier' : 'créer' }} ce participant ?
+          </p>
+          <div class="modal-actions">
+            <VaButton color="secondary" @click="showConfirmation = false">
+              Annuler
+            </VaButton>
+            <VaButton color="primary" @click="confirmSubmission">
+              {{ isEditMode ? 'Modifier' : 'Créer' }}
+            </VaButton>
+          </div>
+        </div>
+      </template>
+    </VaModal>
+  </template>
+  
+  <script setup>
+  import { ref, computed, watch } from "vue";
+  import { VaModal, VaForm, VaInput, VaSelect, VaDateInput, VaButton } from "vuestic-ui";
+  import { genders, grades } from "../replicache/models/constants";
+  
+  // props pr gerer ouverture modale et les donnees du participant
+  const props = defineProps({
+    modelValue: Boolean, // controle ouverture modale
+    participant: Object, // donnees participant null si mode crea
+  });
+  
+  const emit = defineEmits(["update:modelValue", "save"]);
+  
+  // calcule ouverture modale selon modelValue
+  const isModalOpen = computed({
+    get: () => props.modelValue,
+    set: (value) => emit("update:modelValue", value),
+  });
+  
+  // ferme la modale et reset confirmation
+  const closeModal = () => {
+    emit("update:modelValue", false);
+    showConfirmation.value = false;
   };
+  
+  // init form pr stocker infos participant
+  const form = ref({
+    id: "",
+    firstName: "",
+    lastName: "",
+    weight: "",
+    nationality: "",
+    clubName: "",
+    genderId: null,
+    gradeId: null,
+    birthDate: null,
+  });
+  
+  // erreurs validation form
+  const errors = ref({
+    firstName: "",
+    lastName: "",
+    birthDate: "",
+    weight: "",
+    nationality: "",
+    clubName: "",
+    genderId: "",
+    gradeId: "",
+  });
+  
+  const isFormValid = ref(false);
+  const showConfirmation = ref(false);
+  
+  // verifie si mode edit ou crea selon participant
+  const isEditMode = computed(() => {
+    return props.participant && (props.participant.id || props.participant.source?.id);
+  });
+  
+  // genere options pr select genre
+  const genderOptions = computed(() =>
+    genders
+      .filter((g) => g.nom !== "Mixte")
+      .map((g) => ({ text: g.nom, value: Number(g.id) }))
+  );
+  
+  // genere options pr select grade
+  const gradeOptions = computed(() =>
+    grades.map((g) => ({ text: g.nom, value: Number(g.id) }))
+  );
+  
+  // maj auto form selon participant recu
+  watch(
+    () => props.participant,
+    (participant) => {
+  
+      if (participant) {
+  
+        // cherche option correspondante pr genre
+        const selectedGender = genderOptions.value.find(
+          (g) => g.value === Number(participant.source?.genderId)
+        );
+  
+        // cherche option correspondante pr grade
+        const selectedGrade = gradeOptions.value.find(
+          (g) => g.value === Number(participant.source?.gradeId)
+        );
+  
+        // remplit form avec valeurs existantes ou vides
+        form.value = {
+          id: participant.source?.id || "",
+          firstName: participant.source?.firstName || "",
+          lastName: participant.source?.lastName || "",
+          weight: participant.source?.weight ? Number(participant.source.weight) : null,
+          nationality: participant.source?.nationality || "",
+          clubName: participant.source?.clubName || "",
+          genderId: selectedGender || null,
+          gradeId: selectedGrade || null,
+          birthDate: participant.source?.birthDate
+            ? new Date(participant.source.birthDate)
+            : null,
+        };
+  
+      } else {
+        form.value = {
+          id: "",
+          firstName: "",
+          lastName: "",
+          weight: null,
+          nationality: "",
+          clubName: "",
+          genderId: null,
+          gradeId: null,
+          birthDate: null,
+        };
+      }
+    },
+    { immediate: true }
+  );
+  
+  // verifie si form est valide
+  const validateForm = () => {
+    errors.value = {
+      firstName: form.value.firstName ? "" : "nom requis",
+      lastName: form.value.lastName ? "" : "prenom requis",
+      birthDate: form.value.birthDate ? "" : "date naissance requise",
+      weight: form.value.weight ? "" : "poids requis",
+      nationality: form.value.nationality ? "" : "nationalite requise",
+      clubName: form.value.clubName ? "" : "nom club requis",
+      genderId: form.value.genderId ? "" : "genre requis",
+      gradeId: form.value.gradeId ? "" : "grade requis",
+    };
+  
+    isFormValid.value = Object.values(errors.value).every((error) => error === "");
+  };
+  
+  // surveille form et valide auto chaque modif
+  watch(form, validateForm, { deep: true, immediate: true });
+  
+  // soumet form apres confirmation
+  const confirmSubmission = () => {
+    emit("save", form.value);
+    showConfirmation.value = false;
+  };
+  </script>  
 
-  const cleanParticipant = JSON.parse(JSON.stringify(newParticipant));
-  emit("save", cleanParticipant);
-  close();
-};
 
-// ouvre en mode édition
-const openEdit = (participant) => {
-  isEditMode.value = true;
-  editingParticipantId.value = participant.id;
-  nom.value = participant.nom;
-  prenom.value = participant.prenom;
-  club.value = participant.club;
-  sexe.value = participant.sexe;
-  grade.value = grades.value.find((g) => g.value === participant.grade?.value) || null;
-  poids.value = participant.poids;
-  dateNaissance.value = participant.dateNaissance;
-  isOpen.value = true;
-};
-
-// ferme la modale et reinit les champs
-const close = () => {
-  isOpen.value = false;
-  resetFields();
-};
-
-const resetFields = () => {
-  nom.value = "";
-  prenom.value = "";
-  club.value = "";
-  sexe.value = null;
-  grade.value = null;
-  poids.value = null;
-  dateNaissance.value = "";
-};
-
-// ouvrir la modale en mode création ou édition
-defineExpose({
-  open: () => {
-    resetFields();
-    isEditMode.value = false;
-    isOpen.value = true;
-  },
-  openEdit,
-});
-</script>
-
-<style scoped>
-/* modale */
-.modal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  width: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-}
-
-/* Carte */
-.modal-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-/* Ggrille des champs */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-/* champs larges */
-.input-field.wide {
-  grid-column: span 2;
-}
-
-/* boutons */
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: auto;
-}
-</style>
+  
+  <style scoped>
+  .modal-container {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .modal-title {
+    text-align: center;
+    font-weight: bold;
+    color: var(--va-text-primary);
+    margin-bottom: 20px;
+  }
+  
+  .form-container {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .form-item {
+    flex: 1;
+  }
+  
+  .modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 600px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  .confirmation-container {
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .modal-text {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  </style>
+  

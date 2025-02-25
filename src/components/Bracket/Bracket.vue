@@ -26,7 +26,7 @@
   <script setup>
   import { ref, watch, onMounted } from "vue";
   import MatchCard from "./MatchCard.vue";
-  import { replicache } from "@/replicache.js";
+  //import { replicache } from "@/replicache/replicache.js";
   
   const props = defineProps({
     bracket: {

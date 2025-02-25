@@ -51,19 +51,23 @@
 </template>
 
 <script setup>
-// imports necessaires
-import { ref, computed, defineEmits } from "vue";
+// ------------------------------------------------------------------------------------
+// imports
+// ------------------------------------------------------------------------------------
+
+import { ref, computed } from "vue";
 import { useToast } from "vuestic-ui";
 
-// gestion des notifications toast
+// ------------------------------------------------------------------------------------
+// initialisation des variables
+// ------------------------------------------------------------------------------------
+
 const toast = useToast();
+const isOpen = ref(false); // controole l'ouverture de la modale
+const tournoiNom = ref(""); // Stocke le nom du tournoi
+const dateDebut = ref(""); // Stocke la date de début
 
-// variables reactives
-const isOpen = ref(false); // controle l ouverture de la modale
-const tournoiNom = ref(""); // stocke le nom du tournoi
-const dateDebut = ref(""); // stocke la date de debut
-
-// emission d evenements pour communiquer avec le parent
+// emission d'événements pour communiquer avec le parent
 const emit = defineEmits(["create", "close"]);
 
 // validation du formulaire
@@ -71,38 +75,39 @@ const isFormValid = computed(() => {
   return tournoiNom.value.trim() !== "" && dateDebut.value.trim() !== "";
 });
 
-// fonction pour fermer la modale
+// ------------------------------------------------------------------------------------
+// fonctions
+// ------------------------------------------------------------------------------------
+
+// ferme la modale
 const closeModal = () => {
-  isOpen.value = false; // ferme la modale
-  emit("close"); // emet l evenement close
+  isOpen.value = false; // Ferme la modale
+  emit("close"); // emmet l'événement close
 };
 
-// fonction pour creer un tournoi
+// cree un tournoi
 const createTournoi = () => {
   if (isFormValid.value) {
     // cree un nouvel objet tournoi
     const newTournoi = {
-      id: Date.now(), // genere un id unique
-      nom: tournoiNom.value.trim(), // nom du tournoi
-      dateDebut: dateDebut.value, // date de debut
-      combats: [], // liste des combats (vide par defaut)
-      participants: [], // liste des participants (vide par defaut)
+      name: tournoiNom.value.trim(), // nnom du tournoi
+      startingDate: dateDebut.value, // date de début
     };
 
-    emit("create", newTournoi); // emet l evenement create avec le nouveau tournoi
-    toast.init({ message: "tournoi cree avec succes", color: "success" }); // affiche une notification de succes
-    closeModal(); // ferme la modale
+    emit("create", newTournoi); // emet l  événement create avec le nouveau tournoi
+    toast.init({ message: "Tournoi créé avec succès", color: "success" }); // affiche une notification de succès
+    closeModal(); // Ferme la modale
   } else {
-    toast.init({ message: "veuillez remplir tous les champs", color: "danger" }); // affiche une notification d erreur
+    toast.init({ message: "Veuillez remplir tous les champs", color: "danger" }); // Aaffiche une notification d'erreur
   }
 };
 
-// fonction pour ouvrir la modale depuis le parent
+// ouvre la modale depuis le parent
 const open = () => {
   isOpen.value = true; // ouvre la modale
 };
 
-// expose la fonction open pour qu elle soit utilisable depuis le parent
+// expose la fonction open pour qu'elle soit utilisable depuis le parent
 defineExpose({ open });
 </script>
 
