@@ -63,10 +63,11 @@
 
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { getLastTournoi, saveTournoi, deleteTournoi } from "@/store/tournoiStore";
+import { TournamentService } from "@/replicache/services/tournamentService";
+import { getTournaments } from "@/replicache/stores/tournamentStore";
 import TournamentCard from "@/components/TournamentCard.vue";
 import TournamentModal from "@/components/TournamentModal.vue";
-import { generateBracket } from "@/functions/generateBracket.js";
+import { rep } from "@/replicache/stores/tournamentStore"; 
 
 // ------------------------------------------------------------------------------------
 // initialisation des variables
@@ -78,16 +79,15 @@ const tournamentModal = ref(null); // référence vers la modale de création de
 const isDeleteModalOpen = ref(false); // état de la modale de suppression
 const isDeleting = ref(false); // état de chargement lors de la suppression
 
+
 // ------------------------------------------------------------------------------------
 // hooks
 // ------------------------------------------------------------------------------------
 
-
-
-// au montage du composant, récupère le dernier tournoi
+// Au montage du composant, récupère le dernier tournoi depuis Replicache
 onMounted(async () => {
-  tournoi.value = await getLastTournoi();
-
+  const tournaments = await getTournaments(rep);
+  tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
 });
 
 // ------------------------------------------------------------------------------------
@@ -104,11 +104,22 @@ const goToTableau = () => {
   router.push("/bracket-page");
 };
 
-
-// gère la création d'un nouveau tournoi
+// gere la création d'un nouveau tournoi avec Replicache
 const handleCreateTournoi = async (newTournoi) => {
-  await saveTournoi(newTournoi); // sauvegarde le nouveau tournoi
-  tournoi.value = newTournoi; // met à jour l'affichage
+  const id = crypto.randomUUID(); // Génère un ID unique
+  try {
+    await TournamentService.create(id, newTournoi.name, newTournoi.startingDate);
+    console.log("Tournoi créé avec succès !");
+
+    // recup les tournois après la création
+    const tournaments = await getTournaments(rep);
+    console.log("Tournois récupérés :", tournaments);
+
+    // met à jour la référence du tournoi actif
+    tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
+  } catch (error) {
+    console.error("Erreur lors de la création du tournoi :", error);
+  }
 };
 
 // redirige vers la page du tournoi en cours
@@ -128,17 +139,13 @@ const closeDeleteModal = () => {
   isDeleteModalOpen.value = false;
 };
 
-// supprime le tournoi et ferme la modale avec une animation fluide
+// supp le tournoi et ferme la modale avec une animation fluide
 const resetTournoi = async () => {
   isDeleting.value = true; // active l'état de chargement
-  await deleteTournoi(); // supprime le tournoi
-  tournoi.value = null; // réinitialise les données du tournoi
-
-  // ferme la modale après un délai
-  setTimeout(() => {
-    isDeleteModalOpen.value = false;
-    isDeleting.value = false;
-  }, 300);
+  await TournamentService.delete(tournoi.value.id); // supp le tournoi dans Replicache
+  tournoi.value = null; // reinit les données du tournoi
+  isDeleteModalOpen.value = false;
+  isDeleting.value = false;
 };
 </script>
 

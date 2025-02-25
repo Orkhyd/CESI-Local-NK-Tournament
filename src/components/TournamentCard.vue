@@ -4,14 +4,14 @@
     <!-- en tete avec une icone et le nom du tournoi -->
     <div class="card-header">
       <VaIcon name="emoji_events" class="icon-tournament" /> 
-      <VaCardTitle class="tournament-title">{{ tournoi.nom }}</VaCardTitle> 
+      <VaCardTitle class="tournament-title">{{ tournoi.name }}</VaCardTitle> 
     </div>
 
     <!-- contenu de la carte : date du tournoi -->
     <VaCardContent>
       <div class="info">
         <VaIcon name="event" class="icon" /> 
-        <span class="info-text">debut : {{ tournoi.dateDebut }}</span> 
+        <span class="info-text">debut : {{ tournoi.startDate }}</span> 
       </div>
     </VaCardContent>
   </VaCard>

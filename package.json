@@ -17,6 +17,7 @@
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "@mdi/js": "^7.4.47",
+    "concurrently": "^9.1.2",
     "dexie": "^4.0.11",
     "idb": "^8.0.2",
     "indexeddb": "^0.0.0",
@@ -25,7 +26,8 @@
     "replicache": "^15.0.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
-    "vuestic-ui": "^1.10.3"
+    "vuestic-ui": "^1.10.3",
+    "wait-on": "^8.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

@@ -67,7 +67,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { replicache } from "@/replicache.js";
+//import { replicache } from "../replicache/replicache.js";
 
 const props = defineProps({
   match: {
