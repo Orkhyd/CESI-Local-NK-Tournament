@@ -10,12 +10,12 @@
             <div class="form-container">
               <div class="form-row">
                 <div class="form-item">
-                  <VaInput v-model="form.firstName" label="Nom *" clearable placeholder="Entrez le nom"
-                    :error-messages="errors.firstName" @input="validateForm" />
+                  <VaInput v-model="form.firstName" label="Prénom *" clearable placeholder="Entrez le prénom"
+                    :error-messages="errors.firstName" @input="form.firstName = form.firstName.slice(0, 50); validateForm()" :max-length="50" counter />
                 </div>
                 <div class="form-item">
-                  <VaInput v-model="form.lastName" label="Prénom *" clearable placeholder="Entrez le prénom"
-                    :error-messages="errors.lastName" @input="validateForm" />
+                  <VaInput v-model="form.lastName" label="Nom *" clearable placeholder="Entrez le nom"
+                    :error-messages="errors.lastName" @input="form.lastName = form.lastName.slice(0, 50); validateForm()" :max-length="50" counter />
                 </div>
               </div>
   
@@ -33,11 +33,11 @@
               <div class="form-row">
                 <div class="form-item">
                   <VaInput v-model="form.nationality" clearable label="Nationalité *" placeholder="Entrez la nationalité"
-                    :error-messages="errors.nationality" @input="validateForm" />
+                    :error-messages="errors.nationality" @input="form.nationality = form.nationality.slice(0, 20); validateForm()" :max-length="20" counter />
                 </div>
                 <div class="form-item">
                   <VaInput v-model="form.clubName" label="Nom du club *" clearable placeholder="Entrez le nom du club"
-                    :error-messages="errors.clubName" @input="validateForm" />
+                    :error-messages="errors.clubName" @input="form.clubName = form.clubName.slice(0, 30); validateForm()" :max-length="30" counter />
                 </div>
               </div>
   
