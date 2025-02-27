@@ -8,7 +8,6 @@ export const rep = new Replicache({
   mutators: {
     // créa d un nv participant avec un id unique
     create: async (tx, { id, tournamentId, ...data }) => {
-      id = Date.now().toString();
       
       // conversion des donnees reactives en obj brut
       const rawData = toRaw(data);
@@ -30,13 +29,35 @@ export const rep = new Replicache({
     
     // maj des infos d un participant si il existe
     update: async (tx, { id, ...updates }) => {
+      console.log("🛠️ Mise à jour demandée pour le participant :", id);
+      console.log("📌 Données reçues pour mise à jour :", updates);
+    
       const p = await tx.get(`participant/${id}`);
-      if (p) await tx.put(`participant/${id}`, { ...p, ...updates });
+      console.log("🔍 Participant actuel avant mise à jour :", p);
+    
+      if (p) {
+        const updatedParticipant = { ...p, ...updates };
+        console.log("✅ Nouvelle version du participant après mise à jour :", updatedParticipant);
+    
+        await tx.put(`participant/${id}`, updatedParticipant);
+    
+        // 🔥 Vérifie immédiatement si les nouvelles valeurs sont bien stockées
+        const checkUpdate = await tx.get(`participant/${id}`);
+        console.log("🔎 Vérification après stockage :", checkUpdate);
+      } else {
+        console.log("⚠️ Aucune entrée trouvée pour cet ID, mise à jour impossible !");
+      }
     },
+    
     
     // supp d un participant via son id
     delete: async (tx, { id }) => {
       await tx.del(`participant/${id}`);
+    },
+
+    updateCategory: async (participantId, categoryId) => {
+      console.log("🔄 Mise à jour du participant :", participantId, "avec la catégorie :", categoryId);
+      await rep.mutate.update({ id: participantId, categoryId });
     }
   }
 });

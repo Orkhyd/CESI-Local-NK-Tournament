@@ -8,6 +8,5 @@ export class Category {
       this.ageCategoryIds = ageCategoryIds;
       this.minGradeId = minGradeId;
       this.maxGradeId = maxGradeId;
-      this.participantIds = [];
     }
   }
