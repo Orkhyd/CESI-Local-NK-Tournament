@@ -24,7 +24,7 @@
         <!-- colonne Genre avec icône -->
         <template #cell(gender)="{ row }">
           <VaIcon
-            :name="row.source?.gender === 'Homme' ? 'male' : row.source?.gender === 'Femme' ? 'woman' : 'help-circle-outline'"
+            :name="row.source?.gender === 'Homme' ? 'male' : row.source?.gender === 'Femme' ? 'female' : 'help-circle-outline'"
             class="gender-icon" />
         </template>
 
@@ -62,11 +62,12 @@
         </div>
       </template>
     </VaModal>
+
   </div>
 </template>
 
 <script setup>
-import { ref, defineProps, computed } from "vue";
+import { ref, computed } from "vue";
 import { useToast } from "vuestic-ui";
 
 // init vuestic toast
@@ -234,11 +235,16 @@ const columns = [
   flex-direction: column;
 }
 
-/* force table prendre toute hauteur */
-.participants-table {
-  overflow: auto;
-  height: 38vh !important;
+/* wrapper de la table */
+.table-wrapper {
+  width: 100%;
+  overflow: hidden;
   display: flex;
+  flex-direction: column;
+}
+
+:deep(.va-data-table__table .va-data-table__table-td) {
+  padding: 4px !important;
 }
 
 /* sticky footer */
@@ -249,15 +255,17 @@ const columns = [
   font-weight: bold;
   text-align: center;
   border-top: 2px solid #ccc;
-  z-index: 2;
+  z-index: 10; /* Assurez-vous que le footer est au-dessus des autres éléments */
+  width: 100%; /* Prend toute la largeur */
 }
 
-/* assure tfoot bien affiche */
+/* assure tfoot bien affiché */
 .va-data-table tfoot {
   background: #ffffff;
   position: sticky;
   bottom: 0;
-  z-index: 2;
+  z-index: 10; /* Assurez-vous que le footer est au-dessus des autres éléments */
+  width: 100%; /* Prend toute la largeur */
 }
 
 /* empeche footer reduit */
@@ -267,6 +275,7 @@ const columns = [
   font-weight: bold;
   color: #154EC1;
   text-align: center;
+  width: auto; /* Ajuste la largeur des cellules */
 }
 
 /* colonnes ajustees */
@@ -375,5 +384,24 @@ const columns = [
 
 .export-button:hover {
   background-color: #218838;
+}
+
+/* ajustement de la table */
+.participants-table {
+  width: 100%;
+  overflow: auto;
+  height: 38vh !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ajustement des colonnes */
+.va-data-table {
+  width: 100%;
+}
+
+.va-data-table th,
+.va-data-table td {
+  width: auto; /* Ajuste la largeur des colonnes */
 }
 </style>

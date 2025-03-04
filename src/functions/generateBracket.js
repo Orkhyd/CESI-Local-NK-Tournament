@@ -22,7 +22,7 @@ export function generateBracket(participants) {
           realIndex++;
       }
       if (byeInserted < byeCount) {
-          allParticipants.push({ id: -1, nom: "BYE", prenom: "" });
+          allParticipants.push({ id: -1, lastName: "BYE", fistName: "" });
           byeInserted++;
       }
   }
@@ -68,10 +68,10 @@ export function generateBracket(participants) {
               previousMatch1 = `${roundLetters[roundNumber - 1]}${i * 2 + 1}`;
               previousMatch2 = `${roundLetters[roundNumber - 1]}${i * 2 + 2}`;
           }
-          
+
           // creation de l'objet match
           const match = {
-              id: matchId,
+              idMatch: matchId,
               previousMatch1: previousMatch1,
               previousMatch2: previousMatch2,
               player1: player1,
@@ -82,14 +82,14 @@ export function generateBracket(participants) {
               keikoku1: 0,
               keikoku2: 0
           };
-          
+
           // regle speciale pour les bye : avancement automatique
           if (player1.id === -1 && player2.id !== -1) {
-              match.winner = player2; // player2 gagne automatiquement
+              match.winner = player2.id; // player2 gagne automatiquement
           } else if (player2.id === -1 && player1.id !== -1) {
-              match.winner = player1; // player1 gagne automatiquement
+              match.winner = player1.id; // player1 gagne automatiquement
           }
-          
+
           matches.push(match);
       }
       
@@ -99,18 +99,24 @@ export function generateBracket(participants) {
           matches: matches
       });
       
-      // preparer les participants pour le prochain tour (les gagnants)
-      currentRoundParticipants = matches.map(m => {
-          return m.winner || { id: -2, nom: `*Gagnant de ${m.id}` }; // -2 = joueur a determiner
-      });
-      
-      roundNumber++;
+        // preparer les participants pour le prochain tour (les gagnants)
+        // preparer les participants pour le prochain tour (les gagnants)
+        currentRoundParticipants = matches.map(m => {
+            // si le match a un gagnant défini (y compris un "bye"), on le passe directement
+            if (m.winner) {
+                return { id: m.winner, lastName: `*Gagnant de ${m.idMatch}` };
+            }
 
-  }
-  
-  return {
+            // sinon, on met un placeholder "gagnant en attente"
+            return { id: -2, lastName: `*Gagnant de ${m.idMatch}` };
+        });
+
+
+        roundNumber++;
+
+    }
+    return {
       structure: rounds,
-      participants: allParticipants
   };
   
   // fonction pour melanger un tableau

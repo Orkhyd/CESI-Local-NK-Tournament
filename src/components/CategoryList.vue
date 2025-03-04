@@ -1,8 +1,8 @@
 <template>
   <div class="category-list-container">
 
-    <VaDataTable :items="formattedCategories" :columns="columns" class="category-table" striped
-      :allowFooterSorting=true no-data-html="Aucune catégorie trouvé">
+    <VaDataTable :items="formattedCategories" :columns="columns" class="category-table" striped :allowFooterSorting=true
+      no-data-html="Aucune catégorie trouvé">
 
       <!--  genre -->
       <template #cell(genre)="{ row }">
@@ -59,11 +59,12 @@
 
       <!-- table imbriquée pour afficher les participants -->
       <template #expandableRow="{ rowData }">
-        <div class="p-4 bg-gray-100 rounded" v-if="rowData.participants.length > 0">
-          <VaDataTable :items="rowData.participants" :columns="participantColumns" striped class="nested-table" />
+        <div class="expandable-container">
+          <div class="expandable-content">
+            <VaDataTable :items="rowData.participants" :columns="participantColumns" striped class="nested-table" />
+          </div>
         </div>
       </template>
-
 
     </VaDataTable>
 
@@ -189,10 +190,30 @@ const deleteCategory = () => {
 .category-list-container {
   width: 100%;
   height: 100vh;
+  max-height: 200px;;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
+
+.expandable-container {
+  display: flex;
+  flex-direction: column; /* Permet de stacker proprement */
+  width: 100%;
+}
+
+.expandable-content {
+  max-height: 300px; /* Hauteur fixe avec scroll si nécessaire */
+  overflow-y: auto; /* Scroll interne si le contenu dépasse */
+  width: 100%;
+  background: white;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  transition: max-height 0.3s ease-in-out; /* Animation fluide */
+}
+
+
 
 /* enleve padding cellules */
 :deep(.va-data-table__table .va-data-table__table-td) {

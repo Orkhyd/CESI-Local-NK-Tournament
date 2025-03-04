@@ -190,7 +190,7 @@ const filteredParticipants = computed(() => {
 // gestion des statuts mis a jour dynamiquement
 const getStatusText = (participant) => {
     if (selectedParticipants.value.includes(participant.source?.id)) {
-        return "Selectionne"; // participant sélectionné par l'utilisateur
+        return "Selectionné"; // participant sélectionné par l'utilisateur
     }
     else if (!selectedParticipants.value.includes(participant.source?.id) && participant.source?.categoryId === props.category?.source?.id) {
         return "Libre"; // participant désélectionné mais initialement dans la catégorie
@@ -332,8 +332,6 @@ onMounted(() => { // permet de supprimer la checkbox pour tout sélectionner dan
                 checkboxContainer.remove(); // supprime uniquement l'élément enfant contenant la checkbox
             } else {
             }
-        } else {
-            console.log("❌ Colonne non trouvée !");
         }
     }, 100); // petit délai pour s'assurer que l'élément est bien chargé
 });
@@ -374,11 +372,6 @@ const confirmSubmission = () => {
         ...toAttach.map(id => ({ id, action: 'attachToCategory' })),
         ...toUnlink.map(id => ({ id, action: 'unlinkFromCategory' }))
     ];
-
-    console.log("📤 [confirmSubmission] Envoi de la requête avec :", {
-        category: form.value,
-        participants: participantsWithAction
-    });
 
     // émettre l'événement avec la catégorie et les participants mis à jour
     emit("save", { category: form.value, participants: participantsWithAction });

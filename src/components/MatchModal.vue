@@ -1,65 +1,44 @@
 <template>
-  <VaModal
-    v-model="isOpen"
-    hide-default-actions
-    no-dismiss
-    overlay-opacity="0.6"
-    class="custom-modal"
-    size="small"
-    @close="closeModal"
-  >
-    <template #header>
-      <h2 class="modal-title">Détails du Match</h2>
-    </template>
+  <VaModal v-model="isOpen" hide-default-actions>
+    <template #content>
+      <div class="modal-container">
+        <h2 class="modal-title">Mise à jour du match</h2>
 
-    <div class="modal-content">
-      <div class="player-details">
-        <div class="player-row">
-          <span class="player-name">{{ match.player1.nom }}</span>
-          <VaInput
-            type="number"
-            v-model.number="score1"
-            :rules="[value => value >= 0 || 'Le score ne peut pas être négatif']"
-            @input="updateCurrentWinner('score1')"
-            class="score-input"
-          />
+        <!-- &affichage des joueurs et scores -->
+        <div class="score-section">
+          <div class="player-card" :class="{ winner: idWinner === props.match.idPlayer1 }">
+            <h3>{{ player1Name }}</h3>
+            <p class="club-name">{{ props.match.player1?.clubName || "Inconnu" }}</p>
+
+            <label>Ippons :</label>
+            <VaInput v-model="ipponsPlayer1" type="number" min="0" class="score-input" />
+            <label>Keikokus :</label>
+            <VaInput v-model="keikokusPlayer1" type="number" min="0" class="score-input" />
+          </div>
+
+          <div class="player-card" :class="{ winner: idWinner === props.match.idPlayer2 }">
+            <h3>{{ player2Name }}</h3>
+            <p class="club-name">{{ props.match.player2?.clubName || "Inconnu" }}</p>
+
+            <label>Ippons :</label>
+            <VaInput v-model="ipponsPlayer2" type="number" min="0" class="score-input" />
+            <label>Keikokus :</label>
+            <VaInput v-model="keikokusPlayer2" type="number" min="0" class="score-input" />
+          </div>
         </div>
 
-        <div class="player-row">
-          <span class="player-name">{{ match.player2.nom }}</span>
-          <VaInput
-            type="number"
-            v-model.number="score2"
-            :rules="[value => value >= 0 || 'Le score ne peut pas être négatif']"
-            @input="updateCurrentWinner('score2')"
-            class="score-input"
-          />
+        <!-- btns d'actions -->
+        <div class="modal-actions">
+          <VaButton color="primary" @click="updateScores">Mettre à jour</VaButton>
+          <VaButton 
+            color="success" 
+            :disabled="!canRegisterWinner" 
+            @click="registerWinner"
+          >
+            Terminer le match
+          </VaButton>
+          <VaButton color="secondary" @click="closeModal">Annuler</VaButton>
         </div>
-      </div>
-
-      <!-- Affichage du gagnant actuel -->
-      <div class="winner-info">
-        <span class="winner-label">Gagnant Actuel :</span>
-        <span v-if="currentWinner" class="winner-name">{{
-          currentWinner.nom
-        }}</span>
-        <span v-else class="winner-none">Aucun (Égalité)</span>
-      </div>
-    </div>
-
-    <template #footer>
-      <div class="buttons">
-        <VaButton @click="saveScores" color="info" outline>
-          Enregistrer Scores
-        </VaButton>
-        <VaButton
-          color="success"
-          @click="registerWinner"
-          :disabled="!canRegisterWinner"
-        >
-          Terminer le Match
-        </VaButton>
-        <VaButton color="secondary" @click="closeModal"> Fermer </VaButton>
       </div>
     </template>
   </VaModal>
@@ -67,7 +46,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-//import { replicache } from "../replicache/replicache.js";
+import { matchService } from "@/replicache/services/matchService";
 
 const props = defineProps({
   match: {
@@ -76,220 +55,131 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits(["close", "update"]);
 
-// etat de la modale, defini sur ouvert au debut
+// etat de la modale
 const isOpen = ref(true);
 
-// valeurs des scores des joueurs, initialisees avec les scores actuels ou a 0 si non definis
-const score1 = ref(props.match.score1 || 0);
-const score2 = ref(props.match.score2 || 0);
+// recup des scores
+const ipponsPlayer1 = ref(props.match.ipponsPlayer1);
+const ipponsPlayer2 = ref(props.match.ipponsPlayer2);
+const keikokusPlayer1 = ref(props.match.keikokusPlayer1);
+const keikokusPlayer2 = ref(props.match.keikokusPlayer2);
 
-// calcul du gagnant actuel en fonction des scores
-// si le score du joueur 1 est superieur a celui du joueur 2, joueur 1 est gagnant
-// si le score du joueur 2 est superieur a celui du joueur 1, joueur 2 est gagnant
-// si les scores sont egaux, pas de gagnant
-const currentWinner = computed(() => {
-  if (score1.value > score2.value) return props.match.player1;
-  if (score2.value > score1.value) return props.match.player2;
+// noms des joueurs
+const player1Name = computed(() => props.match.player1?.firstName + " " + props.match.player1?.lastName || "Bye");
+const player2Name = computed(() => props.match.player2?.firstName + " " + props.match.player2?.lastName || "Bye");
+
+// détermination du gagnant
+const idWinner = computed(() => {
+  if (ipponsPlayer1.value > ipponsPlayer2.value) return props.match.idPlayer1;
+  if (ipponsPlayer2.value > ipponsPlayer1.value) return props.match.idPlayer2;
   return null;
 });
 
-// verification si on peut enregistrer un gagnant
-// un gagnant peut etre enregistre uniquement si un gagnant est defini et que les joueurs ne sont pas des "placeholders"
-const canRegisterWinner = computed(() => {
-  return (
-    currentWinner.value !== null &&
-    props.match.player1.id !== -1 &&
-    props.match.player2.id !== -1
-  );
-});
+// verif  si un gagnant peut être enregistré
+const canRegisterWinner = computed(() => idWinner.value !== null);
 
-// mise a jour du gagnant en temps reel, declenche le recalcul de la valeur currentWinner
-const updateCurrentWinner = (score) => {
-  if (score === 'score1' && score1.value < 0) { // empeche le score de descendre enb dessous de 0
-    score1.value = 0;
-  } else if (score === 'score2' && score2.value < 0) { // empeche le score de descendre enb dessous de 0
-    score2.value = 0;
-  }
-
-  currentWinner.value; // recalcul le gagnant du match
-};
-
-// enregistrement des scores dans replicache
-const saveScores = async () => {
-  await replicache.mutate.updateMatch({
-    matchId: props.match.id,
-    updates: {
-      score1: score1.value,
-      score2: score2.value,
-    },
+/**
+ * mmet à jour les scores sans terminer le match
+ */
+const updateScores = async () => {
+  await matchService.update(props.match.idMatch, {
+    ipponsPlayer1: ipponsPlayer1.value,
+    ipponsPlayer2: ipponsPlayer2.value,
+    keikokusPlayer1: keikokusPlayer1.value,
+    keikokusPlayer2: keikokusPlayer2.value,
   });
+
+  emit("update");
+  closeModal();
 };
 
-// enregistrement du gagnant et mise a jour de replicache
+/**
+ * termine le match et enregistre le gagnant
+ */
 const registerWinner = async () => {
-  if (canRegisterWinner.value) {
-    await replicache.mutate.updateMatch({
-      matchId: props.match.id,
-      updates: {
-        winner: currentWinner.value,
-        score1: score1.value,
-        score2: score2.value,
-      },
-    });
+  if (!canRegisterWinner.value) return;
 
-    // mise a jour du match suivant avec le gagnant
-    await updateNextMatch(currentWinner.value);
-    closeModal();
-  }
-};
-
-// met a jour le prochain match avec le gagnant du match actuel
-const updateNextMatch = async (winner) => {
-  // recuperer tous les matchs dans replicache
-  const allMatches = await replicache.query(async (tx) => {
-    return (await tx.scan({ prefix: "match/" }).entries().toArray()).map(([_, match]) => match);
+  await matchService.update(props.match.idMatch, {
+    ipponsPlayer1: ipponsPlayer1.value,
+    ipponsPlayer2: ipponsPlayer2.value,
+    keikokusPlayer1: keikokusPlayer1.value,
+    keikokusPlayer2: keikokusPlayer2.value,
+    idWinner: idWinner.value,
   });
 
-  // filtrer uniquement les matchs qui ont le match actuel comme match precedent
-  const nextMatches = allMatches.filter(match => 
-    match.previousMatch1 === props.match.id || 
-    match.previousMatch2 === props.match.id
-  );
-
-  // mise a jour des matchs suivants avec le gagnant
-  for (const nextMatch of nextMatches) {
-    const updates = {};
-
-    // si le match actuel est en previousMatch1, mettre le gagnant en player1
-    if (nextMatch.previousMatch1 === props.match.id) {
-      updates.player1 = winner;
-    } 
-    // si le match actuel est en previousMatch2, mettre le gagnant en player2
-    if (nextMatch.previousMatch2 === props.match.id) {
-      updates.player2 = winner;
-    }
-
-    // si des mises a jour sont necessaires, les appliquer a replicache
-    if (Object.keys(updates).length > 0) {
-      await replicache.mutate.updateMatch({
-        matchId: nextMatch.id,
-        updates,
-      });
-    }
-  }
+  emit("update");
+  closeModal();
 };
 
-// ferme la modale et emet un evenement pour prevenir le parent
+/**
+ * ferme la modale
+ */
 const closeModal = () => {
   isOpen.value = false;
   emit("close");
 };
 </script>
 
-
 <style scoped>
-/* Modale */
-.custom-modal {
-  margin: auto;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  box-sizing: border-box;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-/* Titre */
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-align: center;
-  padding: 20px 0;
-  color: #2c3e50;
-  border-bottom: 1px solid #eaeef2;
-  width: 100%;
-  margin: 0;
-}
-
-/* contenu */
-.modal-content {
+.modal-container {
   padding: 20px;
   text-align: center;
-  width: 100%;
-  box-sizing: border-box;
+  background: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* joueurs */
-.player-details {
+.modal-title {
+  font-size: 1.8rem;
+  font-weight: bold;
   margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  color: #333;
 }
 
-.player-row {
+.score-section {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border-radius: 8px;
-  background: #f8f9fa;
-  width: 100%;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-.player-name {
-  font-size: 1rem;
-  font-weight: 600;
-  flex-grow: 1;
-  text-align: left;
-  color: #34495e;
+.player-card {
+  flex: 1;
+  padding: 15px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.player-card h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #222;
+}
+
+.club-name {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 10px;
 }
 
 .score-input {
-  width: 100px;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: bold;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  padding: 8px;
-  background: #ffffff;
-}
-
-/* gagnant */
-.winner-info {
-  margin-top: 16px;
-  font-size: 1rem;
-  font-weight: bold;
-  text-align: center;
-  padding: 12px;
-  border-radius: 8px;
-  background: #f8f9fa;
-}
-
-.winner-name {
-  color: #28a745;
-  font-weight: bold;
-  font-size: 1.1rem;
-}
-
-.winner-none {
-  color: #dc3545;
-  font-weight: bold;
-  font-size: 1.1rem;
-}
-
-/* boutons */
-.buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  padding: 20px;
+  margin-bottom: 10px;
   width: 100%;
+}
+
+/* style du gagnant */
+.winner {
+  border: 3px solid #4CAF50;
+  background: #eafaea;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
 }
 </style>
