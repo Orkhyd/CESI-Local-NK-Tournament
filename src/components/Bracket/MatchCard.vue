@@ -1,23 +1,23 @@
 <template>
   <div class="match" :class="{ 'disabled-match': isDisabled }" @click="openModal">
     <div class="match-content">
-      <span class="match-id">{{ match.id }}</span>
+      <span class="match-id">{{ match.idMatch }}</span>
       <div class="players">
         <div class="player" v-for="(player, i) in [match.player1, match.player2]" :key="i"
           :class="getPlayerClass(player)">
           <span class="name">
-            <VaIcon v-if="player?.id === match.winner?.id" class="crown" name="check_circle"/>
-            {{ player?.prenom && player?.nom ? `${player.prenom} ${player.nom}` : player?.nom ?? "?" }}
+            <VaIcon v-if="player?.id === match.idWinner" class="crown" name="check_circle"/>
+            {{ player?.firstName && player?.lastName ? `${player.firstName} ${player.lastName}` : player.lastName }}
           </span>
           <span class="score" v-if="match['score' + (i + 1)] !== null">
-            {{ match["score" + (i + 1)] }}
+            {{ match["ipponsPlayer" + (i + 1)] }}
           </span>
         </div>
 
       </div>
     </div>
 
-    <MatchModal v-if="isModalOpen" :match="match" @close="closeModal" />
+    <MatchModal v-if="isModalOpen" :match="match" @close="closeModal"  @update="refreshBracket"/>
   </div>
 </template>
 
@@ -32,6 +32,12 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(["updateBracket"]);
+
+const refreshBracket = () => {
+  emit("updateBracket");
+};
+
 const isModalOpen = ref(false);
 
 // calcul qui determine si un match est desactive
@@ -39,11 +45,11 @@ const isModalOpen = ref(false);
 // un "bye" signifie qu un joueur est automatiquement qualifie sans jouer
 const isDisabled = computed(() => {
   return (
-    props.match.winner !== null ||
-    props.match.player1?.nom === "BYE" ||
-    props.match.player2?.nom === "BYE" ||
-    props.match.player1?.nom?.startsWith("*Gagnant de") ||
-    props.match.player2?.nom?.startsWith("*Gagnant de")
+    props.match.idWinner !== null ||
+    props.match.player1?.lastName === "BYE" ||
+    props.match.player2?.lastName === "BYE" ||
+    props.match.player1?.lastName?.startsWith("*Gagnant de") ||
+    props.match.player2?.lastName?.startsWith("*Gagnant de")
   );
 });
 
@@ -57,6 +63,7 @@ const openModal = () => {
 // ferme la modale
 const closeModal = () => {
   isModalOpen.value = false;
+
 };
 
 // determine la classe css appliquee a un joueur en fonction du gagnant du match
@@ -64,8 +71,8 @@ const closeModal = () => {
 // si le joueur correspond au gagnant alors on lui applique la classe "winner"
 // sinon on lui applique la classe "loser"
 const getPlayerClass = (player) => {
-  if (!props.match.winner) return "";
-  return player?.id === props.match.winner?.id ? "winner" : "loser";
+  if (!props.match.idWinner) return "";
+  return player?.id === props.match.idWinner ? "winner" : "loser";
 };
 </script>
 

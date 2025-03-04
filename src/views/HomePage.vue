@@ -1,8 +1,5 @@
 <template>
 
-  <VaButton color="secondary" class="test-btn" @click="goToTableau">Test Tableau</VaButton>
-
-
   <div class="home-wrapper">
     <!-- titre principal -->
     <h1 class="title">Accueil du Tournoi</h1>
@@ -99,21 +96,14 @@ const openModal = () => {
   tournamentModal.value.open();
 };
 
-// pour dev test la page de tableau
-const goToTableau = () => {
-  router.push("/bracket-page");
-};
-
 // gere la création d'un nouveau tournoi avec Replicache
 const handleCreateTournoi = async (newTournoi) => {
   const id = crypto.randomUUID(); // Génère un ID unique
   try {
     await TournamentService.create(id, newTournoi.name, newTournoi.startingDate);
-    console.log("Tournoi créé avec succès !");
 
     // recup les tournois après la création
     const tournaments = await getTournaments(rep);
-    console.log("Tournois récupérés :", tournaments);
 
     // met à jour la référence du tournoi actif
     tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
@@ -125,9 +115,14 @@ const handleCreateTournoi = async (newTournoi) => {
 // redirige vers la page du tournoi en cours
 const loadTournoi = () => {
   if (tournoi.value) {
-    router.push({ path: `/tournament/${tournoi.value.id}` }); // redirection avec l'ID du tournoi
+    const routePath = tournoi.value.started 
+      ? `/tournament/started/${tournoi.value.id}` 
+      : `/tournament/non-started/${tournoi.value.id}`;
+    
+    router.push({ path: routePath });
   }
 };
+
 
 // ouvre la modale de confirmation de suppression
 const openDeleteModal = () => {

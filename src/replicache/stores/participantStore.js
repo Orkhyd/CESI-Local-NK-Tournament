@@ -28,24 +28,16 @@ export const rep = new Replicache({
     },    
     
     // maj des infos d un participant si il existe
-    update: async (tx, { id, ...updates }) => {
-      console.log("🛠️ Mise à jour demandée pour le participant :", id);
-      console.log("📌 Données reçues pour mise à jour :", updates);
-    
+    update: async (tx, { id, ...updates }) => {  
       const p = await tx.get(`participant/${id}`);
-      console.log("🔍 Participant actuel avant mise à jour :", p);
     
       if (p) {
         const updatedParticipant = { ...p, ...updates };
-        console.log("✅ Nouvelle version du participant après mise à jour :", updatedParticipant);
     
         await tx.put(`participant/${id}`, updatedParticipant);
     
-        // 🔥 Vérifie immédiatement si les nouvelles valeurs sont bien stockées
-        const checkUpdate = await tx.get(`participant/${id}`);
-        console.log("🔎 Vérification après stockage :", checkUpdate);
       } else {
-        console.log("⚠️ Aucune entrée trouvée pour cet ID, mise à jour impossible !");
+        console.error("⚠️ Aucune entrée trouvée pour cet ID, mise à jour impossible !");
       }
     },
     
@@ -56,7 +48,6 @@ export const rep = new Replicache({
     },
 
     updateCategory: async (participantId, categoryId) => {
-      console.log("🔄 Mise à jour du participant :", participantId, "avec la catégorie :", categoryId);
       await rep.mutate.update({ id: participantId, categoryId });
     }
   }
@@ -79,3 +70,23 @@ export async function getParticipantsByTournament(tournamentId) {
     return participants;
   });
 }
+
+// recup tout les participants d une categorie
+export async function getParticipantsByCategory(tournamentId, categoryId) {
+  if (!rep) return [];
+
+  return await rep.query(async tx => {
+    const participants = [];
+
+    // parcours de tous les participants stockeees dans Replicache
+    for await (const value of tx.scan()) {
+      // filtre des participants appartenant au tournoi et à la catego spécifiés
+      if (value?.tournamentId === tournamentId && value?.categoryId === categoryId) {
+        participants.push(value);
+      }
+    }
+
+    return participants;
+  });
+}
+
