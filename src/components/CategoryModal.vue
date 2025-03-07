@@ -55,19 +55,40 @@
                                 :filter-method="customFilteringFn" v-model:sort-by="sortBy" :allow-select-all="false"
                                 v-model:sorting-order="sortingOrder" selectable select-mode="multiple"
                                 :stickyHeader=true v-model="selectedParticipants" items-track-by="id"
-                                :row-bind="getRowBind" :selectable="isRowSelectable" no-data-html="Aucun participant trouvé">
+                                :row-bind="getRowBind" :selectable="isRowSelectable"
+                                no-data-html="Aucun participant trouvé" virtual-scroller>
+
                                 <template #cell(status)="{ row }">
                                     <VaChip :color="getStatusColor(row)" size="small">
                                         {{ getStatusText(row) }}
                                     </VaChip>
                                 </template>
+
+                                <template #cell(nationalityId)="{ row }">
+                                    <div class="nationality-cell">
+                                        <img v-if="getCountry(row.source?.nationalityId)"
+                                            :src="getFlagUrl(getCountry(row.source?.nationalityId).flag)" alt="flag"
+                                            class="nationality-flag" />
+                                        <span>
+                                            {{ getCountry(row.source?.nationalityId)?.name || row.source?.nationalityId
+                                            }}
+                                        </span>
+                                    </div>
+                                </template>
                             </VaDataTable>
+                            <div class="participants-summary">
+                                <VaChip color="info">{{ totalParticipants }} participant(s) totaux</VaChip>
+                                <VaChip color="primary">{{ selectedParticipantsCount }} participant(s) selectionnés
+                                </VaChip>
+                                <VaChip color="success">{{ freeParticipantsCount }} participant(s) libres restants
+                                </VaChip>
+                            </div>
                         </div>
                     </div>
                 </VaForm>
 
 
-                <!-- 🔥 Actions -->
+                <!-- actions -->
                 <div class="modal-actions">
                     <VaButton @click="closeModal" color="danger"> Fermer </VaButton>
                     <VaButton @click="showConfirmation = true" color="primary" :disabled="!isFormValid">
@@ -98,7 +119,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { VaModal, VaForm, VaInput, VaSelect, VaButton, VaDataTable, VaChip, VaAlert } from "vuestic-ui";
-import { genders, grades, categoriesAge, categoriesTypes } from "../replicache/models/constants";
+import { genders, grades, categoriesAge, categoriesTypes, nationality } from "../replicache/models/constants";
 
 // props et emits
 const props = defineProps({
@@ -108,6 +129,16 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue", "save"]);
+
+// reocuperer le nom du pays avec l'id
+const getCountry = (natId) => {
+  return nationality.find(country => country.id === Number(natId));
+};
+
+// recuperer l image en base 64
+const getFlagUrl = (flagBase64) => {
+  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
+};
 
 // etat de la modale
 const isModalOpen = computed({
@@ -145,6 +176,10 @@ const isEditMode = computed(() => {
     return props.category && (props.category.id || props.category.source?.id);
 });
 
+const totalParticipants = computed(() => props.participants.length);
+const selectedParticipantsCount = computed(() => selectedParticipants.value.length);
+const freeParticipantsCount = computed(() => totalParticipants.value - selectedParticipantsCount.value);
+
 // filtres et tri
 const filter = ref(""); // stocke la valeur du filtre appliqué sur les participants
 const filterByFields = ref([]); // liste des champs sur lesquels le filtre doit être appliqué
@@ -159,7 +194,7 @@ const columnsWithName = [
     { value: "grade", text: "Grade" },
     { value: "clubName", text: "Club" },
     { value: "weight", text: "Poids" },
-    { value: "nationality", text: "Nationalite" },
+    { value: "nationalityId", text: "Nationalite" },
 ];
 
 const customFilteringFn = (source, cellData) => {
@@ -399,7 +434,7 @@ const participantColumns = [
     { key: "grade", label: "Grade", sortable: true },
     { key: "clubName", label: "Club", sortable: true },
     { key: "weight", label: "Poids", sortable: true },
-    { key: "nationality", label: "Nationalite", sortable: true },
+    { key: "nationalityId", label: "Nationalite", sortable: true },
 ];
 </script>
 
@@ -441,12 +476,35 @@ const participantColumns = [
     width: 0 !important;
 }
 
+.va-virtual-scroller {
+    height: 80% !important;
+}
 
 .form-column {
     display: flex;
     flex-direction: column;
     gap: 12px;
     width: 100%;
+}
+
+.participants-summary {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.nationality-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nationality-flag {
+  width: 20px;
+  height: auto;
+  vertical-align: middle;
 }
 
 .form-item {
@@ -469,7 +527,8 @@ const participantColumns = [
 
 .participants-list {
     flex-grow: 1;
-    min-width: 0;
+    min-height: 300px;
+    height: 500px !important;
 }
 
 .select-section {

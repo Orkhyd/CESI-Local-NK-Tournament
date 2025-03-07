@@ -35,6 +35,17 @@
             class="action-icon delete-icon" />
         </template>
 
+        <template #cell(nationalityId)="{ row }">
+          <div class="nationality-cell">
+            <img v-if="getCountry(row.source.nationalityId)"
+              :src="getFlagUrl(getCountry(row.source.nationalityId).flag)" alt="flag" class="nationality-flag" />
+            <span>
+              {{ getCountry(row.source.nationalityId) ? getCountry(row.source.nationalityId).name :
+                row.source.nationalityId }}
+            </span>
+          </div>
+        </template>
+
         <!-- footer sticky -->
         <template #footer>
           <tr class="sticky-footer">
@@ -69,6 +80,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useToast } from "vuestic-ui";
+import { nationality } from "@/replicache/models/constants";
 
 // init vuestic toast
 const toast = useToast();
@@ -81,6 +93,15 @@ const props = defineProps({
 
 // def emits
 const emit = defineEmits(["create", "edit", "delete", "import-participant"]);
+
+const getCountry = (natId) => {
+  // convertir natId en nombre si necessaire
+  return nationality.find(country => country.id === Number(natId));
+};
+
+const getFlagUrl = (flagBase64) => {
+  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
+};
 
 // texte filtrage
 const filterText = ref("");
@@ -126,7 +147,7 @@ const importFromCSV = (event) => {
     const content = e.target.result;
     const rows = content.split("\n").map(row => row.replace(/\r$/, "").split(";"));
 
-    const headers = ["firstName", "lastName", "birthDate", "genderId", "gradeId", "clubName", "weight", "nationality"];
+    const headers = ["firstName", "lastName", "birthDate", "genderId", "gradeId", "clubName", "weight", "nationalityId"];
     const fileHeaders = rows.shift().map(h => h.replace(/"/g, "").trim());
 
     if (JSON.stringify(fileHeaders) !== JSON.stringify(headers)) {
@@ -146,7 +167,7 @@ const importFromCSV = (event) => {
         gradeId: Number(row[4].replace(/"/g, "")) || null,
         clubName: row[5].replace(/"/g, "").trim(),
         weight: Number(row[6].replace(/"/g, "")) || null,
-        nationality: row[7].replace(/"/g, "").trim(),
+        nationalityId: Number(row[7].replace(/"/g, "")) || null,
       };
     }).filter(p => p);
 
@@ -171,7 +192,7 @@ const exportToCSV = () => {
     return;
   }
 
-  const headers = ["firstName", "lastName", "birthDate", "genderId", "gradeId", "clubName", "weight", "nationality"];
+  const headers = ["firstName", "lastName", "birthDate", "genderId", "gradeId", "clubName", "weight", "nationalityId"];
 
   const rows = props.participants.map(p => [
     p.firstName || "",
@@ -181,7 +202,7 @@ const exportToCSV = () => {
     p.gradeId || "",
     p.clubName || "",
     p.weight || "",
-    p.nationality || ""
+    p.nationalityId || ""
   ]);
 
   let csvContent = "data:text/csv;charset=utf-8," +
@@ -220,7 +241,7 @@ const columns = [
   { key: "grade", label: "grade", sortable: true  },
   { key: "clubName", label: "club", sortable: true  },
   { key: "weight", label: "poids", sortable: true  },
-  { key: "nationality", label: "nationalite", sortable: true  },
+  { key: "nationalityId", label: "nationalite", sortable: true  },
   { key: "actions", label: "actions", width: "80px" },
 ];
 </script>
@@ -276,6 +297,18 @@ const columns = [
   color: #154EC1;
   text-align: center;
   width: auto; /* Ajuste la largeur des cellules */
+}
+
+.nationality-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nationality-flag {
+  width: 20px;
+  height: auto;
+  vertical-align: middle;
 }
 
 /* colonnes ajustees */
