@@ -13,7 +13,7 @@ export const ParticipantService = {
       birthDate: data.birthDate,
       clubName: data.clubName,
       weight: data.weight,
-      nationality: data.nationality,
+      nationalityId: data.nationalityId,
       genderId: data.genderId,
       gradeId: data.gradeId,
     });

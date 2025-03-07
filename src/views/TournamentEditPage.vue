@@ -45,12 +45,22 @@
     <VaModal v-model="showImportModal" size="large" hide-default-actions>
       <template #content>
         <div class="import-modal">
-          <h2 class="modal-title">Participants importés</h2>
+          <h2 class="modal-title">{{ importedParticipants.length }} participants importés</h2>
 
-          <VaDataTable :items="importedParticipants" :columns="importColumns" striped no-data-html="Aucun participant">
+          <VaDataTable :items="importedParticipants" :columns="importColumns" striped no-data-html="Aucun participant" virtual-scroller :stickyHeader=true>
             <!-- genre -->
             <template #cell(genderId)="{ row }">
               <VaIcon :name="row.genderId === 1 ? 'male' : 'female'" class="gender-icon" />
+            </template>
+
+            <template #cell(nationalityId)="{ row }">
+              <div class="nationality-cell">
+                <img v-if="getCountry(row.source?.nationalityId)"
+                  :src="getFlagUrl(getCountry(row.source?.nationalityId).flag)" alt="flag" class="nationality-flag" />
+                <span>
+                  {{ getCountry(row.source?.nationalityId)?.name || row.source?.nationalityId }}
+                </span>
+              </div>
             </template>
 
             <!-- grade affiché en texte -->
@@ -105,7 +115,7 @@ import { getCategoriesByTournament } from "../replicache/stores/categoryStore";
 import { ParticipantService } from "../replicache/services/participantService";
 import { CategoryService } from "../replicache/services/categoryService";
 import { TournamentService } from "../replicache/services/tournamentService";
-import { genders, grades, categoriesAge, categoriesTypes } from "../replicache/models/constants";
+import { genders, grades, categoriesAge, categoriesTypes, nationality } from "../replicache/models/constants";
 import { useToast } from "vuestic-ui";
 
 // init vuestic toast
@@ -137,6 +147,16 @@ const goToHomePage = () => {
   router.push("/home-page");
 };
 
+// reocuperer le nom du pays avec l'id
+const getCountry = (natId) => {
+  return nationality.find(country => country.id === Number(natId));
+};
+
+// recuperer l image en base 64
+const getFlagUrl = (flagBase64) => {
+  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
+};
+
 // gestion participants importes
 const handleImportedParticipants = (participants) => {
   if (!participants.length) return;
@@ -152,14 +172,14 @@ const getGradeName = (gradeId) => {
 
 // def colonnes import
 const importColumns = [
-  { key: "firstName", label: "prenom", sortable: true },
+  { key: "firstName", label: "prénom", sortable: true },
   { key: "lastName", label: "nom", sortable: true },
   { key: "birthDate", label: "date naissance", sortable: true },
   { key: "genderId", label: "genre", sortable: false },
   { key: "gradeId", label: "grade", sortable: true },
   { key: "clubName", label: "club", sortable: true },
   { key: "weight", label: "poids", sortable: true },
-  { key: "nationality", label: "nationalite", sortable: true }
+  { key: "nationalityId", label: "nationalité", sortable: true }
 ];
 
 // annule import
@@ -170,11 +190,15 @@ const cancelImport = () => {
 };
 
 // confirme import
-const confirmImport = () => {
-  importedParticipants.value.forEach(p => {
+const confirmImport = async () => {
+  let successCount = 0;
+  // boucle sur chaque participant importé
+  for (const p of importedParticipants.value) {
     const formattedParticipant = {
       ...p,
-      birthDate: new Date(p.birthDate),
+      birthDate: p.birthDate && !isNaN(new Date(p.birthDate))
+        ? new Date(p.birthDate)
+        : null,
       genderId: {
         text: genders.find(g => g.id === Number(p.genderId))?.nom || "Inconnu",
         value: Number(p.genderId),
@@ -184,11 +208,22 @@ const confirmImport = () => {
         value: Number(p.gradeId),
       },
     };
-    handleSaveParticipant(formattedParticipant);
-  });
+    try {
+      // sauvegarde du participant, on attend sa résolution
+      await handleSaveParticipant(formattedParticipant);
+      successCount++;
+    } catch (error) {
+      // affiche un toast d'erreur pour ce participant
+      toast.init({ message: `${p.firstName} ${p.lastName} impossible importer`, color: "danger" });
+    }
+  }
+  // ferme la modale et vide la liste importée
   showImportModal.value = false;
   importedParticipants.value = [];
-  toast.init({ message: "Import valide et ajouté", color: "success" });
+  // si au moins un participant a ete importé, affiche un toast global de succes
+  if (successCount > 0) {
+    toast.init({ message: "Import valide et ajouté", color: "success" });
+  }
 };
 
 // recup participants
@@ -272,10 +307,14 @@ const handleSaveParticipant = async (participantData) => {
   try {
     const formattedData = {
       ...participantData,
-      birthDate: participantData.birthDate ? participantData.birthDate.toISOString().split("T")[0] : null,
+      birthDate: participantData.birthDate instanceof Date && !isNaN(participantData.birthDate)
+        ? participantData.birthDate.toISOString().split("T")[0]
+        : null,
       genderId: participantData.genderId?.value || null,
+      nationalityId: participantData.nationalityId || null,
       gradeId: participantData.gradeId?.value || null,
     };
+
     if (participantData.id) {
       await ParticipantService.update(participantData.id, formattedData);
       toast.init({ message: "Le participant a bien été mis à jour!", color: "success" });
@@ -476,9 +515,25 @@ const confirmTournamentValidation = async () => {
   margin-right: 120px;
 }
 
+.nationality-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nationality-flag {
+  width: 20px;
+  height: auto;
+  vertical-align: middle;
+}
+
 .import-modal {
   padding: 20px;
   text-align: center;
+}
+
+.va-virtual-scroller {
+    height: 50vh !important;
 }
 
 .modal-title {

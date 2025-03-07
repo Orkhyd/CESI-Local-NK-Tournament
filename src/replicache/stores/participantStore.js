@@ -21,7 +21,7 @@ export const rep = new Replicache({
         rawData.birthDate,
         rawData.clubName,
         rawData.weight,
-        rawData.nationality,
+        rawData.nationalityId,
         rawData.genderId,
         rawData.gradeId
       ));
