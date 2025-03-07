@@ -5,16 +5,16 @@
       <VaButton @click="goToHomePage" class="home-button" color="primary">
         ⬅ Accueil
       </VaButton>
-      <h1 class="page-title">Gestion du Tournoi</h1>
+      <div class="page-title">Paramétrage du Tournoi</div>
       <VaButton @click="validateCategories" :disabled="!canValidateCategories" :title="validationMessage"
         color="success" class="validate-categories-button">
-        Valider les catégories
+        TERMINER LE PARAMETRAGE DU TOURNOI
       </VaButton>
     </div>
 
     <!-- coonteneur des catégories et des participants -->
     <div class="content-container">
-      <!-- catégories à gauche -->
+      <!-- catégories en haut -->
       <div class="category-section">
         <h2 class="section-title">Catégories</h2>
         <VaButton @click="handleOpenCategoryModal" class="action-button create-category-button" color="primary">
@@ -24,7 +24,7 @@
           @create="handleOpenCategoryModal" @delete="handleDeleteCategory" />
       </div>
 
-      <!-- Participants à droite -->
+      <!-- Participants en bas -->
       <div class="participant-section">
         <h2 class="section-title">Participants</h2>
         <ParticipantList :participants="formattedParticipants" @edit="handleEditParticipant"
@@ -493,26 +493,37 @@ const confirmTournamentValidation = async () => {
   align-items: center;
   justify-content: flex-start;
   gap: 20px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 /* style du bouton d'accueil */
 .home-button {
   padding: 1px 2px;
   font-size: 14px;
+  width: 100px;
   font-weight: bold;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.validate-categories-button {
+  padding: 1px 2px;
+  font-size: 14px;
+  width: 400px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
 }
 
 /* style du titre centré */
 .page-title {
   flex: 1;
   text-align: center;
-  font-size: 2rem;
+  font-size: 40px;
   font-weight: bold;
   color: #154EC1;
-  margin-right: 120px;
+  font-family: Courier, monospace;
 }
 
 .nationality-cell {
@@ -574,16 +585,6 @@ const confirmTournamentValidation = async () => {
   height: 45px !important;
 }
 
-
-/* titre centré */
-.page-title {
-  text-align: center;
-  font-size: 2rem;
-  font-weight: bold;
-  color: #154EC1;
-  margin-bottom: 20px;
-}
-
 /* boutons bien centrés */
 .buttons-container {
   display: flex;
@@ -632,14 +633,12 @@ const confirmTournamentValidation = async () => {
 /* ✅ Titre des sections */
 .section-title {
   padding-bottom: 5px;
-  font-size: 1.5rem;
+  font-size: 22px;
   font-weight: bold;
   color: #262824;
-  margin-bottom: 10px;
-  text-align: center;
+  margin-bottom: 5px;
 }
 
-/* ✅ Assurer que le contenu des listes s'adapte bien */
 .category-section,
 .participant-section {
   display: flex;
@@ -649,10 +648,10 @@ const confirmTournamentValidation = async () => {
 .category-section>*:not(.section-title),
 .participant-section>*:not(.section-title) {
   flex: 1;
-  /* Permet de scroller à l'intérieur si nécessaire */
+  /* permet de scroller à l'intérieur si nécessaire */
 }
 
-/* ✅ Responsive : en colonne sur petit écran */
+/* responsive : en colonne sur petit écran */
 @media screen and (max-width: 1024px) {
   .content-container {
     flex-direction: column;

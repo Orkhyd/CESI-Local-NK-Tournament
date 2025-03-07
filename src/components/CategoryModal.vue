@@ -28,7 +28,16 @@
                             <div class="form-item">
                                 <VaSelect v-model="form.ageCategoryIds" :options="ageCategoryOptions" value-by="value"
                                     label="Type d'âge *" multiple clearable :error-messages="errors.ageCategoryIds"
-                                    @update:modelValue="validateForm" :max-visible-options="2" />
+                                    @update:modelValue="validateForm" :max-visible-options="2">
+                                    <template #option="{ option, selectOption }">
+                                        <div class="option-container" @click="selectOption(option)">
+                                            <span class="option-text">{{ option.text }}</span>
+                                            <div class="age-range">
+                                                {{ getAgeRange(option.value) }}
+                                            </div>
+                                        </div>
+                                    </template>
+                                </VaSelect>
                             </div>
                             <div class="form-item">
                                 <VaSelect v-model="form.minGradeId" :options="gradeOptions" label="Grade minimum *"
@@ -62,6 +71,25 @@
                                     <VaChip :color="getStatusColor(row)" size="small">
                                         {{ getStatusText(row) }}
                                     </VaChip>
+                                </template>
+
+                                <template #cell(gender)="{ row }">
+                                    <span :class="getCellClass('gender', row)" :title="getCellTitle('gender', row)">
+                                        {{ row.source.gender }}
+                                    </span>
+                                </template>
+
+                                <template #cell(birthDate)="{ row }">
+                                    <span :class="getCellClass('birthDate', row)"
+                                        :title="getCellTitle('birthDate', row)">
+                                        {{ row.source.birthDate }}
+                                    </span>
+                                </template>
+
+                                <template #cell(grade)="{ row }">
+                                    <span :class="getCellClass('grade', row)" :title="getCellTitle('grade', row)">
+                                        {{ row.source.grade }}
+                                    </span>
                                 </template>
 
                                 <template #cell(nationalityId)="{ row }">
@@ -140,11 +168,83 @@ const getFlagUrl = (flagBase64) => {
   return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
 };
 
+// recuperer le echelle d'age entre le age min et max des categories d'age
+const getAgeRange = (ageCategoryId) => {
+  const category = categoriesAge.find(cat => Number(cat.id) === Number(ageCategoryId));
+  if (category) {
+    return `${category.ageMin} - ${category.ageMax} ans`;
+  }
+  return "";
+};
+
 // etat de la modale
 const isModalOpen = computed({
     get: () => props.modelValue,
     set: (value) => emit("update:modelValue", value),
 });
+
+// avoir le style css de la cellule en fonction de si le partiicpant correspond au critere de la category
+const getCellClass = (columnKey, row) => {
+    const participant = row.source;
+
+    // verif le genre
+    if (columnKey === "gender" && form.value.genreId && participant.genderId !== form.value.genreId.value) {
+        return "non-matching-cell";
+    }
+
+    // verif l'âge
+    if (columnKey === "birthDate" && form.value.ageCategoryIds.length > 0) {
+        const age = calculateAge(participant.birthDate);
+        const isAgeMatching = form.value.ageCategoryIds.some(ageCat => {
+            const category = categoriesAge.find(cat => cat.id == ageCat);
+            return category && age >= category.ageMin && age <= category.ageMax;
+        });
+        if (!isAgeMatching) {
+            return "non-matching-cell";
+        }
+    }
+
+    // verif le grade
+    if (columnKey === "grade" && form.value.minGradeId && form.value.maxGradeId) {
+        const participantGrade = participant.gradeId;
+        if (participantGrade < form.value.minGradeId.value || participantGrade > form.value.maxGradeId.value) {
+            return "non-matching-cell";
+        }
+    }
+
+    return "";
+};
+
+const getCellTitle = (columnKey, row) => {
+    const participant = row.source;
+
+    // verif le genre
+    if (columnKey === "gender" && form.value.genreId && participant.genderId !== form.value.genreId.value) {
+        return "Le genre du participant ne correspond pas à la catégorie.";
+    }
+
+    // verif l'âge
+    if (columnKey === "birthDate" && form.value.ageCategoryIds.length > 0) {
+        const age = calculateAge(participant.birthDate);
+        const isAgeMatching = form.value.ageCategoryIds.some(ageCat => {
+            const category = categoriesAge.find(cat => cat.id == ageCat);
+            return category && age >= category.ageMin && age <= category.ageMax;
+        });
+        if (!isAgeMatching) {
+            return `L'âge du participant (${age} ans) ne correspond pas aux catégories d'âge sélectionnées.`;
+        }
+    }
+
+    // verif le grade
+    if (columnKey === "grade" && form.value.minGradeId && form.value.maxGradeId) {
+        const participantGrade = participant.gradeId;
+        if (participantGrade < form.value.minGradeId.value || participantGrade > form.value.maxGradeId.value) {
+            return "Le grade du participant ne correspond pas à la plage de grades sélectionnée.";
+        }
+    }
+
+    return "";
+};
 
 // formulaire
 const form = ref({
@@ -357,6 +457,18 @@ watch(
     { immediate: true }
 );
 
+// calcul l'age d'un participant avec sa date de naissance
+const calculateAge = (birthDate) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+    return age;
+};
+
 onMounted(() => { // permet de supprimer la checkbox pour tout sélectionner dans la datagrid car aucun autre moyen de la disable,
 // et impossible de la régler pour ne pas sélectionner les participants déjà inclus à une autre catégorie !
     setTimeout(() => {
@@ -426,10 +538,10 @@ const closeModal = () => {
 
 // colonnes de la table
 const participantColumns = [
-    { key: "status", label: "Statut", sortable: true },
-    { key: "firstName", label: "Prenom", sortable: true },
-    { key: "lastName", label: "Nom", sortable: true },
-    { key: "birthDate", label: "Date de naissance", sortable: true },
+    { key: "status", label: "Statut", sortable: true},
+    { key: "firstName", label: "Prenom", sortable: true},
+    { key: "lastName", label: "Nom", sortable: true},
+    { key: "birthDate", label: "Date de naissance" },
     { key: "gender", label: "Genre", sortable: true },
     { key: "grade", label: "Grade", sortable: true },
     { key: "clubName", label: "Club", sortable: true },
@@ -459,6 +571,11 @@ const participantColumns = [
     margin-bottom: 15px;
 }
 
+.non-matching-cell {
+    color: red !important;
+    font-weight: bold;
+}
+
 .filter-container {
     display: flex;
     gap: 10px;
@@ -480,6 +597,30 @@ const participantColumns = [
     height: 80% !important;
 }
 
+.option-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.3s ease;
+}
+
+.option-container:hover {
+  background-color: #f9f9f9;
+}
+
+.option-container .option-text {
+  font-size: 14px;
+  color: #333;
+}
+
+.option-container .age-range {
+  font-size: 13px;
+  color: #777;
+  font-style: italic;
+}
+
 .form-column {
     display: flex;
     flex-direction: column;
@@ -493,6 +634,13 @@ const participantColumns = [
   align-items: center;
   justify-content: space-around;
   margin-top: 10px;
+}
+
+.flex.justify-between.items-center {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .nationality-cell {
