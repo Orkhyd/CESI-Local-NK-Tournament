@@ -44,7 +44,7 @@
   
   // importation des composants conditionnels
   import BracketType from "@/components/Bracket/BracketType.vue";
-  import PoolPhase from "@/components/Pool/PoolPhase.vue";
+  import PoolList from "@/components/Pool/PoolList.vue";
   import CategoryStatistics from "@/components/CategoryStatistics.vue";
   
   const props = defineProps({
@@ -65,7 +65,7 @@
   const categoryComponent = computed(() => {
     if (!props.category || !props.category.typeId) return null;
     console.log(props.category)
-    return props.category.typeId === 1 ? PoolPhase : BracketType;
+    return props.category.typeId === 1 ? PoolList : BracketType;
   });
   
   // fonction pour recup les participants de la catégorie
