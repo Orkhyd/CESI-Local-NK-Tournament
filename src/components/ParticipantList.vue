@@ -108,14 +108,23 @@ const filterText = ref("");
 
 // filtrage participants
 const filteredParticipants = computed(() => {
-  if (!filterText.value) return props.participants;
+  if (!filterText.value) return props.participants.map(p => ({
+    ...p,
+    status: p.categoryId === -1 ? "Non attribué" : "Attribué", // Ajoutez la propriété `status`
+  }));
 
   const searchLower = filterText.value.toLowerCase();
-  return props.participants.filter((p) =>
-    Object.values(p).some((val) =>
-      val?.toString().toLowerCase().includes(searchLower)
-    )
-  );
+
+  return props.participants
+    .map((p) => ({
+      ...p,
+      status: p.categoryId === -1 ? "Non attribué" : "Attribué", // Ajoutez la propriété `status`
+    }))
+    .filter((p) =>
+      Object.values(p).some((val) =>
+        val?.toString().toLowerCase().includes(searchLower)
+      )
+    );
 });
 
 // stockage participant suppr
@@ -151,7 +160,7 @@ const importFromCSV = (event) => {
     const fileHeaders = rows.shift().map(h => h.replace(/"/g, "").trim());
 
     if (JSON.stringify(fileHeaders) !== JSON.stringify(headers)) {
-      toast.init({ message: "Format incorrect : Assurez vous d avoir les bonnes colonnes.", color: "danger" });
+      toast.init({ message: "Format incorrect : Assurez vous d avoir les bonnes colonnes.", color: "danger", position: 'bottom-center' });
       csvInput.value.value = "";
       return;
     }
@@ -172,7 +181,7 @@ const importFromCSV = (event) => {
     }).filter(p => p);
 
     if (!participants.length) {
-      toast.init({ message: "Format incorrect : Assurez vous d'avoir les bonnes colonnes.", color: "danger" });
+      toast.init({ message: "Format incorrect : Assurez vous d'avoir les bonnes colonnes.", color: "danger", position: 'bottom-center' });
       csvInput.value.value = "";
       return;
     }
@@ -187,7 +196,7 @@ const importFromCSV = (event) => {
 // export csv
 const exportToCSV = () => {
   if (!props.participants.length) {
-    toast.init({ message: "aucun participant a exporter", color: "danger" });
+    toast.init({ message: "Aucun participant a exporter !", color: "danger", position: 'bottom-center' });
     console.warn("aucun participant a exporter.");
     return;
   }
@@ -233,7 +242,7 @@ const editParticipant = (participant) => {
 
 // def colonnes tableau
 const columns = [
-  { key: "status", label: "statut", sortable: false },
+  { key: "status", label: "statut", sortable: true },
   { key: "firstName", label: "prenom", sortable: true },
   { key: "lastName", label: "nom", sortable: true },
   { key: "birthDate", label: "date naissance", sortable: true },
@@ -285,8 +294,8 @@ const columns = [
   background: #ffffff;
   position: sticky;
   bottom: 0;
-  z-index: 10; /* Assurez-vous que le footer est au-dessus des autres éléments */
-  width: 100%; /* Prend toute la largeur */
+  z-index: 10; 
+  width: 100%; 
 }
 
 /* empeche footer reduit */
@@ -296,7 +305,7 @@ const columns = [
   font-weight: bold;
   color: #154EC1;
   text-align: center;
-  width: auto; /* Ajuste la largeur des cellules */
+  width: auto; 
 }
 
 .nationality-cell {
@@ -435,6 +444,6 @@ const columns = [
 
 .va-data-table th,
 .va-data-table td {
-  width: auto; /* Ajuste la largeur des colonnes */
+  width: auto; 
 }
 </style>

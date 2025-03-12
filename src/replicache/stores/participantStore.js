@@ -49,7 +49,18 @@ export const rep = new Replicache({
 
     updateCategory: async (participantId, categoryId) => {
       await rep.mutate.update({ id: participantId, categoryId });
-    }
+    },
+
+    // eliminer un participant
+    eliminate: async (tx, { id }) => {
+      const participant = await tx.get(`participant/${id}`);
+      if (!participant) {
+        console.error(`❌ Le participant ${id} n'a pas été trouvé !`);
+        return;
+      }
+
+      await tx.put(`participant/${id}`, { ...participant, isEliminated: true });
+    },
   }
 });
 
@@ -85,8 +96,18 @@ export async function getParticipantsByCategory(tournamentId, categoryId) {
         participants.push(value);
       }
     }
-
     return participants;
+  });
+}
+
+// recup un participant par son id
+export async function getParticipantById(id) {
+  // verif que l'instance Replicache est prête
+  if (!rep) return null;
+
+  // recup le participant dans Replicache via sa clé
+  return await rep.query(async (tx) => {
+    return await tx.get(`participant/${id}`);
   });
 }
 

@@ -39,44 +39,21 @@
       @update:modelValue="handleCloseParticipantModal" />
 
     <CategoryModal v-if="selectedCategory !== null" :modelValue="selectedCategory !== null" :category="selectedCategory"
-      :participants="formattedParticipants" @save="handleSaveCategory" @update:modelValue="handleCloseCategoryModal" />
+      :categories="categories" :participants="formattedParticipants" @save="handleSaveCategory" @update:modelValue="handleCloseCategoryModal" />
 
     <!-- modale d'import des participants -->
-    <VaModal v-model="showImportModal" size="large" hide-default-actions>
-      <template #content>
-        <div class="import-modal">
-          <h2 class="modal-title">{{ importedParticipants.length }} participants importés</h2>
-
-          <VaDataTable :items="importedParticipants" :columns="importColumns" striped no-data-html="Aucun participant" virtual-scroller :stickyHeader=true>
-            <!-- genre -->
-            <template #cell(genderId)="{ row }">
-              <VaIcon :name="row.genderId === 1 ? 'male' : 'female'" class="gender-icon" />
-            </template>
-
-            <template #cell(nationalityId)="{ row }">
-              <div class="nationality-cell">
-                <img v-if="getCountry(row.source?.nationalityId)"
-                  :src="getFlagUrl(getCountry(row.source?.nationalityId).flag)" alt="flag" class="nationality-flag" />
-                <span>
-                  {{ getCountry(row.source?.nationalityId)?.name || row.source?.nationalityId }}
-                </span>
-              </div>
-            </template>
-
-            <!-- grade affiché en texte -->
-            <template #cell(gradeId)="{ row }">
-              {{ getGradeName(row.source?.gradeId) }}
-            </template>
-          </VaDataTable>
-
-
-          <div class="modal-actions">
-            <VaButton color="secondary" @click="cancelImport"> Annuler </VaButton>
-            <VaButton color="primary" @click="confirmImport"> Confirmer l'import </VaButton>
-          </div>
-        </div>
-      </template>
-    </VaModal>
+    <ImportParticipantsModal
+      v-model="showImportModal"
+      v-if="showImportModal"
+      :importedParticipants="importedParticipants"
+      :registeredParticipants="participants"
+      :importColumns="importColumns"
+      :getCountry="getCountry"
+      :getFlagUrl="getFlagUrl"
+      :getGradeName="getGradeName"
+      @cancelImport="cancelImport"
+      @confirmImport="confirmImport"
+    />
 
     <!-- modale de confirmation de tournoi -->
     <VaModal v-model="showValidationModal" hide-default-actions class="validation-modal">
@@ -110,6 +87,7 @@ import ParticipantModal from "../components/ParticipantModal.vue";
 import ParticipantList from "../components/ParticipantList.vue";
 import CategoryModal from "../components/CategoryModal.vue";
 import CategoryList from "../components/CategoryList.vue";
+import ImportParticipantsModal from "../components/ImportParticipantsModal.vue";
 import { getParticipantsByTournament } from "../replicache/stores/participantStore";
 import { getCategoriesByTournament } from "../replicache/stores/categoryStore";
 import { ParticipantService } from "../replicache/services/participantService";
@@ -186,14 +164,14 @@ const importColumns = [
 const cancelImport = () => {
   importedParticipants.value = [];
   showImportModal.value = false;
-  toast.init({ message: "Import annulé", color: "danger" });
+  toast.init({ message: "Import annulé", color: "danger", position: 'bottom-center' });
 };
 
 // confirme import
-const confirmImport = async () => {
+const confirmImport = async (selectedItems) => {
   let successCount = 0;
   // boucle sur chaque participant importé
-  for (const p of importedParticipants.value) {
+  for (const p of selectedItems) {
     const formattedParticipant = {
       ...p,
       birthDate: p.birthDate && !isNaN(new Date(p.birthDate))
@@ -209,20 +187,20 @@ const confirmImport = async () => {
       },
     };
     try {
-      // sauvegarde du participant, on attend sa résolution
-      await handleSaveParticipant(formattedParticipant);
+      // sauvegarde du participant en mode silencieux
+      await handleSaveParticipant(formattedParticipant, true); // <-- Ajoutez `true` ici
       successCount++;
     } catch (error) {
       // affiche un toast d'erreur pour ce participant
-      toast.init({ message: `${p.firstName} ${p.lastName} impossible importer`, color: "danger" });
+      toast.init({ message: `${p.firstName} ${p.lastName} impossible à importer`, color: "danger", position: 'bottom-center' });
     }
   }
   // ferme la modale et vide la liste importée
   showImportModal.value = false;
   importedParticipants.value = [];
-  // si au moins un participant a ete importé, affiche un toast global de succes
+  // si au moins un participant a été importé, affiche un toast global de succès
   if (successCount > 0) {
-    toast.init({ message: "Import valide et ajouté", color: "success" });
+    toast.init({ message: `${successCount} participant(s) importé(s) avec succès!`, color: "success", position: 'bottom-center' });
   }
 };
 
@@ -295,14 +273,14 @@ const handleDeleteParticipant = async (participant) => {
   try {
     await ParticipantService.delete(participant.source.id);
     await refreshParticipants();
-    toast.init({ message: "Le participant a bien été supprimé!", color: "success" });
+    toast.init({ message: "Le participant a bien été supprimé!", color: "success", position: 'bottom-center' });
   } catch (error) {
     console.error("erreur suppr participant:", error);
   }
 };
 
 // sauvegarde participant
-const handleSaveParticipant = async (participantData) => {
+const handleSaveParticipant = async (participantData, silent = false) => {
   if (!tournamentId.value) return;
   try {
     const formattedData = {
@@ -317,10 +295,14 @@ const handleSaveParticipant = async (participantData) => {
 
     if (participantData.id) {
       await ParticipantService.update(participantData.id, formattedData);
-      toast.init({ message: "Le participant a bien été mis à jour!", color: "success" });
+      if (!silent) {
+        toast.init({ message: "Le participant a bien été mis à jour!", color: "success", position: 'bottom-center' });
+      }
     } else {
       await ParticipantService.create(tournamentId.value, formattedData);
-      toast.init({ message: "Le participant a bien été créé!", color: "success" });
+      if (!silent) {
+        toast.init({ message: "Le participant a bien été créé!", color: "success", position: 'bottom-center' });
+      }
     }
     await refreshParticipants();
     handleCloseParticipantModal();
@@ -357,7 +339,7 @@ const handleDeleteCategory = async (category) => {
     await CategoryService.delete(category.source?.id);
     await refreshCategories();
     await refreshParticipants();
-    toast.init({ message: "La catégorie a bien été supprimée!", color: "success" });
+    toast.init({ message: "La catégorie a bien été supprimée!", color: "success", position: 'bottom-center' });
   } catch (error) {
     console.error("erreur suppr categorie:", error);
   }
@@ -380,11 +362,11 @@ const handleSaveCategory = async ({ category, participants }) => {
     if (cleanData.id) {
       await CategoryService.update(cleanData.id, cleanData);
       categoryId = cleanData.id;
-      toast.init({ message: "La catégorie a bien été mise à jour!", color: "success" });
+      toast.init({ message: "La catégorie a bien été mise à jour!", color: "success", position: 'bottom-center' });
     } else {
       const createdCategory = await CategoryService.create(tournamentId.value, cleanData);
       categoryId = createdCategory.id;
-      toast.init({ message: "La catégorie a bien été créée!", color: "success" });
+      toast.init({ message: "La catégorie a bien été créée!", color: "success", position: 'bottom-center' });
     }
     if (participants.length > 0) {
       const toLink = participants.filter(p => p.action === "attachToCategory").map(p => p.id);
@@ -423,9 +405,17 @@ const validateCategory = (category) => {
   if (participantsInCategory < categoryType.minParticipants) {
     return {
       isValid: false,
-      message: `La catégorie "${category.name}" nécessite au moins ${categoryType.minParticipants} participants (actuellement : ${participantsInCategory}).`
+      message: `La catégorie "${category.name}" nécessite au moins ${categoryType.minParticipants} participants avec ce type de catégorie (actuellement : ${participantsInCategory}).`
     };
   }
+
+  if (participantsInCategory > categoryType.maxParticipants) {
+    return {
+      isValid: false,
+      message: `La catégorie "${category.name}" ne peut contenir plus de ${categoryType.maxParticipants} participants avec ce type de catégorie (actuellement : ${participantsInCategory}).`
+    };
+  }
+
 
   return { isValid: true, message: "" };
 };
@@ -469,7 +459,7 @@ const confirmTournamentValidation = async () => {
     
     toast.init({ 
       message: "Le tournoi est maintenant validé et ne peut plus être modifié !", 
-      color: "success" 
+      color: "success", position: 'bottom-center'
     });
 
     router.push(`/tournament/started/${tournamentId.value}`);
@@ -478,7 +468,7 @@ const confirmTournamentValidation = async () => {
     console.error("Erreur lors de la validation du tournoi :", error);
     toast.init({ 
       message: "Une erreur est survenue lors de la validation du tournoi.", 
-      color: "danger" 
+      color: "danger" , position: 'bottom-center'
     });
   }
 };
@@ -601,7 +591,7 @@ const confirmTournamentValidation = async () => {
   border-radius: 8px;
 }
 
-/* conteneur des catégories et participants - Prend toute la place disponible */
+/* conteneur des catégories et participants -pprend toute la place disponible */
 .content-container {
   flex: 1;
   display: flex;
@@ -627,10 +617,10 @@ const confirmTournamentValidation = async () => {
 }
 
 .participant-section {
-  flex: 7;
+  flex: 8;
 }
 
-/* ✅ Titre des sections */
+/* titre des sections */
 .section-title {
   padding-bottom: 5px;
   font-size: 22px;

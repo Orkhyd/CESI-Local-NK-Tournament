@@ -26,7 +26,7 @@
     </div>
 
     <!-- modale de création de tournoi -->
-    <TournamentModal ref="tournamentModal" @create="handleCreateTournoi" />
+    <TournamentModal v-if="tournamentModalOpen" @create="handleCreateTournoi" @close="tournamentModalOpen = false" />
 
     <!-- modale de confirmation de suppression -->
     <VaModal v-model="isDeleteModalOpen" hide-default-actions class="tournament-modal">
@@ -72,7 +72,7 @@ import { rep } from "@/replicache/stores/tournamentStore";
 
 const router = useRouter();
 const tournoi = ref(null); // stocke les données du tournoi actuel
-const tournamentModal = ref(null); // référence vers la modale de création de tournoi
+const tournamentModalOpen = ref(false); // référence vers la modale de création de tournoi
 const isDeleteModalOpen = ref(false); // état de la modale de suppression
 const isDeleting = ref(false); // état de chargement lors de la suppression
 
@@ -93,7 +93,7 @@ onMounted(async () => {
 
 // ouvre la modale de création de tournoi
 const openModal = () => {
-  tournamentModal.value.open();
+  tournamentModalOpen.value = true;
 };
 
 // gere la création d'un nouveau tournoi avec Replicache
@@ -107,6 +107,8 @@ const handleCreateTournoi = async (newTournoi) => {
 
     // met à jour la référence du tournoi actif
     tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
+
+    tournamentModalOpen.value = false; // ferme la modale après création
   } catch (error) {
     console.error("Erreur lors de la création du tournoi :", error);
   }

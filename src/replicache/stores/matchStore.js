@@ -1,5 +1,6 @@
 import { Replicache } from "replicache";
 import { Match } from "@/replicache/models/Match";
+import { ParticipantService } from "@/replicache/services/participantService"
 
 export const rep = new Replicache({
   name: "match",
@@ -33,11 +34,40 @@ export const rep = new Replicache({
       };
 
       await tx.put(`match/${idMatch}`, updatedMatch);
+
+      // verif : Match Type 1 (tableau ) + Gagnant défini = Perdant éliminé
+      if (updates.idWinner && match.idMatchType === 1) {
+        let loserId = match.idPlayer1 === updates.idWinner ? match.idPlayer2 : match.idPlayer1;
+
+        if (loserId && loserId !== -1) {
+          console.log(`🔍 Suppression du participant perdu avec ID : ${loserId}`);
+
+          // eliminer le participant
+          await ParticipantService.eliminateParticipant(loserId);
+        }
+      }
     },
 
     async delete(tx, { idMatch }) {
       await tx.del(`match/${idMatch}`);
-    }
+    },
+
+    async updateTimer(tx, { idMatch, isRunning, currentTime, additionalTime }) {
+      const match = await tx.get(`match/${idMatch}`);
+      if (!match) return;
+
+      const updatedMatch = {
+        ...match,
+        timer: {
+          ...match.timer,
+          isRunning: isRunning ?? match.timer.isRunning,
+          currentTime: currentTime ?? match.timer.currentTime,
+          additionalTime: additionalTime ?? match.timer.additionalTime,
+        },
+      };
+
+      await tx.put(`match/${idMatch}`, updatedMatch);
+    },
   },
 });
 
@@ -67,3 +97,10 @@ export async function getMatchesByRound(idRound) {
     return matches;
   });
 }
+
+export async function getMatchById(idMatch) {
+  return await rep.query(async (tx) => {
+    return await tx.get(`match/${idMatch}`);
+  });
+}
+

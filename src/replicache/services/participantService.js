@@ -31,6 +31,12 @@ export const ParticipantService = {
     }
     
     await rep.mutate.update({ id: participantId, categoryId });
+  },
+
+  eliminateParticipant: async (idParticipant) => {
+    
+    await rep.mutate.eliminate({ id: idParticipant });
   }
+  
   
 };

@@ -1,7 +1,5 @@
 <template>
   <div class="bracket-page">
-    <h1>Tableau du Tournoi</h1>
-
     <!-- affichage du message de chargement si les donnees ne sont pas encore disponibles -->
     <div v-if="isLoading">Chargement...</div>
 
@@ -11,7 +9,9 @@
         v-if="bracket" 
         :bracket="bracket" 
         :participants="participants"
-        :key="bracket.id" 
+        :key="bracket.id"
+        @update="updateData"
+        :searchParticipant="props.searchParticipant" 
       />
     </div>
   </div>
@@ -36,10 +36,20 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  searchParticipant: {
+    type: Object,
+    default: null,
+  }
 });
+
+const emit = defineEmits(['update']);
 
 const bracket = ref(null);
 const isLoading = ref(true);
+
+const updateData = async () => {
+  emit('update');
+}
 
 /**
  * charge le bracket existant ou en crée un nouveau si nécessaire

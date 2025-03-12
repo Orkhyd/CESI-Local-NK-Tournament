@@ -1,23 +1,23 @@
 <template>
     <div class="tournament-layout">
-      <!-- ✅ HEADER -->
+      <!-- eEADER -->
       <header class="header">
-        <!-- Bouton Accueil (icône seule) -->
+        <!-- bouton Accueil (icône seule) -->
         <VaButton @click="goToHomePage" class="home-button" color="primary" icon="home" />
   
-        <!-- Checkbox pour afficher/cacher la sidebar -->
+        <!-- checkbbox pour afficher/cacher la sidebar -->
         <VaCheckbox v-model="showSidebar" class="toggle-sidebar" label="Afficher les catégories" />
   
-        <!-- Nom du tournoi, bien centré -->
+        <!-- nom du tournoi, bien centré -->
         <h1 class="page-title">
           <VaIcon name="trophy" class="title-icon" />
           Gestion du tournoi: {{ tournament ? tournament.name : "Chargement..." }}
         </h1>
       </header>
   
-      <!-- ✅ Contenu principal -->
+      <!-- contenu principal -->
       <main class="content">
-        <!-- ✅ Sidebar des catégories -->
+        <!-- sidebar des catégories -->
         <aside v-if="showSidebar" class="category-sidebar">
           <h2 class="sidebar-title">
             <VaIcon name="category" />
@@ -32,12 +32,12 @@
               :class="{ active: category.id === activeCategory?.id }"
               @click="activeCategory = category"
             >
-              <!-- ✅ Nom de la catégorie -->
+              <!-- nom de la catégorie -->
               <h3 class="category-name">
                 {{ category.name }}
               </h3>
   
-              <!-- ✅ Genre + Type de tournoi -->
+              <!-- genre + Type de tournoi -->
               <div class="category-meta">
                 <span class="category-gender">
                   <VaIcon name="person" /> {{ category.genre }}
@@ -48,13 +48,13 @@
                 </VaChip>
               </div>
   
-              <!-- ✅ Grade -->
+              <!-- grade -->
               <p class="category-grade">
                 <VaIcon name="school" />
                 {{ category.gradeRange }}
               </p>
   
-              <!-- ✅ Tranche d'âge -->
+              <!-- tranche d'âge -->
               <p class="category-age">
                 <VaIcon name="calendar_today" />
                 {{ category.ageCategories }}
@@ -63,7 +63,7 @@
           </div>
         </aside>
   
-        <!-- ✅ Affichage de CategoryManage quand une catégorie est sélectionnée -->
+        <!-- affichage de CategoryManage quand une catégorie est sélectionnée -->
         <section class="category-manage-container" v-if="activeCategory?.id">
           <CategoryManage :category="activeCategory" :tournament-id="tournamentId"/>
         </section>
@@ -79,18 +79,18 @@
   import CategoryManage from "@/components/CategoryManage.vue";
   import { categoriesAge, grades, genders, categoriesTypes } from "@/replicache/models/constants";
   
-  // ✅ Récupération de l'ID du tournoi via la route
+  // recup de l'ID du tournoi via la route
   const route = useRoute();
   const router = useRouter();
   const tournamentId = computed(() => route.params.id);
   
-  // ✅ États
+  // etats
   const tournament = ref(null);
   const categories = ref([]);
   const activeCategory = ref(null);
   const showSidebar = ref(true); // Sidebar visible par défaut
   
-  // ✅ Récupération du tournoi via Replicache
+  // recup du tournoi via Replicache
   const fetchTournament = async () => {
     if (!tournamentId.value) return;
     try {
@@ -102,7 +102,7 @@
     }
   };
   
-  // ✅ Récupération des catégories
+  // recup des catégories
   const refreshCategories = async () => {
     if (!tournamentId.value) return;
     try {
@@ -112,7 +112,7 @@
     }
   };
   
-  // ✅ Formattage des catégories
+  // formattage des catégories
   const formattedCategories = computed(() =>
     categories.value.map((category) => ({
       ...category,
@@ -125,19 +125,19 @@
     }))
   );
   
-  // ✅ Libellé du genre
+  // libellé du genre
   const getGenderLabel = (genreId) => {
     const gender = genders.find((g) => g.id === String(genreId));
     return gender ? gender.nom : "Inconnu";
   };
   
-  // ✅ Libellé du type de tournoi
+  // liibellé du type de tournoi
   const getTypeLabel = (typeId) => {
     const type = categoriesTypes.find((t) => t.id === String(typeId));
     return type ? type.nom : "Inconnu";
   };
   
-  // ✅ Tranche d'âge
+  // tranche d'âge
   const getAgeCategories = (ageCategoryIds) => {
     if (!ageCategoryIds || ageCategoryIds.length === 0) return "Non défini";
     return ageCategoryIds.map((id) => {
@@ -146,19 +146,19 @@
     }).join(", ");
   };
   
-  // ✅ Grades min et max
+  // grades min et max
   const getGradeRange = (minGradeId, maxGradeId) => {
     const minGrade = grades.find((g) => g.id === String(minGradeId));
     const maxGrade = grades.find((g) => g.id === String(maxGradeId));
     return minGrade && maxGrade ? `${minGrade.nom} → ${maxGrade.nom}` : "Non défini";
   };
   
-  // ✅ Retour à l'accueil
+  // retour à l'accueil
   const goToHomePage = () => {
     router.push("/home-page");
   };
   
-  // ✅ Chargement des données au montage
+  // chargement des données au montage
   onMounted(async () => {
     await fetchTournament();
     await refreshCategories();
@@ -166,7 +166,6 @@
   </script>
   
   <style scoped>
-  /* ✅ Mise en page */
   .tournament-layout {
     display: flex;
     flex-direction: column;
@@ -174,7 +173,7 @@
     background: #f9f9f9;
   }
   
-  /* ✅ HEADER */
+  /* hEADER */
   .header {
     display: flex;
     align-items: center;
@@ -207,13 +206,12 @@
     margin-left: auto;
   }
   
-  /* ✅ Contenu */
   .content {
     display: flex;
     flex: 1;
   }
   
-  /* ✅ Sidebar */
+  /* sidebar */
   .category-sidebar {
     width: 280px;
     min-width: 280px;
@@ -232,7 +230,7 @@
     margin-bottom: 16px;
   }
   
-  /* ✅ Liste des catégories */
+  /* liste des catégories */
   .category-item {
     background: #ffffff;
     border-radius: 8px;
@@ -255,13 +253,13 @@
     padding-bottom: 10px;
   }
   
-  /* ✅ Section principale */
+  /* section principale */
   .category-manage-container {
-  flex-grow: 1; /* Laisse prendre de l'espace disponible mais pas plus */
-  min-width: 0; /* 🔥 Empêche l'expansion incontrôlée */
-  overflow: hidden; /* Évite le dépassement */
-  display: flex; /* Assure une bonne gestion du contenu */
-  flex-direction: column; /* Organise en colonne */
+  flex-grow: 1; 
+  min-width: 0; 
+  overflow: hidden; 
+  display: flex;
+  flex-direction: column;
 }
 
   .category-item {
@@ -275,21 +273,21 @@
 }
 
 .category-item:hover {
-  background: #f0f0f0; /* Effet hover pour plus de feedback */
+  background: #f0f0f0; 
 }
 
 .category-item.active {
-  background: #154EC1; /* Couleur de fond mise en évidence */
-  color: white; /* Texte en blanc pour contraste */
+  background: #154EC1; 
+  color: white; 
   font-weight: bold;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Ombre plus visible */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .category-item.active .category-name,
 .category-item.active .category-meta,
 .category-item.active .category-grade,
 .category-item.active .category-age {
-  color: white; /* S'assurer que tout le texte est bien visible */
+  color: white; 
 }
 
 .category-item.active .category-type {
