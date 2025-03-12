@@ -12,7 +12,9 @@
           <div class="round">
             <!-- boucle sur les matchs du round en cours -->
             <template v-for="(match, matchIndex) in round.matches" :key="match.idMatch">
-              <MatchCard :match="match" :disabled="match.idWinner !== null" :participants="participants" @updateBracket="loadRounds" />
+              <MatchCard :match="match" :disabled="match.idWinner !== null" :participants="participants"
+                @updateBracket="loadRounds" :id="'match-' + match.idMatch" ref="matchRefs"
+                :class="{ 'highlight': highlightedMatchId === match.idMatch }" />
               <!-- ddesactive le match s'il a déjà un gagnant -->
             </template>
           </div>
@@ -23,8 +25,9 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, nextTick } from "vue";
 import MatchCard from "./MatchCard.vue";
+import { rep } from "@/replicache/stores/matchStore";
 import { getRoundsByBracket } from "@/replicache/stores/Bracket/roundStore";
 import { getMatchesByRound } from "@/replicache/stores/matchStore";
 
@@ -37,7 +40,14 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  searchParticipant: {
+    type: Object,
+    default: null,
+  }
 });
+
+const emit = defineEmits(['update']);
+
 
 // stockage des rounds avec leurs matchs
 const rounds = ref([]);
@@ -45,10 +55,12 @@ const rounds = ref([]);
 // attente du chargement complet des données avant exécution
 const isDataReady = ref(false);
 
+const highlightedMatchId = ref(null); // match en surbrillance quand recherche d'un joueur
+
 /**
  * fnnction pour charger les rounds et les matchs associés
  */
- const loadRounds = async () => {
+const loadRounds = async () => {
   try {
     // verif que les donnees necessaires sont disponibles
     if (!props.bracket.id || !props.participants.length) return;
@@ -74,12 +86,10 @@ const isDataReady = ref(false);
           .flat()
           .filter(match => match.idRound === round.id)
           .map(match => {
-            
-            // recuperer les joueurs a partir de leur id
+            // traitement pour récupérer player1, player2, etc.
             let player1 = props.participants.find(p => p.id === match.idPlayer1) || null;
             let player2 = props.participants.find(p => p.id === match.idPlayer2) || null;
 
-            // si le match precedent n'a pas encore de gagnant, afficher "gagnant de id_match"
             if (!player1 && match.idPreviousMatch1) {
               const previousMatch = matchMap.get(match.idPreviousMatch1);
               player1 = previousMatch && !previousMatch.idWinner
@@ -94,21 +104,30 @@ const isDataReady = ref(false);
                 : props.participants.find(p => p.id === previousMatch?.idWinner) || { id: previousMatch?.idWinner, lastName: "Inconnu" };
             }
 
-            return { 
-              ...match, 
+            return {
+              ...match,
               player1: player1 || { id: match.idPlayer1, lastName: "BYE" },
               player2: player2 || { id: match.idPlayer2, lastName: "BYE" }
             };
+          })
+          // tri naturel sur l'ID du match pour emttre du plus petit au plus grand
+          .sort((a, b) => {
+            const aNum = parseInt(a.idMatch.replace(/\D/g, ''), 10);
+            const bNum = parseInt(b.idMatch.replace(/\D/g, ''), 10);
+            return aNum - bNum;
           });
 
         return { ...round, matches };
       });
+
 
       // trier les rounds par le nombre de matchs (du plus grand au plus petit)
       updatedRounds.sort((a, b) => b.matches.length - a.matches.length);
 
       // mettre a jour les rounds avec les matchs associes
       rounds.value = updatedRounds;
+
+      emit('update');
     }
   } catch (error) {
     console.error("❌ erreur lors de la recuperation des rounds et matchs :", error);
@@ -136,18 +155,66 @@ const getRoundLabel = (matchCount, roundIndex, roundLabel) => {
   return labels[matchCount] || `Tour ${roundIndex + 1}`;
 };
 
-// surveille le chargement des données et exécute loadRounds() quand tout est prêt
-watch(
-  () => [props.bracket, props.participants],
-  ([bracket, participants]) => {
-    if (bracket?.id && participants?.length) {
-      isDataReady.value = true;
-      loadRounds();
-    }
-  },
-  { immediate: true } // verif au montage si les données sont déjà prêtes
-);
+// permet de trovuer le match d'un joueur le plus avancé ( dans le tableau )
+const findMostAdvancedMatch = (participantId) => {
+  let latestMatch = null;
 
+  for (const round of rounds.value) {
+    for (const match of round.matches) {
+      if (
+        match.idPlayer1 === participantId || 
+        match.idPlayer2 === participantId
+      ) {
+        latestMatch = match; // Met à jour le match le plus avancé
+      }
+    }
+  }
+
+  return latestMatch; // Retourne le dernier match trouvé
+};
+
+
+let highlightTimeout = null; // stockage du timeout en cours
+
+// quand on clic sur un participant, le redirige vers son ancre html
+watch(() => props.searchParticipant, async (searchParticipant) => {
+  if (!searchParticipant || !searchParticipant.idParticipant) return;
+
+  const latestMatch = findMostAdvancedMatch(searchParticipant.idParticipant);
+
+  if (latestMatch) {
+    await nextTick(); // attennd que le DOM soit mis à jour
+    const matchElement = document.getElementById("match-" + latestMatch.idMatch);
+
+    if (matchElement) {
+      matchElement.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // annule le précédent timeout s'il existe
+      if (highlightTimeout) {
+        clearTimeout(highlightTimeout);
+      }
+
+      // surbrillance
+      highlightedMatchId.value = latestMatch.idMatch;
+
+      // def un nouveau timeout pour retirer la surbrillance apres 3s
+      highlightTimeout = setTimeout(() => {
+        highlightedMatchId.value = null;
+      }, 3000);
+    }
+  }
+}, { deep: true }); // changements profonds dans l'objet
+
+
+// chargement des données et exécute loadRounds()
+onMounted(async () => {
+  // verif si les données sont déjà prêtes au montage
+  if (props.bracket?.id && props.participants?.length) {
+    isDataReady.value = true;
+
+    loadRounds();
+  }
+});
 </script>
 
 <style scoped>
@@ -158,6 +225,12 @@ watch(
   font-size: 1.2rem;
   margin-bottom: 10px;
   color: #333;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  /* pour éviter que le contenu défilant ne se superpose */
+  z-index: 1;
+  /* pour le garder au-dessus des autres éléments */
 }
 
 /* conteneur principal du bracket (arbre du tournoi) */
@@ -230,5 +303,18 @@ watch(
   width: 10px;
   bottom: calc(50% + 1px);
   /* ajuste l'alignement */
+}
+
+.highlight {
+  animation: highlightAnimation 0.5s ease-in-out alternate infinite;
+}
+
+@keyframes highlightAnimation {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.03);
+  }
 }
 </style>

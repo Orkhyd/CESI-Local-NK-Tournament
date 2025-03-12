@@ -5,25 +5,28 @@
       <div class="players">
         <div class="player" v-for="(player, i) in [match.player1, match.player2]" :key="i"
           :class="getPlayerClass(player)">
-          <span class="name">
-            <VaIcon v-if="player?.id === match.idWinner" class="crown" name="check_circle"/>
-            {{ player?.firstName && player?.lastName ? `${player.firstName} ${player.lastName}` : player.lastName }}
-          </span>
+          <div class="player-info">
+            <img v-if="player.nationalityId" :src="getFlagUrl(getCountry(player.nationalityId)?.flag)" alt="drapeau"
+              class="player-flag" />
+            <span class="name">
+              {{ player?.firstName && player?.lastName ? `${player.firstName} ${player.lastName}` : player.lastName }}
+            </span>
+          </div>
           <span class="score" v-if="match['score' + (i + 1)] !== null">
             {{ match["ipponsPlayer" + (i + 1)] }}
           </span>
         </div>
-
       </div>
     </div>
 
-    <MatchModal v-if="isModalOpen" :match="match" @close="closeModal"  @update="refreshBracket"/>
+    <MatchModal v-if="isModalOpen" :matchId="props.match.idMatch" @close="closeModal" @update="refreshBracket" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
 import MatchModal from "../MatchModal.vue";
+import { nationality } from "@/replicache/models/constants"
 
 const props = defineProps({
   match: {
@@ -63,6 +66,7 @@ const openModal = () => {
 // ferme la modale
 const closeModal = () => {
   isModalOpen.value = false;
+  refreshBracket();
 
 };
 
@@ -74,6 +78,17 @@ const getPlayerClass = (player) => {
   if (!props.match.idWinner) return "";
   return player?.id === props.match.idWinner ? "winner" : "loser";
 };
+
+// reocuperer le nom du pays avec l'id
+const getCountry = (natId) => {
+  return nationality.find(country => country.id === Number(natId));
+};
+
+// recuperer l image en base 64
+const getFlagUrl = (flagBase64) => {
+  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
+};
+
 </script>
 
 <style scoped>
@@ -84,9 +99,9 @@ const getPlayerClass = (player) => {
   justify-content: center;
   margin: 10px;
   padding: 15px;
-  width: 320px;
-  min-width: 320px;
-  max-width: 320px;
+  width: 350px;
+  min-width: 350px;
+  max-width: 350px;
   flex-grow: 1;
   position: relative;
   border-radius: 10px;
@@ -104,6 +119,11 @@ const getPlayerClass = (player) => {
   vertical-align: middle;
 }
 
+.player-flag {
+  width: 20px;
+  height: auto;
+  margin-right: 5px;
+}
 
 /* match desactive (non cliquable) */
 .match.disabled-match {
@@ -185,6 +205,7 @@ const getPlayerClass = (player) => {
   border-radius: 5px;
   background-color: #f1f1f1;
   width: 100%;
+  font-size: 10px;
   font-size: 1rem;
 }
 
@@ -196,6 +217,12 @@ const getPlayerClass = (player) => {
 .player.winner .name {
   color: green;
   font-weight: bold;
+  font-size: 14px;
+}
+
+.name {
+  font-size: 12px;
+  text-align: left;
 }
 
 .player.winner .score {

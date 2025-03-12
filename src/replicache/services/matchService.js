@@ -8,14 +8,39 @@ export const matchService = {
   update: async (idMatch, updates) => {
     await rep.mutate.update({ idMatch, ...updates });
 
-    // si un gagnant est défini, propager aux matchs suivants
+    // Si un gagnant est défini, on propage aux matchs suivants
     if (updates.idWinner) {
       await propagateWinner(idMatch, updates.idWinner);
     }
   },
 
+
   delete: async (idMatch) => {
     await rep.mutate.delete({ idMatch });
+  },
+
+  startTimer: async (idMatch) => {
+    await rep.mutate.updateTimer({ idMatch, isRunning: true });
+  },
+
+  stopTimer: async (idMatch) => {
+    await rep.mutate.updateTimer({ idMatch, isRunning: false });
+  },
+
+  resetTimer: async (idMatch) => {
+    await rep.mutate.updateTimer({ idMatch, currentTime: 180, additionalTime: 0, isRunning: false });
+  },
+
+  addTime: async (idMatch, seconds) => {
+    const match = await rep.query(async (tx) => await tx.get(`match/${idMatch}`));
+    if (!match) return;
+
+    const newTime = match.timer.currentTime + seconds;
+    await rep.mutate.updateTimer({ idMatch, currentTime: newTime });
+  },
+
+  setAdditionalTime: async (idMatch, seconds) => {
+    await rep.mutate.updateTimer({ idMatch, additionalTime: seconds });
   },
 };
 

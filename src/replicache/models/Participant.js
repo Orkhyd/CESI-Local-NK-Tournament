@@ -13,5 +13,6 @@ export class Participant {
     this.genderId = genderId; // id du genre du participant
     this.gradeId = gradeId; // id du grade du participant
     this.categoryId = -1; // id de la categorie par defaut
+    this.isEliminated = false;
   }
 }

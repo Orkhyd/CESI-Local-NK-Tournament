@@ -29,8 +29,8 @@ export const genders = [
   { id: "3", nom: "Mixte" },
 ];
 export const categoriesTypes = [
-  { id: "1", nom: "Poule", minParticipants: 3 },
-  { id: "2", nom: "Tableau", minParticipants: 10 },
+  { id: "1", nom: "Poule", minParticipants: 3, maxParticipants: 36 },
+  { id: "2", nom: "Tableau", minParticipants: 10, maxParticipants: 512 },
 ];
 
 export const nationality = [{
