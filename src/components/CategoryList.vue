@@ -9,8 +9,7 @@
         <div class="genre-container">
           <VaIcon v-if="row.source?.genre === 'Homme'" name="male" class="genre-icon" />
           <VaIcon v-else-if="row.source?.genre === 'Femme'" name="female" class="genre-icon" />
-          <VaIcon v-else-if="row.source?.genre === 'Mixte'" name="transgender" class="genre-icon" />
-          <span v-else class="genre-text">{{ row.genre }}</span>
+          <span v-else class="genre-text">{{ row?.source?.genre }}</span>
         </div>
       </template>
 

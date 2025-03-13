@@ -24,6 +24,7 @@ export const bracketService = {
         await matchService.create({
           idMatch: match.idMatch,
           idRound, // on assigne bien l'uuid
+          idPool: null,
           idMatchType: 1, // type tableau
           idPlayer1: match.player1 ? match.player1.id : -2,
           idPlayer2: match.player2 ? match.player2.id : -2,

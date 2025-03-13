@@ -8,7 +8,7 @@ export const CategoryService = {
       id: categoryId,
       tournamentId,
       name: data.name,
-      genreId: data.genreId,
+      genderId: data.genderId,
       typeId: data.typeId,
       ageCategoryIds: data.ageCategoryIds,
       minGradeId: data.minGradeId,

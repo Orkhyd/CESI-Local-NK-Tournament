@@ -136,9 +136,6 @@ const toggleImportSelection = ({ item }) => {
   }
 };
 
-
-
-
 // bouton "Tout sélectionner" : sélectionne uniquement les items disponibles
 const selectAll = () => {
   selectedImportItems.value = defaultSelectedItems.value;

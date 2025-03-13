@@ -39,21 +39,14 @@
       @update:modelValue="handleCloseParticipantModal" />
 
     <CategoryModal v-if="selectedCategory !== null" :modelValue="selectedCategory !== null" :category="selectedCategory"
-      :categories="categories" :participants="formattedParticipants" @save="handleSaveCategory" @update:modelValue="handleCloseCategoryModal" />
+      :categories="categories" :participants="formattedParticipants" @save="handleSaveCategory"
+      @update:modelValue="handleCloseCategoryModal" />
 
     <!-- modale d'import des participants -->
-    <ImportParticipantsModal
-      v-model="showImportModal"
-      v-if="showImportModal"
-      :importedParticipants="importedParticipants"
-      :registeredParticipants="participants"
-      :importColumns="importColumns"
-      :getCountry="getCountry"
-      :getFlagUrl="getFlagUrl"
-      :getGradeName="getGradeName"
-      @cancelImport="cancelImport"
-      @confirmImport="confirmImport"
-    />
+    <ImportParticipantsModal v-model="showImportModal" v-if="showImportModal"
+      :importedParticipants="importedParticipants" :registeredParticipants="participants" :importColumns="importColumns"
+      :getCountry="getCountry" :getFlagUrl="getFlagUrl" :getGradeName="getGradeName" @cancelImport="cancelImport"
+      @confirmImport="confirmImport" />
 
     <!-- modale de confirmation de tournoi -->
     <VaModal v-model="showValidationModal" hide-default-actions class="validation-modal">
@@ -75,12 +68,22 @@
       </div>
     </VaModal>
 
+    <!-- modale de chargement d'importation de participant -->
+    <VaModal v-model="isImporting" hide-default-actions class="loading-modal">
+      <VaInnerLoading :loading="true">
+        <div class="loading-content">
+          <VaIcon name="cloud-download" class="loading-icon" />
+          <p class="loading-text">Importation des participants en cours...</p>
+        </div>
+      </VaInnerLoading>
+    </VaModal>
+
   </div>
 </template>
 
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { VaButton } from "vuestic-ui";
 import ParticipantModal from "../components/ParticipantModal.vue";
@@ -119,6 +122,8 @@ const importedParticipants = ref([]);
 // ouvre la modale de confirmation du tournoi
 const showValidationModal = ref(false);
 
+// si importation de participant en cours
+const isImporting = ref(false);
 
 // redirige vers page accueil
 const goToHomePage = () => {
@@ -167,42 +172,57 @@ const cancelImport = () => {
   toast.init({ message: "Import annulé", color: "danger", position: 'bottom-center' });
 };
 
-// confirme import
+// confirmer l'importation de participants
 const confirmImport = async (selectedItems) => {
   let successCount = 0;
-  // boucle sur chaque participant importé
-  for (const p of selectedItems) {
+  console.log("modale ouvre");
+  isImporting.value = true; // active le chargement
+
+  // force vue à mettre à jour le DOM avant de continuer
+  await nextTick();
+
+  // fnction pour importer un participant à la fois sans bloquer l'affichage de la vue
+  const importParticipant = async (index) => {
+    if (index >= selectedItems.length) {
+      isImporting.value = false; // desactive le chargement quand tout est terminé
+      showImportModal.value = false;
+      importedParticipants.value = [];
+
+      if (successCount > 0) {
+        toast.init({ message: `${successCount} participant(s) importé(s) avec succès!`, color: "success", position: "bottom-center" });
+      }
+      return;
+    }
+
+    const p = selectedItems[index];
     const formattedParticipant = {
       ...p,
-      birthDate: p.birthDate && !isNaN(new Date(p.birthDate))
-        ? new Date(p.birthDate)
-        : null,
+      birthDate: p.birthDate && !isNaN(new Date(p.birthDate)) ? new Date(p.birthDate) : null,
       genderId: {
-        text: genders.find(g => g.id === Number(p.genderId))?.nom || "Inconnu",
+        text: genders.find((g) => g.id === Number(p.genderId))?.nom || "Inconnu",
         value: Number(p.genderId),
       },
       gradeId: {
-        text: grades.find(g => g.id === Number(p.gradeId))?.nom || "Inconnu",
+        text: grades.find((g) => g.id === Number(p.gradeId))?.nom || "Inconnu",
         value: Number(p.gradeId),
       },
     };
+
     try {
-      // sauvegarde du participant en mode silencieux
-      await handleSaveParticipant(formattedParticipant, true); // <-- Ajoutez `true` ici
+      await handleSaveParticipant(formattedParticipant, true);
       successCount++;
     } catch (error) {
-      // affiche un toast d'erreur pour ce participant
-      toast.init({ message: `${p.firstName} ${p.lastName} impossible à importer`, color: "danger", position: 'bottom-center' });
+      toast.init({ message: `${p.firstName} ${p.lastName} impossible à importer`, color: "danger", position: "bottom-center" });
     }
-  }
-  // ferme la modale et vide la liste importée
-  showImportModal.value = false;
-  importedParticipants.value = [];
-  // si au moins un participant a été importé, affiche un toast global de succès
-  if (successCount > 0) {
-    toast.init({ message: `${successCount} participant(s) importé(s) avec succès!`, color: "success", position: 'bottom-center' });
-  }
+
+    // ne pas bloquer le thread principal et laisser le navigateur respirer
+    setTimeout(() => importParticipant(index + 1), 0);
+  };
+
+  // demarrer l'importation avec le premier participant
+  importParticipant(0);
 };
+
 
 // recup participants
 const refreshParticipants = async () => {
@@ -243,7 +263,7 @@ const formattedParticipants = computed(() =>
 const formattedCategories = computed(() =>
   categories.value.map((c) => ({
     ...c,
-    genre: genders.find((g) => +g.id === +c.genreId)?.nom || "Inconnu",
+    genre: genders.find((g) => +g.id === +c.genderId)?.nom || "Inconnu",
     type: categoriesTypes.find((t) => +t.id === +c.typeId)?.nom || "Inconnu",
     minGrade: grades.find((g) => +g.id === +c.minGradeId)?.nom || "Inconnu",
     maxGrade: grades.find((g) => +g.id === +c.maxGradeId)?.nom || "Inconnu",
@@ -350,7 +370,7 @@ const handleSaveCategory = async ({ category, participants }) => {
   let cleanData = JSON.parse(JSON.stringify(category));
   cleanData = {
     ...cleanData,
-    genreId: cleanData.genreId?.value ?? cleanData.genreId ?? null,
+    genderId: cleanData.genderId?.value ?? cleanData.genderId ?? null,
     typeId: cleanData.typeId?.value ?? cleanData.typeId ?? null,
     minGradeId: cleanData.minGradeId?.value ?? cleanData.minGradeId ?? null,
     maxGradeId: cleanData.maxGradeId?.value ?? cleanData.maxGradeId ?? null,
@@ -598,6 +618,31 @@ const confirmTournamentValidation = async () => {
   flex-direction: column;
   gap: 20px;
 }
+
+.loading-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading-icon {
+  font-size: 50px;
+  color: #154ec1;
+  margin-bottom: 15px;
+}
+
+.loading-text {
+  font-size: 18px;
+  font-weight: bold;
+}
+
 
 /* sections égales, prennent 50% de la largeur */
 .category-section,

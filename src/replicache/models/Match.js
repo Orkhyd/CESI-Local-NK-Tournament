@@ -3,6 +3,7 @@ export class Match {
     idMatch,
     idMatchType,
     idRound = null,
+    idPool = null,
     idPlayer1,
     idPlayer2,
     idPreviousMatch1 = null, // uniquement en mode tableau
@@ -20,6 +21,7 @@ export class Match {
   ) {
     this.idMatch = idMatch;
     this.idMatchType = idMatchType;
+    this.idPool = idPool;
     this.idRound = idRound;
     this.idPlayer1 = idPlayer1;
     this.idPlayer2 = idPlayer2;

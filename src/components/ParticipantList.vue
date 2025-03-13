@@ -51,7 +51,7 @@
           <tr class="sticky-footer">
             <td colspan="4" class="footer-cell">Total Participants: <strong>{{ totalParticipants }}</strong></td>
             <td colspan="3" class="footer-cell">Attribués: <strong>{{ participantsLinked }}</strong></td>
-            <td colspan="2" class="footer-cell">Non Attribués: <strong>{{ participantsUnlinked }}</strong></td>
+            <td colspan="3" class="footer-cell">Non Attribués: <strong>{{ participantsUnlinked }}</strong></td>
           </tr>
         </template>
       </VaDataTable>

@@ -27,19 +27,37 @@
 
                             </div>
                             <div class="form-item">
-                                <VaSelect v-model="form.genreId" :options="genderOptions" label="Genre *" clearable
-                                    :error-messages="errors.genreId" @update:modelValue="validateForm" />
+                                <VaSelect v-model="form.genderId" :options="genderOptions" label="Genre *" clearable
+                                    :error-messages="errors.genderId" @update:modelValue="validateForm">
+                                    <template #option="{ option, selectOption }">
+                                        <div class="select-option"
+                                            :class="{'va-select-option--selected': Number(form?.genderId?.value) === Number(option.value)}"
+                                            @click="selectOption(option)">                                        
+                                            {{ option.text }}
+                                        </div>
+                                    </template>
+                                </VaSelect>
                             </div>
                             <div class="form-item">
                                 <VaSelect v-model="form.typeId" :options="typeOptions" label="Type de catégorie"
-                                    clearable :error-messages="errors.typeId" @update:modelValue="validateForm" />
+                                    clearable :error-messages="errors.typeId" @update:modelValue="validateForm">
+                                    <template #option="{ option, selectOption }">
+                                        <div class="select-option"
+                                            :class="{ 'va-select-option--selected': Number(form?.typeId?.value) === Number(option.value) }"
+                                            @click="selectOption(option)">
+                                            {{ option.text }}
+                                        </div>
+                                    </template>
+                                </VaSelect>
                             </div>
                             <div class="form-item">
                                 <VaSelect v-model="form.ageCategoryIds" :options="ageCategoryOptions" value-by="value"
-                                    label="Type d'âge *" multiple clearable :error-messages="errors.ageCategoryIds"
+                                    label="Tranche d'âge *" multiple clearable :error-messages="errors.ageCategoryIds"
                                     @update:modelValue="validateForm" :max-visible-options="2">
                                     <template #option="{ option, selectOption }">
-                                        <div class="option-container" @click="selectOption(option)">
+                                        <div class="option-container"
+                                            :class="{ 'va-select-option--selected': form?.ageCategoryIds?.includes(option.value) }"
+                                            @click="selectOption(option)">
                                             <span class="option-text">{{ option.text }}</span>
                                             <div class="age-range">
                                                 {{ getAgeRange(option.value) }}
@@ -51,12 +69,28 @@
                             <div class="form-item">
                                 <VaSelect v-model="form.minGradeId" :options="gradeOptions" label="Grade minimum *"
                                     clearable :error-messages="errors.minGradeId"
-                                    @update:modelValue="updateMaxGradeOptions" />
+                                    @update:modelValue="updateMaxGradeOptions">
+                                    <template #option="{ option, selectOption }">
+                                        <div class="select-option"
+                                            :class="{ 'va-select-option--selected': Number(form?.minGradeId?.value) === Number(option.value) }"
+                                            @click="selectOption(option)">
+                                            {{ option.text }}
+                                        </div>
+                                    </template>
+                                </VaSelect>
                             </div>
                             <div class="form-item">
                                 <VaSelect v-model="form.maxGradeId" :options="filteredMaxGradeOptions"
                                     label="Grade maximum *" clearable :error-messages="errors.maxGradeId"
-                                    :disabled="!form.minGradeId" @update:modelValue="validateForm" />
+                                    :disabled="!form.minGradeId" @update:modelValue="validateForm">
+                                    <template #option="{ option, selectOption }">
+                                        <div class="select-option"
+                                            :class="{ 'va-select-option--selected': Number(form?.maxGradeId?.value) === Number(option.value) }"
+                                            @click="selectOption(option)">
+                                            {{ option.text }}
+                                        </div>
+                                    </template>
+                                </VaSelect>
                             </div>
                         </div>
 
@@ -237,7 +271,7 @@ const getCellClass = (columnKey, row) => {
     const participant = row.source;
 
     // verif le genre
-    if (columnKey === "gender" && form.value.genreId && participant.genderId !== form.value.genreId.value && form.value.genreId.value !== 3) {
+    if (columnKey === "gender" && form.value.genderId && participant.genderId !== form.value.genderId.value && form.value.genderId.value !== 3) {
         return "non-matching-cell";
     }
 
@@ -268,7 +302,7 @@ const getCellTitle = (columnKey, row) => {
     const participant = row.source;
 
     // verif le genre
-    if (columnKey === "gender" && form.value.genreId && participant.genderId !== form.value.genreId.value  && form.value.genreId.value !== 3) {
+    if (columnKey === "gender" && form.value.genderId && participant.genderId !== form.value.genderId.value  && form.value.genderId.value !== 3) {
         return "Le genre du participant ne correspond pas à la catégorie.";
     }
 
@@ -299,7 +333,7 @@ const getCellTitle = (columnKey, row) => {
 const form = ref({
     id: "",
     name: "",
-    genreId: null,
+    genderId: null,
     typeId: null,
     ageCategoryIds: [],
     minGradeId: null,
@@ -309,7 +343,7 @@ const form = ref({
 // erreurs de validation
 const errors = ref({
     name: "",
-    genreId: "",
+    genderId: "",
     typeId: "",
     ageCategoryIds: "",
     minGradeId: "",
@@ -395,7 +429,7 @@ const filteredParticipants = computed(() => {
       });
 
       // verif du genre
-      const isGenderMatching = !form.value.genreId || p.genderId === form.value.genreId.value || form.value.genreId.value === 3;
+      const isGenderMatching = !form.value.genderId || p.genderId === form.value.genderId.value || form.value.genderId.value === 3;
 
       // verif du grade
       const isGradeMatching = !form.value.minGradeId || !form.value.maxGradeId ||
@@ -504,7 +538,7 @@ watch(
 
             // init du formulaire
             const selectedGender = genderOptions.value.find(
-                (g) => g.value === Number(category.source.genreId)
+                (g) => g.value === Number(category.source.genderId)
             );
 
             const selectedType = typeOptions.value.find(
@@ -512,10 +546,11 @@ watch(
             );
 
             const selectedAgeCategories = category.source.ageCategoryIds
-                ? category.source.ageCategoryIds.map(id =>
-                    ageCategoryOptions.value.find((a) => a.value === Number(id))
-                ).filter(Boolean)
+                ? category.source.ageCategoryIds
+                    .map(id => Number(id)) 
+                    .filter(id => ageCategoryOptions.value.some(a => a.value === id))
                 : [];
+
 
             const selectedMinGrade = gradeOptions.value.find(
                 (g) => g.value === Number(category.source.minGradeId)
@@ -528,7 +563,7 @@ watch(
             form.value = {
                 id: category.source.id || "",
                 name: category.source.name || "",
-                genreId: selectedGender || null,
+                genderId: selectedGender || null,
                 typeId: selectedType || null,
                 ageCategoryIds: selectedAgeCategories || [],
                 minGradeId: selectedMinGrade || null,
@@ -538,7 +573,7 @@ watch(
             form.value = {
                 id: "",
                 name: "",
-                genreId: null,
+                genderId: null,
                 typeId: null,
                 ageCategoryIds: [],
                 minGradeId: null,
@@ -565,7 +600,7 @@ const calculateAge = (birthDate) => {
 const validateForm = () => {
     errors.value = {
         name: form.value.name ? "" : "Nom requis",
-        genreId: form.value.genreId ? "" : "Genre requis",
+        genderId: form.value.genderId ? "" : "Genre requis",
         ageCategoryIds: Array.isArray(form.value.ageCategoryIds) && form.value.ageCategoryIds.length
             ? ""
             : "Type d'âge requis",
@@ -726,6 +761,21 @@ const participantColumns = [
 
 .filter-container .va-checkbox {
     margin-left: auto;
+}
+
+.va-select-option--selected {
+    background-color: #f9f9f9 !important; 
+    font-weight: bold !important; 
+    border-left: 5px solid #154EC1;
+}
+
+.select-option {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.select-option:hover {
+    background-color: #f4f4f4;
 }
 
 .option-container .age-range {
