@@ -1,9 +1,9 @@
 export class Category {
-    constructor(id, tournamentId, name, genreId, typeId, ageCategoryIds, minGradeId, maxGradeId) {
+    constructor(id, tournamentId, name, genderId, typeId, ageCategoryIds, minGradeId, maxGradeId) {
       this.id = id;
       this.tournamentId = tournamentId;
       this.name = name;
-      this.genreId = genreId;
+      this.genderId = genderId;
       this.typeId = typeId;
       this.ageCategoryIds = ageCategoryIds;
       this.minGradeId = minGradeId;

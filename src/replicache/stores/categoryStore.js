@@ -10,7 +10,7 @@ export const rep = new Replicache({
         id,
         tournamentId,
         data.name,
-        data.genreId,
+        data.genderId,
         data.typeId,
         data.ageCategoryIds,
         data.minGradeId,

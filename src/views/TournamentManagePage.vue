@@ -118,7 +118,7 @@
       ...category,
       name: category.name,
       icon: category.typeId === 1 ? "grid_view" : "bar_chart",
-      genre: getGenderLabel(category.genreId),
+      genre: getGenderLabel(category.genderId),
       type: getTypeLabel(category.typeId),
       ageCategories: getAgeCategories(category.ageCategoryIds),
       gradeRange: getGradeRange(category.minGradeId, category.maxGradeId),

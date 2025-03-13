@@ -30,9 +30,10 @@
       <div v-if="activeTab === 'category'">
 
         <!-- chargement dynamique des composants -->
-        <component v-if="participants.length > 0" :is="categoryComponent" :tournamentId="props.tournamentId"
-          :category="props.category" :participants="participants" @update="fetchParticipants()"
-          :searchParticipant="searchParticipant" />
+        <component v-if="participants.length > 0" :is="categoryComponent" :key="categoryKey"
+          :tournamentId="props.tournamentId" :category="props.category" :participants="participants"
+          @update="fetchParticipants()" :searchParticipant="searchParticipant" />
+
       </div>
 
       <!-- onglet "stats" -->
@@ -64,6 +65,7 @@
       required: true,
     },
   });
+  
 
   const showParticipants = ref(false);
 
@@ -71,6 +73,8 @@
   
   const activeTab = ref("category"); // onglet actif par défaut
   const participants = ref([]); // liste des participants
+
+  const categoryKey = computed(() => `${props.category.id}-${participants.value.length}`);
   
   // choisir le bon composant en fonction du type de catégorie
   const categoryComponent = computed(() => {

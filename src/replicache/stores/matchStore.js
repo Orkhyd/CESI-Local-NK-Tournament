@@ -6,11 +6,12 @@ export const rep = new Replicache({
   name: "match",
   licenseKey: "l70ce33fc0dee46abb6f056086da4d872",
   mutators: {
-    async create(tx, { idMatch, idMatchType, idRound, idPlayer1, idPlayer2, idPreviousMatch1, idPreviousMatch2, ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2, idWinner }) {
+    async create(tx, { idMatch, idMatchType, idRound, idPool, idPlayer1, idPlayer2, idPreviousMatch1, idPreviousMatch2, ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2, idWinner }) {
       await tx.put(`match/${idMatch}`, new Match(
         idMatch,
         idMatchType,
         idRound,
+        idPool,
         idPlayer1,
         idPlayer2,
         idPreviousMatch1,
@@ -97,6 +98,32 @@ export async function getMatchesByRound(idRound) {
     return matches;
   });
 }
+
+export async function getMatchesByPool(idPool) {
+  return await rep.query(async (tx) => {
+    const matches = [];
+    const scanResults = await tx.scan().entries().toArray(); // Convertir en tableau
+
+    if (!Array.isArray(scanResults)) {
+      return [];
+    }
+
+    for (const entry of scanResults) {
+      // Chaque entrée est un tableau [clé, valeur, timestamp]
+      if (!Array.isArray(entry) || entry.length < 2) continue; // Ignorer si mal formée
+
+      const matchData = entry[1]; // Récupérer l'objet match
+
+      // On verif que l'objet match possède bien la propriété idPool et qu'elle correspond
+      if (matchData && matchData.idPool === idPool) {
+        matches.push(matchData);
+      }
+    }
+
+    return matches;
+  });
+}
+
 
 export async function getMatchById(idMatch) {
   return await rep.query(async (tx) => {

@@ -39,15 +39,17 @@
             <div class="form-row">
               <div class="form-item">
                 <VaSelect v-model="form.nationalityId" label="Nationalité *" :options="nationalityOptions" clearable
-                  placeholder="Choisissez une nationalité" searchable text-by="text" value-by="value" searchPlaceholderText="Rechercher..">
+                  placeholder="Choisissez une nationalité" searchable text-by="text" value-by="value"
+                  searchPlaceholderText="Rechercher..">
                   <template #option="{ option, selectOption }">
-                    <div class="option-container" @click="selectOption(option)">
+                    <div class="select-option option-container"
+                      :class="{ 'va-select-option--selected': Number(form.nationalityId) === Number(option.value) }"
+                      @click="selectOption(option)">
                       <img class="flag" :src="getFlagUrl(option.flag)" alt="flag" />
                       <span class="country-name">{{ option.text }}</span>
                     </div>
                   </template>
                 </VaSelect>
-
               </div>
               <div class="form-item">
                 <VaInput v-model="form.clubName" label="Nom du club *" clearable placeholder="Entrez le nom du club"
@@ -59,11 +61,31 @@
             <div class="form-row">
               <div class="form-item">
                 <VaSelect v-model="form.genderId" :options="genderOptions" label="Genre *" clearable
-                  :error-messages="errors.genderId" @update:modelValue="validateForm" />
+                  :error-messages="errors.genderId" @update:modelValue="validateForm">
+                  <template #option="{ option, selectOption }">
+                    <div class="select-option"
+                      :class="{ 'va-select-option--selected': Number(form.genderId?.value) === Number(option.value) }"
+                      @click="selectOption(option)">
+                      <VaIcon
+                        :name="option.value === 1 ? 'male' : option.value === 2 ? 'female' : 'help-circle-outline'"
+                        class="gender-icon" />
+                      {{ option.text }}
+                    </div>
+                  </template>
+                </VaSelect>
               </div>
               <div class="form-item">
-                <VaSelect v-model="form.gradeId" :options="gradeOptions" label="Grade *" clearable
-                  :error-messages="errors.gradeId" @update:modelValue="validateForm" searchPlaceholderText="Rechercher.." searchable/>
+                <VaSelect v-model="form.gradeId" :options="gradeOptions" label="Grade *" clearable searchable
+                  :error-messages="errors.gradeId" searchPlaceholderText="Rechercher.."
+                  @update:modelValue="validateForm">
+                  <template #option="{ option, selectOption }">
+                    <div class="select-option"
+                      :class="{ 'va-select-option--selected': Number(form.gradeId?.value) === Number(option.value) }"
+                      @click="selectOption(option)">
+                      {{ option.text }}
+                    </div>
+                  </template>
+                </VaSelect>
               </div>
             </div>
           </div>
@@ -103,7 +125,6 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { VaModal, VaForm, VaInput, VaSelect, VaDateInput, VaButton } from "vuestic-ui";
 import { genders, grades, nationality } from "../replicache/models/constants";
 
 // props pr gerer ouverture modale et les donnees du participant
@@ -339,6 +360,21 @@ const confirmSubmission = () => {
   border-top: 1px solid #e0e0e0;
 }
 
+.va-select-option--selected {
+    background-color: #f9f9f9 !important; 
+    font-weight: bold !important; 
+    border-left: 5px solid #154EC1;
+}
+
+.select-option {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.select-option:hover {
+    background-color: #f4f4f4;
+}
+
 .confirmation-container {
   padding: 20px;
   text-align: center;
@@ -353,7 +389,7 @@ const confirmSubmission = () => {
 .option-container {
   display: flex;
   align-items: center;
-  padding: 4px 8px;
+  padding: 6 8px;
 }
 
 .option-container:hover {
