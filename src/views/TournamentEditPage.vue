@@ -636,6 +636,7 @@ const confirmTournamentValidation = async () => {
   font-size: 50px;
   color: #154ec1;
   margin-bottom: 15px;
+  padding: 5px;
 }
 
 .loading-text {

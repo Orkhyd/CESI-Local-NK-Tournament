@@ -21,8 +21,8 @@ export class Match {
   ) {
     this.idMatch = idMatch;
     this.idMatchType = idMatchType;
-    this.idPool = idPool;
     this.idRound = idRound;
+    this.idPool = idPool;
     this.idPlayer1 = idPlayer1;
     this.idPlayer2 = idPlayer2;
     this.idPreviousMatch1 = idPreviousMatch1;

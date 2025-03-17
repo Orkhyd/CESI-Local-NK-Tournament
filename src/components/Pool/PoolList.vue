@@ -1,7 +1,6 @@
 <template>
   <!-- on englobe toute la vue dans un conteneur qui scrolle -->
   <div class="pool-list-scroll">
-    <h2 class="main-title">Gestion multiphase des poules</h2>
 
     <!-- loading -->
     <div v-if="loading" class="loading">
@@ -15,54 +14,38 @@
 
     <!-- affichage normal des phases -->
     <div v-else>
-      <div
-        v-for="(phase, phaseIndex) in phases"
-        :key="`phase_${phaseIndex}`"
-        class="phase-block"
-      >
-        <h2>{{ phase.label }}</h2>
-
+      <div v-for="(phase, phaseIndex) in phases" :key="`phase_${phaseIndex}`" class="phase-block">
+        <h2 style="margin-bottom: 5px;">{{ phase.label }}</h2>
         <div class="pools-grid">
-          <Pool
-            v-for="(pool, idx) in phase.pools"
-            :key="`pool_${phaseIndex}_${idx}`"
-            :pool="pool"
-            @edit-match="showMatchEditor"
-            :refresh-matches="refreshMatches"
-          />
+          <Pool v-for="(pool, idx) in filteredPools(phase.pools)" :key="`pool_${phaseIndex}_${idx}`" :pool="pool"
+            @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
+            :search-participant="props.searchParticipant" :participants="props.participants" />
         </div>
 
-        <!-- bouton "générer la phase suivante" -->
-        <div
-          v-if="phaseIndex === phases.length - 1 && phase.pools.length > 1"
-          class="final-phase"
-        >
-          <hr />
-          <button class="btn primary large" @click="generateNextPhase">
-            Générer la phase suivante (vainqueurs)
-          </button>
-        </div>
+
       </div>
+
+      <!-- Affichage de la Poule Finale si elle existe -->
+      <div v-if="finalPool" class="final-pool-container">
+        <h2 class="final-pool-title">🏆 Poule Finale de Classement 🏆</h2>
+        <Pool :pool="finalPool" class="final-pool" @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
+          :search-participant="props.searchParticipant" :participants="props.participants" />
+      </div>
+
     </div>
 
-    <!-- matchmodal.vue (scoreboard) -->
-    <MatchModal
-      v-if="matchEditorOpen"
-      :matchId="currentMatchId"
-      @close="closeMatchEditor"
-    />
+    <!-- modal du match  -->
+    <MatchModal v-if="matchEditorOpen" :matchId="currentMatchId" @close="closeMatchEditor" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watchEffect } from 'vue';
 import Pool from './Pool.vue';
 import MatchModal from '@/components/MatchModal.vue';
 import { poolManagerService } from '@/replicache/services/Pool/poolManagerService';
 import { getPoolManagerByCategory } from '@/replicache/stores/Pool/poolManagerStore'
-import { getPoulesByPoolManagerId } from '@/replicache/stores/Pool/poolStore'
-import { poolService } from '@/replicache/services/Pool/poolService';
-import { generateFinalistPool } from '@/functions/generatePools';
+import { getPoulesByPoolManagerId, rep } from '@/replicache/stores/Pool/poolStore'
 
 const props = defineProps({
   participants: {
@@ -73,6 +56,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  searchParticipant: {
+    type: Object,
+    default: null,
+  }
 });
 
 const loading = ref(false);
@@ -101,12 +88,19 @@ const loadOrCreatePoolManager = async () => {
     const poules = await getPoulesByPoolManagerId(poolManagerId.value);
 
     // structure les phases
+    poules.sort((a, b) => {
+      const numA = parseInt(a.label.replace(/\D/g, ""), 10);
+      const numB = parseInt(b.label.replace(/\D/g, ""), 10);
+      return numA - numB;
+    });
+
     phases.value = [
       {
         label: 'Phase 1 (Poules initiales)',
         pools: poules,
       },
     ];
+
   } catch (error) {
     console.error('Erreur lors du chargement des poules:', error);
     alert('Erreur lors du chargement des poules');
@@ -115,57 +109,17 @@ const loadOrCreatePoolManager = async () => {
   }
 };
 
-/* genere la phase suivante avec les vainqueurs des poules actuelles */
-const generateNextPhase = async () => {
-  const lastIndex = phases.value.length - 1;
-  const lastPhase = phases.value[lastIndex];
+const finalPool = computed(() => {
+  if (!phases.value.length || !phases.value[0]?.pools) return null;
+  return phases.value[0].pools.find(pool => pool.label === "Poule Finale") || null;
+});
 
-  if (lastPhase.pools.length <= 1) {
-    alert('Une seule poule => pas de phase suivante possible.');
-    return;
-  }
-
-  const allDone = lastPhase.pools.every((p) => p.isComplete);
-  if (!allDone) {
-    alert('Toutes les poules de la phase précédente doivent être terminées.');
-    return;
-  }
-
-  // genere la phase suivante avec les vainqueurs
-  const nextPools = generateFinalistPool(lastPhase.pools, 1);
-
-  // cree les nouvelles poules dans replicache
-  for (const pool of nextPools) {
-    await poolService.create({
-      poolManagerId: poolManagerId.value,
-      label: pool.label,
-      participants: pool.participants,
-      qualifyingPositions: pool.qualifyingPositions,
-    });
-
-    // cree les matchs de la nouvelle poule
-    for (const match of pool.matches) {
-      await matchService.create({
-        idMatch: match.idMatch,
-        idPoule: pool.id,
-        idPlayer1: match.player1 ? match.player1.id : -2,
-        idPlayer2: match.player2 ? match.player2.id : -2,
-        score1: match.score1,
-        score2: match.score2,
-        winner: match.winner,
-        keikoku1: match.keikoku1,
-        keikoku2: match.keikoku2,
-      });
-    }
-  }
-
-  // ajoute la nouvelle phase a l'affichage
-  const newPhaseNumber = phases.value.length + 1;
-  phases.value.push({
-    label: `Phase ${newPhaseNumber}`,
-    pools: nextPools,
-  });
+const filteredPools = (pools) => {
+  if (!pools) return [];
+  console.log(pools.filter(pool => pool?.label !== "Poule Finale"))
+  return pools.filter(pool => pool?.label !== "Poule Finale");
 };
+
 
 /* ouvre la modale d'edition de match */
 const showMatchEditor = (match) => {
@@ -179,12 +133,23 @@ const closeMatchEditor = () => {
   matchEditorOpen.value = false;
   currentMatchId.value = null;
   refreshMatches.value++;
+  loadOrCreatePoolManager();
 };
 
 // charge les donnees au montage du composant
 onMounted(() => {
   loadOrCreatePoolManager();
 });
+
+const allPoolsComplete = computed(() => {
+  if (!phases.value.length || !phases.value[0]?.pools?.length) return false;
+
+  return phases.value[0].pools
+    .filter(pool => pool?.label !== "Poule Finale")
+    .every(pool => pool.isComplete);
+});
+
+
 </script>
 
 
@@ -235,6 +200,8 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+
+
 .phase-block {
   margin-bottom: 40px;
 }
@@ -276,4 +243,33 @@ onMounted(() => {
   text-align: center;
   margin-top: 20px;
 }
+
+/* Conteneur spécifique pour la Poule Finale */
+.final-pool-container {
+  margin-top: 40px;
+  padding: 20px;
+  background: #f9f5dc; /* Couleur dorée claire */
+  border: 3px solid #d4af37; /* Bordure dorée */
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Titre de la Poule Finale */
+.final-pool-title {
+  color: #b8860b;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+}
+
+/* Style spécial pour la Poule Finale */
+.final-pool {
+  border: 2px solid #b8860b; /* Doré foncé */
+  background: #fffaf0; /* Fond beige clair */
+  padding: 15px;
+  border-radius: 10px;
+}
+
 </style>

@@ -1,25 +1,60 @@
 <template>
-  <div class="match" :class="{ 'disabled-match': isDisabled }" @click="openModal">
+  <div class="match" :class="{ 'disabled-match': isDisabled }" @click="openMatchModal">
     <div class="match-content">
       <span class="match-id">{{ match.idMatch }}</span>
       <div class="players">
-        <div class="player" v-for="(player, i) in [match.player1, match.player2]" :key="i"
-          :class="getPlayerClass(player)">
-          <div class="player-info">
-            <img v-if="player.nationalityId" :src="getFlagUrl(getCountry(player.nationalityId)?.flag)" alt="drapeau"
-              class="player-flag" />
-            <span class="name">
-              {{ player?.firstName && player?.lastName ? `${player.firstName} ${player.lastName}` : player.lastName }}
-            </span>
-          </div>
-          <span class="score" v-if="match['score' + (i + 1)] !== null">
-            {{ match["ipponsPlayer" + (i + 1)] }}
-          </span>
-        </div>
+        <!-- joueur 1 -->
+        <VaMenu preset="context" :options="['Détails']" @selected="(option) => openPlayerModal(option, match.player1)">
+          <template #anchor>
+            <div class="player" :class="getPlayerClass(match.player1)">
+              <div class="player-info">
+                <img v-if="match.player1.nationalityId" :src="getFlagUrl(getCountry(match.player1.nationalityId)?.flag)"
+                  alt="drapeau" class="player-flag" />
+                <span class="name">
+                  {{ match.player1?.firstName && match.player1?.lastName ? `${match.player1.firstName}
+                  ${match.player1.lastName}` : match.player1.lastName }}
+                </span>
+              </div>
+              <span class="score" v-if="match.score1 !== null">
+                {{ match.ipponsPlayer1 }}
+              </span>
+            </div>
+          </template>
+        </VaMenu>
+
+        <!-- joueur 2 -->
+        <VaMenu preset="context" :options="['Détails']" @selected="(option) => openPlayerModal(option, match.player2)">
+          <template #anchor>
+            <div class="player" :class="getPlayerClass(match.player2)">
+              <div class="player-info">
+                <img v-if="match.player2.nationalityId" :src="getFlagUrl(getCountry(match.player2.nationalityId)?.flag)"
+                  alt="drapeau" class="player-flag" />
+                <span class="name">
+                  {{ match.player2?.firstName && match.player2?.lastName ? `${match.player2.firstName}
+                  ${match.player2.lastName}` : match.player2.lastName }}
+                </span>
+              </div>
+              <span class="score" v-if="match.score2 !== null">
+                {{ match.ipponsPlayer2 }}
+              </span>
+            </div>
+          </template>
+        </VaMenu>
       </div>
     </div>
 
-    <MatchModal v-if="isModalOpen" :matchId="props.match.idMatch" @close="closeModal" @update="refreshBracket" />
+    <!--les statistiques du joueur -->
+    <VaModal v-model="showPlayerModal" size="large" :hideDefaultActions="true">
+      <ParticipantDetails :participant="selectedPlayer" :participants="participants" />
+      <template #footer>
+        <VaButton @click="showPlayerModal = false" color="primary" round>
+          Fermer
+        </VaButton>
+      </template>
+    </VaModal>
+
+    <!--  match (uniquement si le match est actif) -->
+    <MatchModal v-if="isModalOpen" :matchId="match.idMatch" @close="closeMatchModal" @update="refreshBracket" />
   </div>
 </template>
 
@@ -27,13 +62,38 @@
 import { ref, computed } from "vue";
 import MatchModal from "../MatchModal.vue";
 import { nationality } from "@/replicache/models/constants"
+import ParticipantDetails from "../ParticipantDetails.vue";
 
 const props = defineProps({
   match: {
     type: Object,
     required: true,
   },
+  participants: {
+    type: Array,
+    required: true
+  },
+  searchParticipant: {
+    type: Object,
+    default: null,
+  }
 });
+
+const showPlayerModal = ref(false);
+const selectedPlayer = ref(null);
+
+// ouvrir la modale pour un joueur
+const openPlayerModal = (option, player) => {
+  if (option === "Détails" && player) {
+    selectedPlayer.value = player;
+    showPlayerModal.value = true;
+  }
+};
+
+// fermer la modale
+const closePlayerModal = () => {
+  showPlayerModal.value = false;
+};
 
 const emit = defineEmits(["updateBracket"]);
 
@@ -57,14 +117,14 @@ const isDisabled = computed(() => {
 });
 
 // ouvre la modale si le match n est pas desactive
-const openModal = () => {
+const openMatchModal = () => {
   if (!isDisabled.value) {
     isModalOpen.value = true;
   }
 };
 
 // ferme la modale
-const closeModal = () => {
+const closeMatchModal = () => {
   isModalOpen.value = false;
   refreshBracket();
 
@@ -129,6 +189,11 @@ const getFlagUrl = (flagBase64) => {
 .match.disabled-match {
   opacity: 0.8;
   pointer-events: none;
+}
+
+/* Réactiver le clic sur les joueurs même si la carte est désactivée */
+.match.disabled-match .player {
+  pointer-events: auto;
 }
 
 .match-content {

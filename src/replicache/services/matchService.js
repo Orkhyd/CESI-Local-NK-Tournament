@@ -1,16 +1,26 @@
 import { rep } from "@/replicache/stores/matchStore";
+import { checkAndCompletePool } from "@/replicache/stores/Pool/poolStore";
+import { getMatchById } from "@/replicache/stores/matchStore";
 
 export const matchService = {
   create: async (data) => {
     await rep.mutate.create({ ...data });
   },
 
-  update: async (idMatch, updates) => {
+  update: async (idMatch, idMatchType, updates) => {
     await rep.mutate.update({ idMatch, ...updates });
 
-    // Si un gagnant est défini, on propage aux matchs suivants
-    if (updates.idWinner) {
+    // en mode tableau, si un gagnant est défini, on propage au match suivznt le gagnant
+    if (Number(idMatchType) === 1 && updates.idWinner) {
       await propagateWinner(idMatch, updates.idWinner);
+    }
+
+    if (Number(idMatchType) === 2) {  // en mode poule on verifie si c'est lde dernier match et si oui on cloture la poule et envois le participant dans la poule finalek
+      const match = await getMatchById(idMatch);
+      if (match && match.idPool) {
+        console.log(match.idPool)
+        await checkAndCompletePool(match.idPool);
+      }
     }
   },
 
@@ -45,7 +55,7 @@ export const matchService = {
 };
 
 /* met a jouur les matchs suivants en assignant le gagnant dans idPlayer1 ou idPlayer2  */
- 
+
 async function propagateWinner(idMatch, idWinner) {
   const allMatches = await rep.query(async (tx) => {
     const matches = [];

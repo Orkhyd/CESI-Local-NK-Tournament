@@ -94,7 +94,6 @@ export async function getMatchesByRound(idRound) {
         matches.push(matchData);
       }
     }
-
     return matches;
   });
 }
@@ -124,10 +123,32 @@ export async function getMatchesByPool(idPool) {
   });
 }
 
-
 export async function getMatchById(idMatch) {
   return await rep.query(async (tx) => {
     return await tx.get(`match/${idMatch}`);
   });
 }
 
+export async function getMatchesByParticipant(participantId) {
+  return await rep.query(async (tx) => {
+    const matches = [];
+    const scanResults = await tx.scan().entries().toArray(); 
+
+    if (!Array.isArray(scanResults)) {
+      return [];
+    }
+
+    for (const entry of scanResults) {
+      if (!Array.isArray(entry) || entry.length < 2) continue; // Ignorer si mal formée
+
+      const matchData = entry[1]; // Récupérer l'objet match
+
+      // verif si le participant a joué dans ce match
+      if (matchData && (matchData.idPlayer1 === participantId || matchData.idPlayer2 === participantId)) {
+        matches.push(matchData);
+      }
+    }
+
+    return matches;
+  });
+}

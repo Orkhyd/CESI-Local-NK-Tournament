@@ -3,25 +3,25 @@ import { rep } from "@/replicache/stores/Pool/poolStore";
 
 export const poolService = {
   // crée une poule
-  create: async ({ poolManagerId, label, participants, qualifyingPositions }) => {
-    const idPoule = crypto.randomUUID();
+  create: async ({ poolManagerId, label, qualifyingPositions, participants }) => {
+    const idPool = crypto.randomUUID();
     await rep.mutate.createPoule({
-      id: idPoule,
+      id: idPool,
       poolManagerId,
       label,
-      participants,
       qualifyingPositions,
+      participants
     });
-    return idPoule;
+    return idPool;
   },
 
   // met à jour une poule
-  update: async (idPoule, updates) => {
-    await rep.mutate.updatePoule({ id: idPoule, ...updates });
+  update: async (idPool, updates) => {
+    await rep.mutate.updatePoule({ id: idPool, ...updates });
   },
 
   // supp une poule
-  delete: async (idPoule) => {
-    await rep.mutate.deletePoule({ id: idPoule });
+  delete: async (idPool) => {
+    await rep.mutate.deletePoule({ id: idPool });
   },
 };
