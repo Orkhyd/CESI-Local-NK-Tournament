@@ -1,6 +1,6 @@
 # 🏆 Gestion de Tournoi - Vue 3 + Electron + Vuestic UI
 
-Ce projet est une **application Electron** développée avec **Vue 3** et **Vuestic UI**. Elle permet de **gérer des tournois**, organiser les catégories et les participants, tout en offrant une **interface fluide et moderne**. L'application utilise aussi **IndexedDB** pour stocker les données localement et **Material Icons** pour un rendu plus esthétique.
+Ce projet est une **application Electron** développée avec **Vue 3** et **Vuestic UI**. Elle permet de **gérer des tournois**, organiser les catégories et les participants, tout en offrant une **interface fluide et moderne**. L'application utilise aussi **IndexedDB** avec **Replicache** pour stocker les données localement et **Material Icons** pour un rendu plus esthétique et pour la partie statistics **ApexChart**.
 
 ## 🚀 Installation et lancement
 
@@ -36,7 +36,9 @@ L'application utilise **IndexedDB** pour stocker les participants, catégories e
 - **Electron** (pour le packaging en app de bureau)
 - **Vuestic UI** (framework UI moderne)
 - **IndexedDB** (stockage local)
+- **Replicache** (stockage local)
 - **Material Icons** (icônes visuelles)
+- **ApexChart** ( graphics, charts..)
 
 ## ⚡ Fonctionnalités principales
 ✅ Gestion des participants avec filtres et recherche avancée  

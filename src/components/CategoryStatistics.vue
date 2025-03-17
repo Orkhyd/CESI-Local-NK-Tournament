@@ -1,1 +1,0 @@
-<template>stats</template>

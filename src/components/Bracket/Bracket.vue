@@ -14,7 +14,7 @@
             <template v-for="(match, matchIndex) in round.matches" :key="match.idMatch">
               <MatchCard :match="match" :disabled="match.idWinner !== null" :participants="participants"
                 @updateBracket="loadRounds" :id="'match-' + match.idMatch" ref="matchRefs"
-                :class="{ 'highlight': highlightedMatchId === match.idMatch }" />
+                :class="{ 'highlight-match': highlightedMatchId === match.idMatch }" />
               <!-- ddesactive le match s'il a déjà un gagnant -->
             </template>
           </div>
@@ -27,7 +27,6 @@
 <script setup>
 import { ref, watch, onMounted, nextTick } from "vue";
 import MatchCard from "./MatchCard.vue";
-import { rep } from "@/replicache/stores/matchStore";
 import { getRoundsByBracket } from "@/replicache/stores/Bracket/roundStore";
 import { getMatchesByRound } from "@/replicache/stores/matchStore";
 
@@ -162,7 +161,7 @@ const findMostAdvancedMatch = (participantId) => {
   for (const round of rounds.value) {
     for (const match of round.matches) {
       if (
-        match.idPlayer1 === participantId || 
+        match.idPlayer1 === participantId ||
         match.idPlayer2 === participantId
       ) {
         latestMatch = match; // Met à jour le match le plus avancé
@@ -268,7 +267,6 @@ onMounted(async () => {
   display: block;
   min-height: 30px;
   border-left: 2px solid #333;
-  /* ligne verticale */
   position: absolute;
   margin-left: -22px;
   transform: rotate(90deg);
@@ -282,12 +280,10 @@ onMounted(async () => {
   border-top-color: #333;
   border-right-color: #333;
   height: calc(50% + 10px);
-  /* ajuste la taille pour relier les matchs */
   position: absolute;
   right: 0px;
   width: 10px;
   top: calc(50% + 1px);
-  /* aligne correctement la liaison */
 }
 
 /* ligne de liaison pour les matchs pairs (bas) */
@@ -302,17 +298,19 @@ onMounted(async () => {
   right: 0px;
   width: 10px;
   bottom: calc(50% + 1px);
-  /* ajuste l'alignement */
 }
 
-.highlight {
+/* zoom uniquement pour la MatchCard */
+.highlight-match {
   animation: highlightAnimation 0.5s ease-in-out alternate infinite;
 }
+
 
 @keyframes highlightAnimation {
   from {
     transform: scale(1);
   }
+
   to {
     transform: scale(1.03);
   }

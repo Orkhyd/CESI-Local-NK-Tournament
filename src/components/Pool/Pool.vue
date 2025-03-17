@@ -3,7 +3,7 @@
     <!-- entete de la poule -->
     <div class="pool-header">
       <h3>{{ pool.label }}</h3>
-      <span class="badge">{{ pool.participants.length }} participants</span>
+      <span class="badge">{{ props.pool.participants.length }} participants</span>
     </div>
 
     <div class="pool-content">
@@ -11,19 +11,27 @@
         <!-- paarticipants -->
         <div class="participants-list">
           <h4>Participants</h4>
-          <ul>
-            <li v-for="participant in pool.participants" :key="participant.id">
-              <div class="avatar">{{ getInitials(participant) }}</div>
-              <div class="info">
-                <div>{{ participant.lastName }} {{ participant.firstName }}</div>
-                <div class="club">{{ participant.clubName }}</div>
-              </div>
+          <ul v-if="props.pool.participants.length > 0">
+            <li v-for="participant in props.pool.participants" :key="participant.id"
+              :data-participant-id="participant.id">
+              <VaMenu preset="context" :options="['Détails']" @selected="(option) => openModal(participant)">
+                <template #anchor>
+                  <div class="participant-item">
+                    <div class="avatar">{{ getInitials(participant) }}</div>
+                    <div class="info">
+                      <div>{{ participant.lastName }} {{ participant.firstName }}</div>
+                      <div class="club">{{ participant.clubName }}</div>
+                    </div>
+                  </div>
+                </template>
+              </VaMenu>
             </li>
           </ul>
+          <p v-else class="empty-placeholder">Aucun participant</p>
         </div>
 
         <!-- classement -->
-        <div class="standings">
+        <div class="standings" v-if="sortedStandings.length > 0">
           <h4>Classement</h4>
           <table>
             <thead>
@@ -42,12 +50,29 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(standing, index) in sortedStandings" :key="standing.participant.id"
+              <tr v-for="(standing, index) in sortedStandings" :key="standing.participant.id" class="ligne-participant"
                 :class="[getMedalClass(index), { qualifying: index < pool.qualifyingPositions[0] }]">
                 <td>{{ index + 1 }}</td>
-                <td> <img v-if="getCountry(standing.participant.nationalityId)?.flag"
-                    :src="getFlagUrl(getCountry(standing.participant.nationalityId).flag)" alt="Drapeau"
-                    class="flag" />{{ standing.participant.lastName }} {{ standing.participant.firstName }}</td>
+                <td>
+                  <VaMenu preset="context" :options="['Détails']"
+                    @selected="(option) => openModal(standing.participant)">
+                    <template #anchor>
+                      <div class="participant-info">
+                        <img v-if="getCountry(standing.participant.nationalityId)?.flag"
+                          :src="getFlagUrl(getCountry(standing.participant.nationalityId).flag)" alt="Drapeau"
+                          class="flag" />
+                        {{ standing.participant.lastName }} {{ standing.participant.firstName }}
+                      </div>
+                    </template>
+                  </VaMenu>
+
+                  <div class="match-history">
+                    <span v-for="(match, index) in getMatchHistory(standing.participant.id)" :key="index"
+                      class="history-bubble" :class="{ win: match.won, lose: !match.won && match.played }">
+                    </span>
+                  </div>
+                </td>
+
                 <td>{{ standing.mj }}/{{ standing.mt }}</td>
                 <td>{{ standing.mg }}</td>
                 <td>{{ standing.mp }}</td>
@@ -57,22 +82,24 @@
                 <td>{{ standing.kp }}</td>
                 <td>{{ standing.kc }}</td>
                 <td><b>{{ standing.points }}</b></td>
+
               </tr>
             </tbody>
           </table>
         </div>
+        <p v-else class="empty-placeholder">Aucun classement disponible</p>
       </div>
 
       <!-- matchs -->
       <div class="matches">
-        <h4>
+        <h4 class="padding-10-px">
           Matchs
           <span class="badge">
             {{ getCompletedMatchCount() }}/{{ poolMatches.length }}
           </span>
           <span v-if="pool.isComplete"> (terminée)</span>
         </h4>
-        <div class="matches-grid">
+        <div class="matches-grid" v-if="poolMatches.length > 0">
           <div v-for="match in poolMatches" :key="match.idMatch" class="match-card"
             :class="{ completed: match.idWinner !== null }" @click="editMatch(match)">
             <!-- entete du match -->
@@ -122,15 +149,28 @@
             </div>
           </div>
         </div>
+        <p v-else class="empty-placeholder">Aucun match programmé</p>
       </div>
     </div>
   </div>
+
+  <VaModal v-model="showModal" size="large" hide-default-actions>
+    <ParticipantDetails :participant="selectedParticipant" :participants="props.participants" />
+    <template #footer>
+      <VaButton @click="showModal = false" color="primary" round>
+        Fermer
+      </VaButton>
+    </template>
+  </VaModal>
+
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { getMatchesByPool } from '@/replicache/stores/matchStore';
 import { nationality } from '@/replicache/models/constants';
+import { determinePoolRanking } from "@/functions/determinePoolRanking"
+import ParticipantDetails from "../ParticipantDetails.vue"
 
 // def props
 const props = defineProps({
@@ -141,6 +181,14 @@ const props = defineProps({
   refreshMatches: {
     type: Number,
     default: 0
+  },
+  participants: {
+    type: Array,
+    required: true,
+  },
+  searchParticipant: {
+    type: Object,
+    default: null,
   }
 });
 
@@ -152,9 +200,34 @@ const poolMatches = ref([]);
 
 // fonction recup matchs (recup des matchs de la pool)
 async function fetchPoolMatches() {
-  poolMatches.value = await getMatchesByPool(props.pool.id);
-  console.log(poolMatches.value);
+  const rawMatches = await getMatchesByPool(props.pool.id);
+  poolMatches.value = balanceMatchOrder(rawMatches);
 }
+
+function balanceMatchOrder(matches) {
+  const scheduledMatches = [];
+  const playersLastMatch = new Map(); // stocke le dernier match joué par chaque joueur
+
+  while (matches.length > 0) {
+    // triee les matchs pour privilégier ceux qui permette un max de repos aux joueurs
+    matches.sort((a, b) => {
+      const lastMatchA = Math.max(playersLastMatch.get(a.idPlayer1) || 0, playersLastMatch.get(a.idPlayer2) || 0);
+      const lastMatchB = Math.max(playersLastMatch.get(b.idPlayer1) || 0, playersLastMatch.get(b.idPlayer2) || 0);
+      return lastMatchA - lastMatchB;
+    });
+
+    // prend le match qui offre le plus de repos aux joueurs
+    const nextMatch = matches.shift();
+    scheduledMatches.push(nextMatch);
+
+    // maj la dernière fois que chaque joueur a joué
+    playersLastMatch.set(nextMatch.idPlayer1, scheduledMatches.length);
+    playersLastMatch.set(nextMatch.idPlayer2, scheduledMatches.length);
+  }
+
+  return scheduledMatches;
+}
+
 
 // init : appel de la fonction recup au montage
 onMounted(() => {
@@ -166,97 +239,71 @@ watch(() => props.refreshMatches, () => {
   fetchPoolMatches();
 });
 
+
+// watcher pour searchParticipant pour emmener vers l'ancre du participant rechercher
+watch(
+  () => props.searchParticipant,
+  async (newSearchParticipant) => {
+    if (!newSearchParticipant || !newSearchParticipant.idParticipant) return;
+
+    // trouve le participant dans la liste des participants de la poule
+    const participant = props.pool.participants.find(
+      (p) => p.id === newSearchParticipant.idParticipant
+    );
+
+    if (participant) {
+      await nextTick();
+
+      // trouuve l'élément DOM correspondant au participant
+      const participantElement = document.querySelector(
+        `[data-participant-id="${participant.id}"]`
+      );
+
+      if (participantElement) {
+        // classe css pour l'animation de zoom
+        participantElement.classList.add('highlight-participant');
+
+        // défiler la page jusqu'a l'élément
+        participantElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // retirer la classe css après 3 secondes
+        setTimeout(() => {
+          participantElement.classList.remove('highlight-participant');
+        }, 3000);
+      }
+    }
+  },
+  { deep: true }
+);
+
+const showModal = ref(false);
+const selectedParticipant = ref(null);
+
+function openModal(participant) {
+  selectedParticipant.value = participant;
+  showModal.value = true;
+}
+
 // gestion des drapeaux et nationalités
 const getCountry = (natId) => nationality.find(country => country.id === Number(natId));
 const getFlagUrl = (flagBase64) => flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
 
 // computed : calcule et trie le classement (standings)
-// logique metier : 1 pt par victoire, diff = ip - ic, etc.
 const sortedStandings = computed(() => {
-  // init stats pour chaque participant
-  const stats = {};
-  props.pool.participants.forEach(p => {
-    stats[p.id] = {
-      participant: p,
-      mj: 0,  // matchs joues
-      mt: 0,  // matchs totaux (programmés)
-      mg: 0,  // matchs gagnes
-      mp: 0,  // matchs perdus
-      ip: 0,  // ippons pour
-      ic: 0,  // ippons contre
-      di: 0,  // diff ippons (ip - ic)
-      kc: 0,  // keikoku contre
-      kp: 0,  // keikoku pour
-      points: 0 // points (1 pt par victoire)
-    };
-  });
-
-  // calcule mt : recup total matchs pour chaque participant
-  if (poolMatches.value && poolMatches.value.length > 0) {
-    poolMatches.value.forEach(match => {
-      if (match.idPlayer1 && stats[match.idPlayer1]) {
-        stats[match.idPlayer1].mt++;
-      }
-      if (match.idPlayer2 && stats[match.idPlayer2]) {
-        stats[match.idPlayer2].mt++;
-      }
-    });
-  }
-
-  // parcours des matchs finis pour modifs stats
-  poolMatches.value.forEach(match => {
-    // on ne prend en compte que les matchs finis (si idWinner existe)
-    if (!match.idWinner) return;
-    const p1 = match.idPlayer1;
-    const p2 = match.idPlayer2;
-    // inc mj : matchs joues pour les deux
-    if (stats[p1]) stats[p1].mj++;
-    if (stats[p2]) stats[p2].mj++;
-    // modif victoires et defaites selon idWinner
-    if (match.idWinner === p1) {
-      if (stats[p1]) {
-        stats[p1].mg++;         // match gagne
-        stats[p1].points += 1;   // 1 pt par victoire
-      }
-      if (stats[p2]) stats[p2].mp++; // match perdu
-    } else if (match.idWinner === p2) {
-      if (stats[p2]) {
-        stats[p2].mg++;
-        stats[p2].points += 1;
-      }
-      if (stats[p1]) stats[p1].mp++;
-    }
-    // recup ippons et keikokus
-    if (stats[p1]) {
-      stats[p1].ip += match.ipponsPlayer1 || 0;
-      stats[p1].ic += match.ipponsPlayer2 || 0;
-      stats[p1].kc += match.keikokusPlayer1 || 0;
-      stats[p1].kp += match.keikokusPlayer2 || 0;
-    }
-    if (stats[p2]) {
-      stats[p2].ip += match.ipponsPlayer2 || 0;
-      stats[p2].ic += match.ipponsPlayer1 || 0;
-      stats[p2].kc += match.keikokusPlayer2 || 0;
-      stats[p2].kp += match.keikokusPlayer1 || 0;
-    }
-  });
-
-  // calc diff ippons : di = ip - ic
-  Object.keys(stats).forEach(id => {
-    stats[id].di = stats[id].ip - stats[id].ic;
-  });
-
-  // conversion en tableau et tri par pts, diff, puis mg
-  const standArr = Object.values(stats);
-  standArr.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.di !== a.di) return b.di - a.di;
-    if (b.mg !== a.mg) return b.mg - a.mg;
-    return 0;
-  });
-
-  return standArr;
+  return determinePoolRanking(props.pool.participants, poolMatches.value);
 });
+
+
+// recupere l historique des matchs d'un joueur
+const getMatchHistory = (participantId) => {
+  return poolMatches.value
+    .filter(match => match.idPlayer1 === participantId || match.idPlayer2 === participantId)
+    .map(match => ({
+      won: match.idWinner === participantId,  // true si gagné, False sinon
+      played: match.idWinner !== null // true si le match est terminé
+    }));
+};
+
 
 // fonction edit : ouvre editeur de match si match pas fini
 function editMatch(match) {
@@ -381,7 +428,8 @@ function getMedalClass(index) {
 .standings th,
 .standings td {
   padding: 8px;
-  text-align: center;
+  text-align: left;
+  vertical-align: middle;
 }
 
 /* en-tete du tableau, fond leger */
@@ -457,30 +505,37 @@ function getMedalClass(index) {
   color: #444;
   /* technique de clamp pour 2 lignes */
   display: -webkit-box;
-  line-clamp: 2;      /* nombre maximum de lignes */
+  line-clamp: 2;
+  /* nombre maximum de lignes */
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
   line-height: 1.2em;
-  height: 2.4em; /* 1.2em x 2 lignes */
+  height: 2.4em;
+  /* 1.2em x 2 lignes */
 }
 
 .stat small {
-  font-size: 0.75em; /* texte plus petit */
-  color: #555;       /* couleur legerement grise */
-  margin-right: 4px; /* petit espacement */
+  font-size: 0.75em;
+  /* texte plus petit */
+  color: #555;
+  /* couleur legerement grise */
+  margin-right: 4px;
+  /* petit espacement */
 }
 
 
 /* style du drapeau, taille fixe, ajustement et bordure arrondie */
 /* taille du drapeau et espace entre le drapeau et le nom */
 .flag {
-  width: 24px; /* taille du drapeau */
+  width: 24px;
+  /* taille du drapeau */
   height: 16px;
   object-fit: cover;
   border-radius: 3px;
-  margin-right: 8px; /* espace entre le drapeau et le nom */
+  margin-right: 8px;
+  /* espace entre le drapeau et le nom */
   margin-top: 0px;
 }
 
@@ -513,6 +568,10 @@ function getMedalClass(index) {
   margin-bottom: 2px;
 }
 
+.a {
+  color: rgb(26, 83, 242) !important;
+}
+
 /* separateur "vs", taille de police, poids, marge horizontale et couleur */
 .versus {
   font-size: 1.1em;
@@ -542,8 +601,95 @@ function getMedalClass(index) {
   pointer-events: none;
 }
 
+.ligne-participant {
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+
 /* etat du match en attente, couleur */
 .match-status.pending {
   color: #d32f2f;
 }
+
+/* conteneur du nom, prénom et drapeau */
+.participant-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* conteneur des bulles d'historique */
+.match-history {
+  display: flex;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+/* bulles d'historique de matchs */
+.history-bubble {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: gray;
+  /* De base, les bulles sont grises */
+  display: inline-block;
+  box-shadow: 1px 1px 1px rgb(101, 112, 255);
+}
+
+/* gagné = vert */
+.history-bubble.win {
+  background-color: green;
+}
+
+/* perdu = rouge */
+.history-bubble.lose {
+  background-color: red;
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.participant-item:hover {
+  background: rgba(0, 120, 255, 0.1);
+}
+
+/* animation de zoom pour le participant recherché */
+.highlight-participant {
+  animation: zoomHighlight 3s ease-in-out;
+}
+
+@keyframes zoomHighlight {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.empty-placeholder {
+  text-align: center;
+  font-size: 1rem;
+  color: #888;
+  padding: 20px;
+  font-style: italic;
+  background: #f8f8f8;
+  border-radius: 8px;
+}
+
+.padding-10-px {
+  padding: 10px;
+}
+
 </style>

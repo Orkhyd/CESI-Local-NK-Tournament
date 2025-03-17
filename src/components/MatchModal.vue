@@ -222,8 +222,7 @@ const disableCounters = (player) => {
 // fction pour confirmer définitivement le vainqueur
 const confirmWinner = async () => {
   const finalWinner = selectedWinner.value || idWinner.value; // prend le gagnant sélectionné ou normal
-
-  await matchService.update(match.value.idMatch, {
+  await matchService.update(match.value.idMatch, match.value.idMatchType, {
     ipponsPlayer1: ipponsPlayer1.value,
     ipponsPlayer2: ipponsPlayer2.value,
     keikokusPlayer1: keikokusPlayer1.value,
@@ -235,6 +234,7 @@ const confirmWinner = async () => {
   showWinnerConfirmation.value = false;
   selectedWinner.value = null; // reinit après validation
 
+  stopTimer();
   closeModal();
 };
 
@@ -426,7 +426,7 @@ onUnmounted(() => {
 
 // met a jour en direct les scores du match
 watch([ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2], async () => {
-  await matchService.update(match.value.idMatch, {
+  await matchService.update(match.value.idMatch, match.value.idMatchType, {
     ipponsPlayer1: ipponsPlayer1.value,
     ipponsPlayer2: ipponsPlayer2.value,
     keikokusPlayer1: keikokusPlayer1.value,

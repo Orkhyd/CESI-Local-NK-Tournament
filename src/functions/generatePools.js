@@ -1,4 +1,3 @@
-// generatePools.js
 // genere des poules de 3 a 6 combattants de facon equilibree
 // et indique dans chaque poule quelles positions se qualifient pour la phase suivante
 
@@ -19,11 +18,11 @@ export function generatePools(participants) {
     nbPools = 1;
   } else if (total <= 8) {
     nbPools = 2;
-  } else if (total <= 11) {
+  } else if (total <= 12) {
     nbPools = 3;
-  } else if (total <= 14) {
+  } else if (total <= 16) {
     nbPools = 4;
-  } else if (total <= 17) {
+  } else if (total <= 25) {
     nbPools = 5;
   } else {
     nbPools = 6;
@@ -46,7 +45,15 @@ export function generatePools(participants) {
     const poolSize = i < r ? q + 1 : q;
     const slice = realParticipants.slice(startIndex, startIndex + poolSize);
     startIndex += poolSize;
-    pools.push(buildPool(slice, i + 1, qualifyingPositions));
+    pools.push(buildPool(slice, `Poule ${i + 1}`, qualifyingPositions));
+  }
+
+  console.log(nbPools);
+
+  // si on a plusieurs poules, on genere une poule finale vide avec un libellé spécifique
+  if (nbPools > 1) {
+    const finalPool = buildPool([], "Poule Finale", []); // poule finale vide avec nom spécifique
+    pools.push(finalPool);
   }
 
   console.log(pools);
@@ -54,71 +61,36 @@ export function generatePools(participants) {
 }
 
 // construit une poule avec ses participants, matchs et classement
-function buildPool(participants, indexPool, qualifyingPositions) {
-  const matches = generateRoundRobinMatches(participants, indexPool); // genere les matchs en round-robin
-
-  const totalMatches = participants.length - 1;
-  const standings = participants.map((p) => ({
-    participant: p,
-    mg: 0, // matchs gagnes
-    mp: 0, // matchs perdus
-    mj: 0, // matchs joues
-    mt: totalMatches, // matchs theoriques
-    ip: 0, // points inscrits
-    ic: 0, // points encaisses
-    di: 0, // difference de points
-    kp: 0, // indicateur (ex : avertissements)
-    kc: 0,
-    points: 0,
-  }));
+function buildPool(participants, label, qualifyingPositions) {
+  const matches = generateRoundRobinMatches(participants, label); // genere les matchs en round-robin
 
   return {
-    label: `Poule ${indexPool}`,
+    label, // On utilise directement le libellé passé en paramètre
     participants,
     matches,
-    standings,
     isComplete: false,
-    // indique quelles positions se qualifient pour la phase finale
-    // pour plusieurs poules, seul le premier qualifie
     qualifyingPositions,
   };
 }
 
 // genere les matchs en round-robin avec un ordre equitable
-function generateRoundRobinMatches(participants, indexPool) {
+function generateRoundRobinMatches(participants, label) {
   const matches = [];
   const n = participants.length;
 
-  // si le nombre de participants est impair, on ajoute un participant fictif
-  const hasDummy = n % 2 !== 0;
-  const dummyParticipant = hasDummy ? { id: -1 } : null;
-  const participantsWithDummy = hasDummy ? [...participants, dummyParticipant] : participants;
-
-  // nombre de tours necessaires
-  const rounds = n - 1;
-
-  for (let round = 0; round < rounds; round++) {
-    for (let i = 0; i < n / 2; i++) {
-      const player1 = participantsWithDummy[i];
-      const player2 = participantsWithDummy[n - 1 - i];
-
-      // on ignore les matchs avec le participant fictif
-      if (player1.id !== -1 && player2.id !== -1) {
-        matches.push({
-          idMatch: `P${indexPool}_${player1.id}vs${player2.id}_R${round + 1}`,
-          player1,
-          player2,
-          score1: null,
-          score2: null,
-          winner: null,
-          keikoku1: 0,
-          keikoku2: 0,
-        });
-      }
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      matches.push({
+        idMatch: `${label}_${participants[i].id}vs${participants[j].id}`,
+        player1: participants[i],
+        player2: participants[j],
+        score1: null,
+        score2: null,
+        winner: null,
+        keikoku1: 0,
+        keikoku2: 0,
+      });
     }
-
-    // rotation des participants pour le prochain tour
-    participantsWithDummy.splice(1, 0, participantsWithDummy.pop());
   }
 
   return matches;
@@ -130,31 +102,4 @@ function shuffleArray(arr) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-}
-
-// genere la poule finale (phase des vainqueurs) en ne prenant que les premiers qualifies
-export function generateFinalistPool(pools) {
-  const finalists = [];
-  pools.forEach((pool) => {
-    // ici, on prend les positions indiquees dans pool.qualifyingPositions
-    // par defaut, cela correspond au premier de la poule (index 0)
-    pool.qualifyingPositions.forEach((pos) => {
-      // on considere que le classement est deja trie (le premier est le meilleur)
-      const qualified = pool.standings[pos - 1]; // conversion 1-indexe -> 0-indexe
-      if (qualified) finalists.push(qualified.participant);
-    });
-  });
-
-  // on regroupe les vainqueurs dans une nouvelle phase finale
-  const finalResult = generatePools(finalists).structure;
-  finalResult.forEach((fPool, idx) => {
-    fPool.label = `Finale ${idx + 1}`;
-    fPool.matches.forEach((match) => {
-      if (match.idMatch.startsWith('P')) {
-        match.idMatch = match.idMatch.replace(/^P/, 'F');
-      }
-    });
-  });
-  console.log(finalResult)
-  return finalResult;
 }

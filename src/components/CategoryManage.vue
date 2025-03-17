@@ -14,7 +14,7 @@
         </VaTabs>
       </template>
       <template #right>
-        <div>
+        <div v-if="activeTab !== 'statistics'"> <!-- cache le bouton si on est sur la partie statistiques de la catégoorie -->
           <va-button @click="showParticipants = !showParticipants" round icon="visibility" color="#ffffff">
             Afficher les Participants
           </va-button>
@@ -38,7 +38,7 @@
 
       <!-- onglet "stats" -->
       <div v-else-if="activeTab === 'statistics'">
-        <CategoryStatistics :tournamentId="props.tournamentId" :category="props.category" />
+        <CategoryStatistics :category="props.category" :participants="participants" />
       </div>
     </div>
   </div>
@@ -52,7 +52,7 @@
   // importation des composants conditionnels
   import BracketType from "@/components/Bracket/BracketType.vue";
   import PoolList from "@/components/Pool/PoolList.vue";
-  import CategoryStatistics from "@/components/CategoryStatistics.vue";
+  import CategoryStatistics from "@/components/Statistics/CategoryStatistics.vue";
   import ParticipantList from "./Bracket/ParticipantsList.vue";
   
   const props = defineProps({
@@ -91,6 +91,12 @@
       console.error("Erreur lors de la récupération des participants :", error);
     }
   };
+
+  watch(activeTab, (newTab) => {
+  if (newTab === "statistics") {
+    showParticipants.value = false; // ferme la liste des participants
+  }
+});
   
   // chg les participants au montage et si la catégorie change
   onMounted(fetchParticipants);

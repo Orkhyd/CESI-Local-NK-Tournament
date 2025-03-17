@@ -22,8 +22,8 @@ export const poolManagerService = {
       const idPool = await poolService.create({
         poolManagerId: idPoolManager,
         label: pool.label,
-        participants: pool.participants,
         qualifyingPositions: pool.qualifyingPositions,
+        participants: pool.participants
       });
 
       // cree les matchs de la poule via MatchService
