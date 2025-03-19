@@ -1,5 +1,5 @@
 <template>
-  <div class="tournament-brackets">
+  <div id="bracketContainer" class="tournament-brackets" ref="bracketContainer">
     <div class="bracket">
       <!-- boucle sur chaque round (phase du tournoi) -->
       <template v-for="(round, roundIndex) in rounds" :key="round.id">
@@ -11,7 +11,7 @@
 
           <div class="round">
             <!-- boucle sur les matchs du round en cours -->
-            <template v-for="(match, matchIndex) in round.matches" :key="match.idMatch">
+            <template v-for="(match, matchIndex) in round.matches" :key="match.idMatch" class="match-match">
               <MatchCard :match="match" :disabled="match.idWinner !== null" :participants="participants"
                 @updateBracket="loadRounds" :id="'match-' + match.idMatch" ref="matchRefs"
                 :class="{ 'highlight-match': highlightedMatchId === match.idMatch }" />
@@ -22,6 +22,7 @@
       </template>
     </div>
   </div>
+  <canvas id="minimap"></canvas>
 </template>
 
 <script setup>
@@ -29,6 +30,7 @@ import { ref, watch, onMounted, nextTick } from "vue";
 import MatchCard from "./MatchCard.vue";
 import { getRoundsByBracket } from "@/replicache/stores/Bracket/roundStore";
 import { getMatchesByRound } from "@/replicache/stores/matchStore";
+import pagemap from "pagemap";
 
 const props = defineProps({
   bracket: {
@@ -47,7 +49,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update']);
 
-
 // stockage des rounds avec leurs matchs
 const rounds = ref([]);
 
@@ -55,6 +56,8 @@ const rounds = ref([]);
 const isDataReady = ref(false);
 
 const highlightedMatchId = ref(null); // match en surbrillance quand recherche d'un joueur
+
+const bracketContainer = ref(null); // ref au conteneur scrollable
 
 /**
  * fnnction pour charger les rounds et les matchs associés
@@ -92,14 +95,14 @@ const loadRounds = async () => {
             if (!player1 && match.idPreviousMatch1) {
               const previousMatch = matchMap.get(match.idPreviousMatch1);
               player1 = previousMatch && !previousMatch.idWinner
-                ? { id: match.idPreviousMatch1, lastName: `*Gagnant de ${match.idPreviousMatch1}` }
+                ? { id: match.idPreviousMatch1, lastName: `*Gagnant de ${match.idPreviousMatch1.split("-")[0]}` }
                 : props.participants.find(p => p.id === previousMatch?.idWinner) || { id: previousMatch?.idWinner, lastName: "Inconnu" };
             }
 
             if (!player2 && match.idPreviousMatch2) {
               const previousMatch = matchMap.get(match.idPreviousMatch2);
               player2 = previousMatch && !previousMatch.idWinner
-                ? { id: match.idPreviousMatch2, lastName: `*Gagnant de ${match.idPreviousMatch2}` }
+                ? { id: match.idPreviousMatch2, lastName: `*Gagnant de ${match.idPreviousMatch2.split("-")[0]}` }
                 : props.participants.find(p => p.id === previousMatch?.idWinner) || { id: previousMatch?.idWinner, lastName: "Inconnu" };
             }
 
@@ -111,10 +114,17 @@ const loadRounds = async () => {
           })
           // tri naturel sur l'ID du match pour emttre du plus petit au plus grand
           .sort((a, b) => {
-            const aNum = parseInt(a.idMatch.replace(/\D/g, ''), 10);
-            const bNum = parseInt(b.idMatch.replace(/\D/g, ''), 10);
+            const extractBaseId = (idMatch) => idMatch.split("-")[0]; // prend tout avant le "-"
+
+            const baseA = extractBaseId(a.idMatch);
+            const baseB = extractBaseId(b.idMatch);
+
+            const aNum = parseInt(baseA.replace(/\D/g, ''), 10);
+            const bNum = parseInt(baseB.replace(/\D/g, ''), 10);
+
             return aNum - bNum;
           });
+
 
         return { ...round, matches };
       });
@@ -132,7 +142,6 @@ const loadRounds = async () => {
     console.error("❌ erreur lors de la recuperation des rounds et matchs :", error);
   }
 };
-
 
 
 /**
@@ -207,16 +216,40 @@ watch(() => props.searchParticipant, async (searchParticipant) => {
 
 // chargement des données et exécute loadRounds()
 onMounted(async () => {
-  // verif si les données sont déjà prêtes au montage
   if (props.bracket?.id && props.participants?.length) {
     isDataReady.value = true;
+    await loadRounds(); 
 
-    loadRounds();
+    await nextTick();
+
+    // init pagemap après que le contenu est rendu
+    if (bracketContainer.value) {
+      pagemap(document.querySelector('#minimap'), {
+        viewport: bracketContainer.value,
+        styles: {
+          '.match-content': 'rgba(0, 0, 0, 0.27)',
+          '.finished': 'rgba(0, 255, 0, 0.8)',
+          '.round-label': 'rgba(150, 150, 150, 0.8)',
+        },
+        back: 'rgba(240, 240, 240, 1)',
+        view: 'rgba(0, 0, 0, 0.2)',
+        drag: 'rgba(0, 0, 0, 0.2)',
+        interval: 1,
+      });
+    }
   }
 });
 </script>
 
 <style scoped>
+.tournament-brackets {
+  width: 80vw;
+  height: 75vh;
+  overflow: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
 /* style pour les titres des rounds (ex : "Demi-finale") */
 .round-label {
   text-align: center;
@@ -314,5 +347,16 @@ onMounted(async () => {
   to {
     transform: scale(1.03);
   }
+}
+
+#minimap {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 100px; 
+  height: 200px;
+  z-index: 1000;
+  border: 1px solid rgba(0, 28, 42, 1);
+  background-color: rgba(240, 240, 240, 1);
 }
 </style>

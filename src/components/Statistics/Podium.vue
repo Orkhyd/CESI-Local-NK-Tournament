@@ -1,31 +1,47 @@
 <template>
     <div class="podium-container">
-        <div class="title">🏆 {{ title }}</div>
-
-        <div class="podium">
-            <!-- 2emme place -->
-            <div class="podium__item second">
-                <div class="podium__rank">🥈</div>
-                <p v-if="ranking[1]" class="podium__name">{{ ranking[1].firstName }} {{ ranking[1].lastName }}</p>
-                <p v-if="ranking[1]" class="podium__score">{{ ranking[1].score }}</p>
-            </div>
-
-            <!-- premiere place -->
-            <div class="podium__item first">
-                <div class="podium__rank">🥇</div>
-                <p v-if="ranking[0]" class="podium__name">{{ ranking[0].firstName }} {{ ranking[0].lastName }}</p>
-                <p v-if="ranking[0]" class="podium__score">{{ ranking[0].score }}</p>
-            </div>
-
-            <!-- 3 ème place -->
-            <div class="podium__item third">
-                <div class="podium__rank">🥉</div>
-                <p v-if="ranking[2]" class="podium__name">{{ ranking[2].firstName }} {{ ranking[2].lastName }}</p>
-                <p v-if="ranking[2]" class="podium__score">{{ ranking[2].score }}</p>
-            </div>
+      <div class="title">🏆 {{ title }}</div>
+  
+      <div class="podium">
+        <!-- deuxieme place -->
+        <div class="podium__item second">
+          <div class="podium__rank">🥈</div>
+          <p
+            class="podium__name"
+            :class="'size-' + ranking.filter(p => p.rank === 2).length"
+          >
+            {{ getDisplayNames(ranking.filter(p => p.rank === 2)) }}
+          </p>
+          <p class="podium__score">{{ ranking.find(p => p.rank === 2)?.score }}</p>
         </div>
+  
+        <!-- premiere ère place -->
+        <div class="podium__item first">
+          <div class="podium__rank">🥇</div>
+          <p
+            class="podium__name"
+            :class="'size-' + ranking.filter(p => p.rank === 1).length"
+          >
+            {{ getDisplayNames(ranking.filter(p => p.rank === 1)) }}
+          </p>
+          <p class="podium__score">{{ ranking.find(p => p.rank === 1)?.score }}</p>
+        </div>
+  
+        <!-- troisieme place -->
+        <div class="podium__item third">
+          <div class="podium__rank">🥉</div>
+          <p
+            class="podium__name"
+            :class="'size-' + ranking.filter(p => p.rank === 3).length"
+          >
+            {{ getDisplayNames(ranking.filter(p => p.rank === 3)) }}
+          </p>
+          <p class="podium__score">{{ ranking.find(p => p.rank === 3)?.score }}</p>
+        </div>
+      </div>
     </div>
-</template>
+  </template>  
+  
 
 
 <script setup>
@@ -33,6 +49,14 @@ defineProps({
     title: { type: String, required: true },
     ranking: { type: Array, required: true }, // 3 joeuurs max
 });
+
+const getDisplayNames = (players) => {
+  if (players.length <= 3) {
+    return players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
+  }
+  return players.slice(0, 2).map(p => `${p.firstName} ${p.lastName}`).join(', ') + ` et ${players.length - 2} autres`;
+};
+
 </script>
 
 <style scoped>
@@ -130,6 +154,26 @@ defineProps({
     font-weight: bold;
     color: white;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.podium__name.size-2 {
+  font-size: 12px;
+}
+
+.podium__name.size-3, .podium__name.size-4 {
+  font-size: 10px;
+}
+
+.podium__name.size-5, .podium__name.size-6 {
+  font-size: 9px;
+}
+
+.podium__name.size-7, .podium__name.size-8 {
+  font-size: 8px;
+}
+
+.podium__name.size-9, .podium__name.size-10 {
+  font-size: 7px;
 }
 
 .podium__score {

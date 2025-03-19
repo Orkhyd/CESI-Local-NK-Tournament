@@ -37,4 +37,9 @@ export async function getBracketByCategory(categoryId) {
   });
 }
 
+export async function getBracketById(bracketId) {
+  return await rep.query(async (tx) => {
+    return await tx.get(`bracket/${bracketId}`);
+  });
+}
 

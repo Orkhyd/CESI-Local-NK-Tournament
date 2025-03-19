@@ -77,13 +77,11 @@
           - 5s
         </va-button>
 
-
-
         <va-button class="timer-btn" size="medium" :icon="match?.timer?.isRunning ? 'stop_circle' : 'play_arrow'"
           color="primary" @click="match?.timer?.isRunning ? stopTimer() : startTimer()" />
 
         <va-button class="timer-btn" size="medium" @click="addTime(5)" icon="keyboard_double_arrow_right"
-          color="success">
+          color="success" :disabled="isAddTimeDisabled">
           + 5s
         </va-button>
 
@@ -237,6 +235,15 @@ const confirmWinner = async () => {
   stopTimer();
   closeModal();
 };
+
+const isAddTimeDisabled = computed(() => {
+  if (match.value?.timer?.currentTime > 0) {
+    return match?.value?.timer?.currentTime + 5 > 180; // dépasse 180s en temps réglementaire
+  } else if (match.value?.timer?.additionalTime !== -1) {
+    return match?.value?.timer?.additionalTime + 5 > 60; // dépasse 60s en temps additionnel
+  }
+  return true; // si on ne peut pas ajouter de temps
+});
 
 
 // fonction pour gérer le clic sur le bouton "Déclarer vainqueur"

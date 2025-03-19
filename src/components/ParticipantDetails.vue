@@ -147,7 +147,13 @@ const props = defineProps({
 });
 
 const matches = ref([]);
-const filteredMatches = computed(() => matches.value.filter(match => match.idWinner !== null));
+
+const filteredMatches = computed(() =>
+  matches.value.filter(match =>
+    match.idWinner !== null && match.idPlayer1 !== -1 && match.idPlayer2 !== -1
+  )
+);
+
 
 const totalWins = computed(() =>
   filteredMatches.value.filter(match => match.idWinner === props.participant.id).length
@@ -190,7 +196,7 @@ const totalKeikokusReceived = computed(() =>
 const averageMatchTime = computed(() => {
   if (filteredMatches.value.length === 0) return "Non défini";
   const totalDuration = filteredMatches.value.reduce(
-    (sum, match) => sum + (180 - match.timer.currentTime + Math.max(match.timer.additionalTime, 0)),
+    (sum, match) => sum + getMatchDuration(match),
     0
   );
   return formatTime(Math.round(totalDuration / filteredMatches.value.length));
@@ -241,8 +247,17 @@ function formatTime(seconds) {
 
 //  acalcul de la durée d'un match
 function getMatchDuration(match) {
-  return 180 - match.timer.currentTime + Math.max(match.timer.additionalTime, 0);
+  if (!match.timer) return 0;
+
+  let totalTime = 180 - match.timer.currentTime; // temps écoulé en temps réglementaire
+
+  if (match.timer.additionalTime !== -1) {
+    totalTime += (60 - match.timer.additionalTime); // ajouter le temps additionnel écoulé
+  }
+
+  return totalTime;
 }
+
 
 // fnc pour obtenir le prénom du joueur à partir de son ID
 function getPlayerFirstName(playerId) {

@@ -9,7 +9,6 @@ export const roundService = {
       idBracket,
       label,
     });
-
     return idRound;
   },
 

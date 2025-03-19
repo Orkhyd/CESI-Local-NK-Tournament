@@ -34,3 +34,10 @@ export async function getRoundsByBracket(idBracket) {
     return rounds;
   });
 }
+
+// recup un round par son ID
+export async function getRoundById(idRound) {
+  return await rep.query(async (tx) => {
+    return await tx.get(`round/${idRound}`);
+  });
+}

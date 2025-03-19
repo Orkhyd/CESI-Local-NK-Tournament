@@ -1,51 +1,59 @@
 <template>
-  <!-- on englobe toute la vue dans un conteneur qui scrolle -->
-  <div class="pool-list-scroll">
-
+  <div class="pool-list-scroll" ref="poolListScroll">
     <!-- loading -->
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
       <p>Génération des poules...</p>
     </div>
 
+    <!-- aucune poule générée -->
     <div v-else-if="phases.length === 0" class="empty-state">
       <p>Aucune poule générée</p>
     </div>
 
-    <!-- affichage normal des phases -->
-    <div v-else>
-      <div v-for="(phase, phaseIndex) in phases" :key="`phase_${phaseIndex}`" class="phase-block">
-        <h2 style="margin-bottom: 5px;">{{ phase.label }}</h2>
-        <div class="pools-grid">
-          <Pool v-for="(pool, idx) in filteredPools(phase.pools)" :key="`pool_${phaseIndex}_${idx}`" :pool="pool"
-            @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
-            :search-participant="props.searchParticipant" :participants="props.participants" />
-        </div>
+    <!-- affichage des phases -->
+    <div v-elseclass="stepper - container">
+      <!-- navigation -->
+      <VaStepper v-model="currentStep" :steps="stepperSteps" :navigation-disabled="!allPoolsComplete" controls-hidden>
+        <!-- etape 1 : Poules initiales -->
+        <template #step-content-0>
+          <div v-for="(phase, phaseIndex) in phases" :key="`phase_${phaseIndex}`" class="phase-block">
+            <h2 style="margin-bottom: 5px;">{{ phase.label }}</h2>
+            <div class="pools-grid">
+              <Pool v-for="(pool, idx) in filteredPools(phase.pools)" :key="`pool_${phaseIndex}_${idx}`" :pool="pool"
+                @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
+                :search-participant="props.searchParticipant" :participants="props.participants" />
+            </div>
+          </div>
+        </template>
 
-
-      </div>
-
-      <!-- Affichage de la Poule Finale si elle existe -->
-      <div v-if="finalPool" class="final-pool-container">
-        <h2 class="final-pool-title">🏆 Poule Finale de Classement 🏆</h2>
-        <Pool :pool="finalPool" class="final-pool" @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
-          :search-participant="props.searchParticipant" :participants="props.participants" />
-      </div>
-
+        <!-- etape 2 : poule finale, affichée uniquement si une poule finale existe -->
+        <template #step-content-1 v-if="finalPool">
+          <div class="final-pool-container">
+            <h2 class="final-pool-title">🏆 Poule Finale 🏆</h2>
+            <Pool :pool="finalPool" class="final-pool" @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
+              :search-participant="props.searchParticipant" :participants="props.participants" />
+          </div>
+        </template>
+      </VaStepper>
     </div>
 
-    <!-- modal du match  -->
+    <!-- modal du match -->
     <MatchModal v-if="matchEditorOpen" :matchId="currentMatchId" @close="closeMatchEditor" />
   </div>
+  <canvas id="minimap"></canvas>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watchEffect } from 'vue';
+import { ref, onMounted, computed, watchEffect, nextTick } from 'vue';
 import Pool from './Pool.vue';
 import MatchModal from '@/components/MatchModal.vue';
 import { poolManagerService } from '@/replicache/services/Pool/poolManagerService';
-import { getPoolManagerByCategory } from '@/replicache/stores/Pool/poolManagerStore'
-import { getPoulesByPoolManagerId, rep } from '@/replicache/stores/Pool/poolStore'
+import { getPoolManagerByCategory } from '@/replicache/stores/Pool/poolManagerStore';
+import { getPoulesByPoolManagerId } from '@/replicache/stores/Pool/poolStore';
+import { matchService } from "@/replicache/services/matchService";
+import { getMatchesByPool } from "@/replicache/stores/matchStore";
+import pagemap from 'pagemap';
 
 const props = defineProps({
   participants: {
@@ -59,35 +67,32 @@ const props = defineProps({
   searchParticipant: {
     type: Object,
     default: null,
-  }
+  },
 });
 
 const loading = ref(false);
 const phases = ref([]);
 const poolManagerId = ref(null);
-
-// pour la matchmodal.vue
 const matchEditorOpen = ref(false);
 const currentMatchId = ref(null);
+const refreshMatches = ref(0);
+const currentStep = ref(0); // etape actuelle du stepper
 
-/* charge ou cree un poolmanager et recupere les phases */
+// charge ou crée un poolmanager et récupère les phases
 const loadOrCreatePoolManager = async () => {
+  if (loading.value) return; 
   loading.value = true;
   try {
-    // verifie si un poolmanager existe deja pour cette categorie
     const existingPoolManager = await getPoolManagerByCategory(props.category.id);
 
     if (existingPoolManager) {
       poolManagerId.value = existingPoolManager.id;
     } else {
-      // cree un nouveau poolmanager si aucun n'existe
       poolManagerId.value = await poolManagerService.create(props.category.id, props.participants);
     }
 
-    // recupere les poules du poolmanager
     const poules = await getPoulesByPoolManagerId(poolManagerId.value);
 
-    // structure les phases
     poules.sort((a, b) => {
       const numA = parseInt(a.label.replace(/\D/g, ""), 10);
       const numB = parseInt(b.label.replace(/\D/g, ""), 10);
@@ -100,7 +105,6 @@ const loadOrCreatePoolManager = async () => {
         pools: poules,
       },
     ];
-
   } catch (error) {
     console.error('Erreur lors du chargement des poules:', error);
     alert('Erreur lors du chargement des poules');
@@ -111,24 +115,27 @@ const loadOrCreatePoolManager = async () => {
 
 const finalPool = computed(() => {
   if (!phases.value.length || !phases.value[0]?.pools) return null;
+
+  // si une seule poule existe, elle est considérée comme la finale
+  if (phases.value[0].pools.length === 1) {
+    return phases.value[0].pools[0];
+  }
+
+  // sinon, recherche une poule qui porte le label "Poule Finale"
   return phases.value[0].pools.find(pool => pool.label === "Poule Finale") || null;
 });
 
+
 const filteredPools = (pools) => {
   if (!pools) return [];
-  console.log(pools.filter(pool => pool?.label !== "Poule Finale"))
   return pools.filter(pool => pool?.label !== "Poule Finale");
 };
 
-
-/* ouvre la modale d'edition de match */
 const showMatchEditor = (match) => {
   currentMatchId.value = match.idMatch;
   matchEditorOpen.value = true;
 };
 
-const refreshMatches = ref(0);
-/* ferme la modale */
 const closeMatchEditor = () => {
   matchEditorOpen.value = false;
   currentMatchId.value = null;
@@ -136,11 +143,49 @@ const closeMatchEditor = () => {
   loadOrCreatePoolManager();
 };
 
-// charge les donnees au montage du composant
-onMounted(() => {
-  loadOrCreatePoolManager();
+const poolListScroll = ref(null); // ref au conteneur scrollable
+
+onMounted(async () => {
+  await loadOrCreatePoolManager();
+
+  // Attendre que le DOM soit mis à jour
+  await nextTick();
+
+  // Initialiser pagemap après que le contenu est rendu
+  if (poolListScroll.value) {
+    pagemap(document.querySelector('#minimap'), {
+      viewport: poolListScroll.value,
+      styles: {
+        '.pool-container': 'rgba(210, 210, 210, 0.5)', // Couleur pour la poule finale
+        '.match-card': 'rgba(203, 203, 255, 0.5)', // Couleur pour la poule finale
+        '.standings': 'rgba(210, 210, 210, 0.9)', // Couleur pour la poule finale
+      },
+      back: 'rgba(240, 240, 240, 1)', 
+      view: 'rgba(0, 0, 0, 0.2)', 
+      drag: 'rgba(0, 0, 0, 0.2)', 
+      interval: 1,
+    });
+    
+  }
 });
 
+
+// def les étapes du stepper
+const stepperSteps = computed(() => {
+  // si une seule poule, on affiche une seule étape
+  if (phases.value.length === 1 && phases.value[0].pools.length === 1) {
+    return [{ label: 'Phase Unique' }]; // affichage d'une seule étape
+  }
+  
+  // sinon, on affiche les étapes classiques
+  return [
+    { label: 'Poules Initiales', completed: allPoolsComplete.value },
+    { label: 'Poule Finale', disabled: !allPoolsComplete.value },
+  ];
+});
+
+
+// verif si toutes les poules initiales sont terminées
 const allPoolsComplete = computed(() => {
   if (!phases.value.length || !phases.value[0]?.pools?.length) return false;
 
@@ -149,7 +194,36 @@ const allPoolsComplete = computed(() => {
     .every(pool => pool.isComplete);
 });
 
+// si une seule poule existe, la poule finale est la poule unique
+watchEffect(() => {
+  if (phases.value.length === 1 && phases.value[0].pools.length === 1) {
+    currentStep.value = 0; // reste sur la phase 1 si une seule poule
+  }
+});
 
+// genere les matchs de la poule finale
+watchEffect(async () => {
+  if (allPoolsComplete.value && finalPool.value) {
+    try {
+      const existingMatches = await getMatchesByPool(finalPool.value.id);
+
+      if (existingMatches.length > 0) {
+        return;
+      }
+
+      await matchService.generatePoolFinalMatchs(
+        poolManagerId.value,
+        finalPool.value.id,
+        finalPool.value.participants,
+      );
+
+      refreshMatches.value++;
+      loadOrCreatePoolManager();
+    } catch (error) {
+      console.error("Erreur lors de la génération des matchs de la poule finale :", error);
+    }
+  }
+});
 </script>
 
 
@@ -157,7 +231,7 @@ const allPoolsComplete = computed(() => {
 /* --- conteneur global qui scrolle sur toute la page (width 100%) --- */
 .pool-list-scroll {
   width: 100%;
-  height: 80vh;
+  height: 75vh;
   overflow-y: auto;
   padding: 1rem;
   box-sizing: border-box;
@@ -174,6 +248,16 @@ const allPoolsComplete = computed(() => {
   align-items: center;
   padding: 40px 0;
 }
+
+.stepper-container {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: white;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
 
 .spinner {
   width: 30px;
@@ -209,6 +293,7 @@ const allPoolsComplete = computed(() => {
 .pools-grid {
   display: grid;
   gap: 20px;
+  background: white;
 }
 
 .btn {
@@ -244,32 +329,38 @@ const allPoolsComplete = computed(() => {
   margin-top: 20px;
 }
 
-/* Conteneur spécifique pour la Poule Finale */
 .final-pool-container {
   margin-top: 40px;
-  padding: 20px;
-  background: #f9f5dc; /* Couleur dorée claire */
-  border: 3px solid #d4af37; /* Bordure dorée */
+  padding: 1ch;
+  border: 3px solid #d4af37;
   border-radius: 12px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
 }
 
-/* Titre de la Poule Finale */
 .final-pool-title {
   color: #b8860b;
   font-size: 24px;
   font-weight: bold;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   text-transform: uppercase;
 }
 
-/* Style spécial pour la Poule Finale */
 .final-pool {
-  border: 2px solid #b8860b; /* Doré foncé */
-  background: #fffaf0; /* Fond beige clair */
-  padding: 15px;
+  border: 2px solid #b8860b;
+  background: #fffaf0;
+  padding: 10px;
   border-radius: 10px;
 }
 
+#minimap {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 100px;
+  height: 200px;
+  z-index: 1000;
+  border: 1px solid rgba(0, 28, 42, 1);
+  background-color: rgba(240, 240, 240, 1);
+}
 </style>
