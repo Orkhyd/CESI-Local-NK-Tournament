@@ -51,8 +51,17 @@
             </thead>
             <tbody>
               <tr v-for="(standing, index) in sortedStandings" :key="standing.participant.id" class="ligne-participant"
-                :class="[getMedalClass(index), { qualifying: index < pool.qualifyingPositions[0] }]">
-                <td>{{ index + 1 }}</td>
+                :class="[getMedalClass(index), { 'same-rank': sortedStandings.filter(s => s.rank === standing.rank).length > 1 }]">
+                <td>
+                  <span class="rank" :class="{'qualified-first': standing.position === 1}">
+                    {{ standing.position }}
+                    <!-- affiche l icône d'alerte si plusieurs joueurs partagent la première place -->
+                    <VaIcon v-if="standing.position === 1 && sortedStandings.filter(s => s.position === 1).length > 1"
+                      name="warning" class="alert-icon" title="La place du joueur dans le classement n'est pas réelle car il est a égalité avec un/d'autres joueur(s)."/>
+                  </span>
+                </td>
+
+
                 <td>
                   <VaMenu preset="context" :options="['Détails']"
                     @selected="(option) => openModal(standing.participant)">
@@ -72,7 +81,6 @@
                     </span>
                   </div>
                 </td>
-
                 <td>{{ standing.mj }}/{{ standing.mt }}</td>
                 <td>{{ standing.mg }}</td>
                 <td>{{ standing.mp }}</td>
@@ -82,7 +90,6 @@
                 <td>{{ standing.kp }}</td>
                 <td>{{ standing.kc }}</td>
                 <td><b>{{ standing.points }}</b></td>
-
               </tr>
             </tbody>
           </table>
@@ -101,7 +108,8 @@
         </h4>
         <div class="matches-grid" v-if="poolMatches.length > 0">
           <div v-for="match in poolMatches" :key="match.idMatch" class="match-card"
-            :class="{ completed: match.idWinner !== null }" @click="editMatch(match)">
+            :class="{ completed: match.idWinner !== null, 'additional-match': match.idMatch.includes('%ADDITIONNAL-MATCH') }"
+            @click="editMatch(match)">
             <!-- entete du match -->
             <div class="match-header">
               Match
@@ -201,7 +209,17 @@ const poolMatches = ref([]);
 // fonction recup matchs (recup des matchs de la pool)
 async function fetchPoolMatches() {
   const rawMatches = await getMatchesByPool(props.pool.id);
-  poolMatches.value = balanceMatchOrder(rawMatches);
+
+  // separe les matchs en normaux et supplémentaires
+  const normalMatches = rawMatches.filter(match => !match.idMatch.includes('%ADDITIONNAL-MATCH'));
+  const additionalMatches = rawMatches.filter(match => match.idMatch.includes('%ADDITIONNAL-MATCH'));
+
+  // appliquer l'algorithme d'équilibrage pour maximiser le repos des joueurs
+  const sortedNormalMatches = balanceMatchOrder(normalMatches);
+  const sortedAdditionalMatches = balanceMatchOrder(additionalMatches);
+
+  // fusionnne en mettant d'abord les matchs normaux, puis les supplémentaires
+  poolMatches.value = [...sortedNormalMatches, ...sortedAdditionalMatches];
 }
 
 function balanceMatchOrder(matches) {
@@ -209,7 +227,7 @@ function balanceMatchOrder(matches) {
   const playersLastMatch = new Map(); // stocke le dernier match joué par chaque joueur
 
   while (matches.length > 0) {
-    // triee les matchs pour privilégier ceux qui permette un max de repos aux joueurs
+    // trie les matchs pour maximiser le repos des joueurs
     matches.sort((a, b) => {
       const lastMatchA = Math.max(playersLastMatch.get(a.idPlayer1) || 0, playersLastMatch.get(a.idPlayer2) || 0);
       const lastMatchB = Math.max(playersLastMatch.get(b.idPlayer1) || 0, playersLastMatch.get(b.idPlayer2) || 0);
@@ -227,6 +245,7 @@ function balanceMatchOrder(matches) {
 
   return scheduledMatches;
 }
+
 
 
 // init : appel de la fonction recup au montage
@@ -290,7 +309,21 @@ const getFlagUrl = (flagBase64) => flagBase64 ? `data:image/png;base64,${flagBas
 
 // computed : calcule et trie le classement (standings)
 const sortedStandings = computed(() => {
-  return determinePoolRanking(props.pool.participants, poolMatches.value);
+  const standings = determinePoolRanking(props.pool.participants, poolMatches.value);
+
+  // trier par rank
+  standings.sort((a, b) => a.rank - b.rank);
+
+  // ajouter une propriété `position` pour afficher le rang visuelllement
+  let currentRank = 1;
+  standings.forEach((standing, index) => {
+    if (index > 0 && standing.rank !== standings[index - 1].rank) {
+      currentRank = index + 1;
+    }
+    standing.position = currentRank;
+  });
+
+  return standings;
 });
 
 
@@ -385,6 +418,7 @@ function getMedalClass(index) {
   list-style: none;
   padding: 0;
   margin: 0;
+
 }
 
 /* element de la liste des participants, disposition en flex et alignement centre */
@@ -424,12 +458,27 @@ function getMedalClass(index) {
   border-collapse: collapse;
 }
 
+.standings {
+  background: white;
+}
+
 /* cellules du tableau, padding et alignement centre */
 .standings th,
 .standings td {
   padding: 8px;
-  text-align: left;
+  text-align: left !important;
   vertical-align: middle;
+}
+
+/* alignement à gauche pour les titres et listes */
+.participants-list h4,
+.participants-list ul,
+.participants-list li,
+.standings h4,
+.standings table,
+.matches h4,
+.matches .matches-grid {
+  text-align: left !important;
 }
 
 /* en-tete du tableau, fond leger */
@@ -625,25 +674,84 @@ function getMedalClass(index) {
   margin-top: 7px;
 }
 
-/* bulles d'historique de matchs */
-.history-bubble {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: gray;
-  /* De base, les bulles sont grises */
-  display: inline-block;
-  box-shadow: 1px 1px 1px rgb(101, 112, 255);
+/* Style pour les rangs */
+.rank {
+  font-weight: bold;
+  color: #333;
 }
 
-/* gagné = vert */
+.qualified-first {
+  background-color: blue;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.alert-icon {
+  color: red;
+  margin-left: 4px;
+  width: 2px;
+  height: 2px;
+
+}
+
+.additional-match {
+  border: 2px dashed orange; /* une bordure en pointillé pour signaler l'extra */
+  position: relative;
+}
+
+.additional-match::after {
+  content: 'Départage';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: orange;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.7em;
+}
+
+.same-rank {
+  font-style: italic;
+  color: #666;
+}
+
+
+/* Style pour les lignes du tableau */
+.ligne-participant {
+  transition: background-color 0.3s;
+}
+
+.ligne-participant:hover {
+  background-color: #f5f5f5;
+}
+
+/* Style pour les bulles d'historique des matchs */
+.history-bubble {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 2px;
+}
+
 .history-bubble.win {
   background-color: green;
 }
 
-/* perdu = rouge */
 .history-bubble.lose {
   background-color: red;
+}
+
+.history-bubble:not(.win):not(.lose) {
+  background-color: #ccc;
 }
 
 .participant-item {
@@ -691,5 +799,4 @@ function getMedalClass(index) {
 .padding-10-px {
   padding: 10px;
 }
-
 </style>

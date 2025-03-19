@@ -1,12 +1,12 @@
 <template>
   <div class="match" :class="{ 'disabled-match': isDisabled }" @click="openMatchModal">
     <div class="match-content">
-      <span class="match-id">{{ match.idMatch }}</span>
+      <span class="match-id">{{ match.idMatch.split("-")[0] }}</span>
       <div class="players">
         <!-- joueur 1 -->
         <VaMenu preset="context" :options="['Détails']" @selected="(option) => openPlayerModal(option, match.player1)">
           <template #anchor>
-            <div class="player" :class="getPlayerClass(match.player1)">
+            <div class="player" :class="[ getPlayerClass(match.player1), { finished: isFinished } ]">
               <div class="player-info">
                 <img v-if="match.player1.nationalityId" :src="getFlagUrl(getCountry(match.player1.nationalityId)?.flag)"
                   alt="drapeau" class="player-flag" />
@@ -15,17 +15,23 @@
                   ${match.player1.lastName}` : match.player1.lastName }}
                 </span>
               </div>
-              <span class="score" v-if="match.score1 !== null">
-                {{ match.ipponsPlayer1 }}
-              </span>
+              <div class="scores">
+                <span class="score">{{ match.ipponsPlayer1 }}</span>
+                <span class="keikoku">{{ match.keikokusPlayer1 }}</span>
+              </div>
             </div>
           </template>
         </VaMenu>
 
+        <div v-if="getMatchDuration()" class="match-duration-overlay">
+          ⏳ {{ getMatchDuration() }}
+        </div>
+
+
         <!-- joueur 2 -->
         <VaMenu preset="context" :options="['Détails']" @selected="(option) => openPlayerModal(option, match.player2)">
           <template #anchor>
-            <div class="player" :class="getPlayerClass(match.player2)">
+            <div class="player" :class="[ getPlayerClass(match.player2), { finished: isFinished } ]">
               <div class="player-info">
                 <img v-if="match.player2.nationalityId" :src="getFlagUrl(getCountry(match.player2.nationalityId)?.flag)"
                   alt="drapeau" class="player-flag" />
@@ -34,9 +40,10 @@
                   ${match.player2.lastName}` : match.player2.lastName }}
                 </span>
               </div>
-              <span class="score" v-if="match.score2 !== null">
-                {{ match.ipponsPlayer2 }}
-              </span>
+              <div class="scores">
+                <span class="score">{{ match.ipponsPlayer2 }}</span>
+                <span class="keikoku">{{ match.keikokusPlayer2 }}</span>
+              </div>
             </div>
           </template>
         </VaMenu>
@@ -123,12 +130,38 @@ const openMatchModal = () => {
   }
 };
 
+
 // ferme la modale
 const closeMatchModal = () => {
   isModalOpen.value = false;
   refreshBracket();
-
 };
+
+const formatTime = (seconds) => {
+  if (isNaN(seconds) || seconds < 0) return "00:00";
+
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+};
+
+const getMatchDuration = () => {
+  if (props.match.timer.currentTime >= 180) return null; // affiche rien si le match n'est pas fini
+
+  const { currentTime, additionalTime } = props.match.timer;
+  let duration = 180 - currentTime; // ttemps écoulé en temps réglementaire
+
+  if (additionalTime > -1) {
+    duration += 60 - additionalTime; // ajoute le temps additionnel écoulé
+  }
+
+  return formatTime(duration);
+};
+
+const isFinished = computed(() => {
+  return props.match.idWinner !== null;
+});
+
 
 // determine la classe css appliquee a un joueur en fonction du gagnant du match
 // si aucun gagnant n est defini alors on ne met pas de classe specifique
@@ -200,22 +233,42 @@ const getFlagUrl = (flagBase64) => {
   padding: 10px;
   border-radius: 10px;
   transition: box-shadow 0.3s ease-in-out, border 0.3s ease-in-out;
+  background: white;
 }
+
+.match-duration-overlay {
+  position: absolute;
+  top: 50%;
+  left: 75%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.5);
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.6rem;
+  font-weight: bold;
+  color: #444;
+  z-index: 1;
+}
+
 
 /* animation pour voir les matchs e ncours */
 @keyframes rotating-dash {
   0% {
     border-image-source: linear-gradient(90deg, rgba(0, 0, 0, 0.7), transparent);
   }
+
   25% {
     border-image-source: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent);
   }
+
   50% {
     border-image-source: linear-gradient(270deg, rgba(0, 0, 0, 0.7), transparent);
   }
+
   75% {
     border-image-source: linear-gradient(360deg, rgba(0, 0, 0, 0.7), transparent);
   }
+
   100% {
     border-image-source: linear-gradient(90deg, rgba(0, 0, 0, 0.7), transparent);
   }
@@ -224,9 +277,11 @@ const getFlagUrl = (flagBase64) => {
 /* bordure pour voir les matchs e ncours */
 .match:not(.disabled-match) .match-content {
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
-  border: 1px dashed rgba(0, 0, 0, 0.7); /* Bordure pointillée */
+  border: 1px dashed rgba(0, 0, 0, 0.7);
+  /* Bordure pointillée */
   border-image-slice: 1;
-  animation: rotating-dash 2s linear infinite; /* Animation qui tourne */
+  animation: rotating-dash 2s linear infinite;
+  /* Animation qui tourne */
 }
 
 
@@ -258,6 +313,10 @@ const getFlagUrl = (flagBase64) => {
 /* effet au survol sur les joueurs */
 .players:hover {
   transform: scale(1.02);
+}
+
+.finished { 
+  background-color: rgba(0,0,0,0);
 }
 
 /* style des joueurs */
@@ -309,5 +368,55 @@ const getFlagUrl = (flagBase64) => {
 .player.loser .score {
   color: red;
   font-weight: bold;
+}
+
+/* conteneur des scores */
+.scores {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* style des Ippons */
+.score {
+  font-size: 1.2rem;
+}
+
+/* style des Keikokus */
+.keikoku {
+  font-size: 0.6rem;
+  align-self: flex-end;
+}
+
+/* llignement des Keikokus pour le joueur du haut */
+.player:first-child .keikoku {
+  align-self: flex-end;
+}
+
+/* llignement des Keikokus pour le joueur du bas */
+.player:last-child .keikoku {
+  align-self: flex-start;
+}
+
+/* style du chrono */
+.timer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* icône du chrono */
+.timer .icon {
+  font-size: 1.5rem;
+}
+
+/*  temps */
+.timer .time {
+  font-size: 1rem;
 }
 </style>

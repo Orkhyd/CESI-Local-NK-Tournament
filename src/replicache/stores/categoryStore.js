@@ -17,15 +17,20 @@ export const rep = new Replicache({
         data.maxGradeId
       ));      
     },
-    update: async (tx, { id, ...updates }) => {
+    async update(tx, { id, ...updates }) {
       const c = await tx.get(`category/${id}`);
       if (!c) return;
     
-      const updatedCategory = { ...c, ...updates, ...updates.updates };
-      delete updatedCategory.updates;
+      const updatedCategory = {
+        ...c,
+        ...updates,
+        ...(updates.updates ?? {}), 
+        idWinner: updates.idWinner ?? updates.updates?.idWinner ?? c.idWinner,
+      };
     
       await tx.put(`category/${id}`, updatedCategory);
-    },    
+    },
+       
      
     delete: async (tx, { id }) => {
       await tx.del(`category/${id}`);
@@ -48,5 +53,19 @@ export async function getCategoriesByTournament(tournamentId) {
     }
 
     return categories;
+  });
+}
+
+export async function getCategoryByBracketId(bracketId) {
+  return await rep.query(async (tx) => {
+    const allCategories = await tx.scan({ prefix: "category/" }).entries().toArray();
+
+    for (const [key, value] of allCategories) {
+      if (value.id === bracketId) {
+        return value;
+      }
+    }
+
+    return null;
   });
 }

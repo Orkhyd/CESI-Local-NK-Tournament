@@ -33,5 +33,6 @@ export class Match {
     this.keikokusPlayer2 = keikokusPlayer2;
     this.idWinner = idWinner;
     this.timer = timer;
+    this.createdAt = new Date().toISOString();
   }
 }

@@ -100,7 +100,7 @@ onMounted(() => {
 .bracket-page {
   text-align: center;
   padding: 10px;
-  max-height: 76vh; /* empêche le dépassement vertical */
+  max-height: 82vh; /* empêche le dépassement vertical */
   overflow-y: auto; /* scroll vertical */
   overflow-x: auto; /* empêche un mini scroll horizontal parasite */
   white-space: nowrap; /* évite le retour à la ligne des éléments enfants */

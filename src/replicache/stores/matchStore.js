@@ -1,6 +1,6 @@
 import { Replicache } from "replicache";
 import { Match } from "@/replicache/models/Match";
-import { ParticipantService } from "@/replicache/services/participantService"
+import { ParticipantService } from "@/replicache/services/participantService";
 
 export const rep = new Replicache({
   name: "match",
@@ -77,7 +77,6 @@ export const rep = new Replicache({
 export async function getMatchesByRound(idRound) {
   return await rep.query(async (tx) => {
     const matches = [];
-
     const scanResults = await tx.scan().entries().toArray(); // convertir en tableau
 
     if (!Array.isArray(scanResults)) {
@@ -101,19 +100,19 @@ export async function getMatchesByRound(idRound) {
 export async function getMatchesByPool(idPool) {
   return await rep.query(async (tx) => {
     const matches = [];
-    const scanResults = await tx.scan().entries().toArray(); // Convertir en tableau
+    const scanResults = await tx.scan().entries().toArray();
 
     if (!Array.isArray(scanResults)) {
       return [];
     }
 
     for (const entry of scanResults) {
-      // Chaque entrée est un tableau [clé, valeur, timestamp]
-      if (!Array.isArray(entry) || entry.length < 2) continue; // Ignorer si mal formée
+      if (!Array.isArray(entry) || entry.length < 2) continue; 
 
-      const matchData = entry[1]; // Récupérer l'objet match
+      const matchData = entry[1]; // recup l'objet match
 
-      // On verif que l'objet match possède bien la propriété idPool et qu'elle correspond
+      // on verif que l'objet match possède bien la propriété idPool et qu'elle correspond
+      console.log(matchData.idPool, idPool)
       if (matchData && matchData.idPool === idPool) {
         matches.push(matchData);
       }

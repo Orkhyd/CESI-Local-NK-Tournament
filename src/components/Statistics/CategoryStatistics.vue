@@ -75,7 +75,7 @@ function calculateMatchDurations() {
 
   const matchDurations = finishedMatches.map((match) => {
     const baseTime = 180 - match.timer.currentTime;
-    const additionalTime = match.timer.additionalTime > 0 ? match.timer.additionalTime : 0;
+    const additionalTime = match.timer.additionalTime !== -1 ? (60 - match.timer.additionalTime) : 0;
     const totalTime = baseTime + additionalTime;
 
     const player1 = props.participants.find((p) => p.id === match.idPlayer1);
@@ -155,21 +155,21 @@ async function fetchMatches() {
   }
 
   // verif si les joueurs existent et enlève les matchs "BYE"
-matches.value = matches.value.filter((match) => {
-  const player1 = props.participants.find((p) => p.id === match.idPlayer1);
-  const player2 = props.participants.find((p) => p.id === match.idPlayer2);
+  matches.value = matches.value.filter((match) => {
+    const player1 = props.participants.find((p) => p.id === match.idPlayer1);
+    const player2 = props.participants.find((p) => p.id === match.idPlayer2);
 
-  // si un des joueurs a un ID -1, on exclut le match car c'est un match contre un BYE et il compte pas
-  if (match.idPlayer1 === -1 || match.idPlayer2 === -1) {
-    return false;
-  }
+    // si un des joueurs a un ID -1, on exclut le match car c'est un match contre un BYE et il compte pas
+    if (match.idPlayer1 === -1 || match.idPlayer2 === -1) {
+      return false;
+    }
 
-  // on garde les matchs où un ou deux joueurs ont ID -2
-  const hasPlayer1 = player1 || match.idPlayer1 === -2;
-  const hasPlayer2 = player2 || match.idPlayer2 === -2;
+    // on garde les matchs où un ou deux joueurs ont ID -2
+    const hasPlayer1 = player1 || match.idPlayer1 === -2;
+    const hasPlayer2 = player2 || match.idPlayer2 === -2;
 
-  return hasPlayer1 && hasPlayer2;
-});
+    return hasPlayer1 && hasPlayer2;
+  });
 
   // maj des données après récupération des matchs
   updateChartData();
@@ -194,25 +194,56 @@ function calculateTopPlayers() {
   let keikokuScores = {};
 
   props.participants.forEach((participant) => {
-    const participantMatches = matches.value.filter((match) => match.idPlayer1 === participant.id || match.idPlayer2 === participant.id);
+    const participantMatches = matches.value.filter(
+      (match) => match.idPlayer1 === participant.id || match.idPlayer2 === participant.id
+    );
 
-    let ippons = participantMatches.reduce((sum, match) => sum + (match.idPlayer1 === participant.id ? match.ipponsPlayer1 : match.ipponsPlayer2), 0);
-    let keikokus = participantMatches.reduce((sum, match) => sum + (match.idPlayer1 === participant.id ? match.keikokusPlayer1 : match.keikokusPlayer2), 0);
+    let ippons = participantMatches.reduce(
+      (sum, match) =>
+        sum + (match.idPlayer1 === participant.id ? match.ipponsPlayer1 : match.ipponsPlayer2),
+      0
+    );
+    let keikokus = participantMatches.reduce(
+      (sum, match) =>
+        sum + (match.idPlayer1 === participant.id ? match.keikokusPlayer1 : match.keikokusPlayer2),
+      0
+    );
 
-    ipponScores[participant.id] = { ...participant, score: ippons };
-    keikokuScores[participant.id] = { ...participant, score: keikokus };
+    if (ippons > 0) ipponScores[participant.id] = { ...participant, score: ippons };
+    if (keikokus > 0) keikokuScores[participant.id] = { ...participant, score: keikokus };
   });
 
-  topIppons.value = Object.values(ipponScores)
-    .sort((a, b) => b.score - a.score)
-    .filter(player => player.score > 0) // exclure les joueurs avec 0 ippons
-    .slice(0, 3);
+  // fonction pour classer les joueurs avec gestion des égalités
+  const rankPlayers = (scores) => {
+    const sortedPlayers = Object.values(scores).sort((a, b) => b.score - a.score);
+    const rankedPlayers = [];
+    const rankMap = new Map();
+    
+    let rank = 1;
+    for (let i = 0; i < sortedPlayers.length; i++) {
+      const player = sortedPlayers[i];
 
-  topKeikokus.value = Object.values(keikokuScores)
-    .sort((a, b) => b.score - a.score)
-    .filter(player => player.score > 0) // xcluree les joueurs avec 0 keikokus
-    .slice(0, 3);
+      // si le score est nouveau, on lui attribue une place dans le podium
+      if (!rankMap.has(player.score)) {
+        rankMap.set(player.score, rank);
+        rank++;
+      }
+
+      // attribue la bonne position
+      rankedPlayers.push({ ...player, rank: rankMap.get(player.score) });
+
+      // arrete après avoir rempli le podium (max 3 places)
+      if (rankMap.size >= 3) break;
+    }
+
+    return rankedPlayers;
+  };
+
+  // classement final
+  topIppons.value = rankPlayers(ipponScores);
+  topKeikokus.value = rankPlayers(keikokuScores);
 }
+
 
 
 onMounted(fetchMatches);

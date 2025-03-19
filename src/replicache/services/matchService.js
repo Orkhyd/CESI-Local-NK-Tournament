@@ -1,6 +1,10 @@
 import { rep } from "@/replicache/stores/matchStore";
 import { checkAndCompletePool } from "@/replicache/stores/Pool/poolStore";
 import { getMatchById } from "@/replicache/stores/matchStore";
+import { getMatchesByPool } from "@/replicache/stores/matchStore";
+import { getRoundsByBracket, getRoundById } from "@/replicache/stores/Bracket/roundStore";
+import { getBracketById } from "@/replicache/stores/Bracket/bracketStore";
+import { rep as categoryRep, getCategoryByBracketId } from "@/replicache/stores/categoryStore";
 
 export const matchService = {
   create: async (data) => {
@@ -10,20 +14,28 @@ export const matchService = {
   update: async (idMatch, idMatchType, updates) => {
     await rep.mutate.update({ idMatch, ...updates });
 
-    // en mode tableau, si un gagnant est défini, on propage au match suivznt le gagnant
+    // en mode tableau et si ya un gagnant
     if (Number(idMatchType) === 1 && updates.idWinner) {
-      await propagateWinner(idMatch, updates.idWinner);
+
+      const match = await getMatchById(idMatch);
+      if (!match) return;
+
+      const isFinalMatch = await checkIfFinalMatchBracket(match); // verifie si c'est le dernier match du tableau (finale )
+
+      if (isFinalMatch) {
+        await declareCategoryWinner(match, updates.idWinner); // declare le gagnant du match gagnant de la category
+      } else {
+        await propagateWinnerToNextBracketMatch(idMatch, updates.idWinner); // propage le gagnant au match d'apres
+      }
     }
 
     if (Number(idMatchType) === 2) {  // en mode poule on verifie si c'est lde dernier match et si oui on cloture la poule et envois le participant dans la poule finalek
       const match = await getMatchById(idMatch);
       if (match && match.idPool) {
-        console.log(match.idPool)
         await checkAndCompletePool(match.idPool);
       }
     }
   },
-
 
   delete: async (idMatch) => {
     await rep.mutate.delete({ idMatch });
@@ -52,11 +64,55 @@ export const matchService = {
   setAdditionalTime: async (idMatch, seconds) => {
     await rep.mutate.updateTimer({ idMatch, additionalTime: seconds });
   },
+
+  generatePoolFinalMatchs: async (poolManagerId, finalPoolId, finalPoolParticipants, finalRoundId) => {
+
+    // verif avec getMatchesByPool : existe-t-il déjà des matchs pour ce round finaal ???
+    const existingMatches = await getMatchesByPool(finalPoolId);
+
+    if (existingMatches.length > 0) {
+      return; // pas de génération si des matchs existent déjà
+    }
+
+    // création des matchs pour la poule finale (Round Robin)
+    const matches = [];
+
+    for (let i = 0; i < finalPoolParticipants.length; i++) {
+      for (let j = i + 1; j < finalPoolParticipants.length; j++) {
+        const idMatch = crypto.randomUUID(); // génère un ID unique
+        const match = {
+          idMatch,
+          idMatchType: 2, // match de poule
+          idPool: finalPoolId,
+          idRound: finalRoundId,
+          idPlayer1: finalPoolParticipants[i].id,
+          idPlayer2: finalPoolParticipants[j].id,
+          idPreviousMatch1: null,
+          idPreviousMatch2: null,
+          ipponsPlayer1: 0,
+          ipponsPlayer2: 0,
+          keikokusPlayer1: 0,
+          keikokusPlayer2: 0,
+          idWinner: null,
+          timer: {
+            isRunning: false,
+            currentTime: 180,
+            additionalTime: -1,
+          },
+        };
+        matches.push(match);
+      }
+    }
+
+    // denregistrement des matchs dans Replicache
+    for (const match of matches) {
+      await rep.mutate.create(match);
+    }
+  }
 };
 
 /* met a jouur les matchs suivants en assignant le gagnant dans idPlayer1 ou idPlayer2  */
-
-async function propagateWinner(idMatch, idWinner) {
+async function propagateWinnerToNextBracketMatch(idMatch, idWinner) {
   const allMatches = await rep.query(async (tx) => {
     const matches = [];
     for await (const value of tx.scan()) {
@@ -66,8 +122,8 @@ async function propagateWinner(idMatch, idWinner) {
   });
 
   // trouve les matchs suivants qui dépendent du match gagné
-  const matchesToUpdate = allMatches.filter(
-    (m) => m.idPreviousMatch1 === idMatch || m.idPreviousMatch2 === idMatch
+  const matchesToUpdate = allMatches.filter(m =>
+    (m.idPreviousMatch1 === idMatch || m.idPreviousMatch2 === idMatch)
   );
 
   for (const match of matchesToUpdate) {
@@ -83,4 +139,36 @@ async function propagateWinner(idMatch, idWinner) {
     // maj des matchs suivants dans replicache
     await rep.mutate.update({ idMatch: match.idMatch, ...updatedMatch });
   }
+}
+
+async function checkIfFinalMatchBracket(match) {
+  // recup tous les rounds de ce bracket
+  const actualRound = await getRoundById(match.idRound);
+  const rounds = await getRoundsByBracket(actualRound.idBracket);
+  if (!rounds || rounds.length === 0) return false;
+
+  // trouve le round du match actuel
+  const currentRound = rounds.find(r => r.id === match.idRound);
+  if (!currentRound) return false;
+
+  // verif si ce round est la "Finale"
+  return currentRound.label.toLowerCase() === "finale";
+}
+
+async function declareCategoryWinner(match, idWinner) {
+  // trouver la catégorie liée à ce bracket
+  const actualRound = await getRoundById(match.idRound);
+  const bracket = await getBracketById(actualRound.idBracket);
+  const category = await getCategoryByBracketId(bracket.categoryId);
+
+  if (!bracket) {
+    console.error("❌ Impossible de trouver le bracket associé !");
+    return;
+  }
+
+  // mettre à jour la catégorie avec le gagnant
+  await categoryRep.mutate.update({
+    id: category.id,
+    idWinner, // enregistre le gagnant
+  });
 }
