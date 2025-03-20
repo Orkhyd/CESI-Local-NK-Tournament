@@ -41,3 +41,12 @@ export async function getPoolManagerByCategory(categoryId) {
     return null;
   });
 }
+
+// recup un PoolManager par son ID
+export async function getPoolManagerById(poolManagerId) {
+  return await rep.query(async (tx) => {
+    const poolManager = await tx.get(`poolManager/${poolManagerId}`);
+    return poolManager ? poolManager : null;
+  });
+}
+

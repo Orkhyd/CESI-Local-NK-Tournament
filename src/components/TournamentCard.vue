@@ -9,6 +9,7 @@
         class="icon-tournament"
         :gradient="true"
         :size="60"
+        color="#0c2432"
       />
 
       <!-- nom du tournoi -->
@@ -19,7 +20,7 @@
     <VaCardContent class="card-content">
       <!-- date de début -->
       <div class="info">
-        <VaIcon name="event" class="icon" :size="20"/>
+        <VaIcon name="event" class="icon" :size="20" color="#0c2432"/>
         <span class="info-text">Début : {{ formatDate(tournoi.startDate) }}</span>
       </div>
 
@@ -113,7 +114,12 @@ const formatDate = (date) => {
 .tournament-title {
   font-size: 24px;
   font-weight: 700;
-  color: #154EC1;
+  color: #0c2432;
+  word-wrap: break-word;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* seection des infos */
@@ -128,7 +134,7 @@ const formatDate = (date) => {
 
 /* icone de date */
 .icon {
-  color: #154EC1;
+  color: #0c2432;
 }
 
 /* texte de la date */

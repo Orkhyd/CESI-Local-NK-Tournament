@@ -3,6 +3,8 @@ import { Pool } from "@/replicache/models/Pool/Pool";
 import { getMatchesByPool } from "@/replicache/stores/matchStore"
 import { determinePoolRanking } from "@/functions/determinePoolRanking";
 import { matchService } from "@/replicache/services/matchService";
+import { getPoolManagerById } from "./poolManagerStore";
+import { rep as categoryRep } from "../categoryStore"
 
 export const rep = new Replicache({
   name: "pool",
@@ -41,81 +43,92 @@ export async function getPoulesByPoolManagerId(poolManagerId) {
 
 // verifie et rend la poule terminé si tout les matchs sont finis !
 export async function checkAndCompletePool(poolId) {
-  // recup les matchs de la poule
+  // recuperer les matchs de la poule
   const poolMatches = await getMatchesByPool(poolId);
-  console.log("📌 Matchs de la poule :", poolMatches);
 
-  // verif que tous les matchs ont un gagnant
+  // verifier que tous les matchs ont un gagnant
   const allCompleted = poolMatches.every(match => match.idWinner !== null);
   if (!allCompleted) {
     return;
   }
 
-  // recup la poule pour obtenir les participants et le poolManagerId
-  const poule = await rep.query(async (tx) => await tx.get(`poule/${poolId}`));
-  if (!poule) {
-    console.error("❌ Impossible de récupérer la poule !");
+  // recuperer la poule pour obtenir les participants et le poolManagerId
+  const pool = await rep.query(async (tx) => await tx.get(`poule/${poolId}`));
+  if (!pool) {
     return;
   }
 
-  // recup le classement de la poule terminée
-  const participants = poule.participants || [];
-  const classement = determinePoolRanking(participants, poolMatches);
-  console.log(classement);
-  if (classement.length === 0) {
-    console.warn("⚠️ Aucun participant dans le classement !");
+  // recuperer le classement de la poule terminee
+  const participants = pool.participants || [];
+  const ranking = determinePoolRanking(participants, poolMatches);
+  if (ranking.length === 0) {
     return;
   }
 
-  // verif s'il y a plusieurs joueurs ex æquo en première position
-  const premiers = classement.filter(p => p.rank === 1);
-  if (premiers.length > 1) {
-    console.log("Plusieurs joueurs sont ex æquo en première position. Création de matchs supplémentaires pour départager.");
-
-    // creation de matchs entre chaque paire des joueurs ex aeqquo
-    for (let i = 0; i < premiers.length; i++) {
-      for (let j = i + 1; j < premiers.length; j++) {
-        const idMatch = crypto.randomUUID() + '%ADDITIONNAL-MATCH'; // id unique pour le match
+  // verifier s'il y a plusieurs joueurs ex aequo en premiere position
+  const topPlayers = ranking.filter(p => p.rank === 1);
+  if (topPlayers.length > 1) {
+    // creer des matchs entre chaque paire des joueurs ex aequo
+    for (let i = 0; i < topPlayers.length; i++) {
+      for (let j = i + 1; j < topPlayers.length; j++) {
+        const matchId = crypto.randomUUID() + '%ADDITIONNAL-MATCH'; // id unique pour le match
         await matchService.create({
-          idMatch: idMatch,
+          idMatch: matchId,
           idPool: poolId,
           idMatchType: 2, // id poule
-          idPlayer1: premiers[i].participant.id,
-          idPlayer2: premiers[j].participant.id,
+          idPlayer1: topPlayers[i].participant.id,
+          idPlayer2: topPlayers[j].participant.id,
           idPreviousMatch1: null,
           idPreviousMatch2: null,
           idWinner: null,
         });
       }
     }
-    // on ferme pas la poule tant que ces matchs de départage n'ont pas été joues
+    // ne pas fermer la poule tant que ces matchs de departage n'ont pas ete joues
     return;
   }
 
-  // si le premier est unique, on marque la poule comme complète
+  // si le premier est unique, marquer la poule comme complete
   await rep.mutate.updatePoule({ id: poolId, isComplete: true });
 
-  // recup toutes les poules du poolManager pour trouver la poule finale
-  const poolManagerId = poule.poolManagerId;
-  const allPoules = await getPoulesByPoolManagerId(poolManagerId);
-  const finalPool = allPoules.find(p => p.label === "Poule Finale");
-  if (!finalPool) {
-    console.warn("⚠️ Aucune poule finale trouvée !");
-    return;
+  // recuperer toutes les poules du poolManager pour determiner si c'est la poule finale
+  const poolManagerId = pool.poolManagerId;
+  const allPools = await getPoulesByPoolManagerId(poolManagerId);
+  const isFinalPool = pool.label === "Poule Finale" || allPools.length === 1;
+
+  if (isFinalPool) {
+    // si c'est la poule finale, mettre a jour le gagnant de la categorie
+    const topParticipant = ranking.find(p => p.rank === 1)?.participant;
+    if (!topParticipant) {
+      return;
+    }
+
+    const poolManager = await getPoolManagerById(poolManagerId);
+    const categoryId = poolManager.categoryId;
+    if (categoryId) {
+      await categoryRep.mutate.update({
+        id: categoryId,
+        idWinner: topParticipant.id
+      });
+    }
+  } else {
+    // si ce n'est pas la poule finale, envoyer le gagnant vers la poule finale
+    const topParticipant = ranking.find(p => p.rank === 1)?.participant;
+    if (!topParticipant) {
+      return;
+    }
+
+    const finalPool = allPools.find(p => p.label === "Poule Finale");
+    if (!finalPool) {
+      return;
+    }
+
+    // mettre a jour la poule finale avec le nouveau participant
+    await rep.mutate.updatePoule({
+      id: finalPool.id,
+      participants: [...(finalPool.participants || []), topParticipant]
+    });
   }
-
-  // recup le premier du classement
-  const premierParticipant = classement[0].participant;
-  const updatedFinalPool = { 
-    ...finalPool, 
-    participants: [...(finalPool.participants || []), premierParticipant] 
-  };
-
-  // maj la poule finale avec le nouveau participant
-  await rep.mutate.updatePoule({
-    id: updatedFinalPool.id,
-    participants: updatedFinalPool.participants
-  });
 }
 
 

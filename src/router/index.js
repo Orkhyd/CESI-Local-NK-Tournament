@@ -1,9 +1,10 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import LoginPage from '../views/LoginPage.vue'
-import HomePage from '../views/HomePage.vue'
-import TournamentEditPage from '../views/TournamentEditPage.vue'
-import TournamentManagePage from '../views/TournamentManagePage.vue'
-import MatchScoreboardPage from '../views/MatchScoreboardPage.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import LoginPage from '../views/LoginPage.vue';
+import HomePage from '../views/HomePage.vue';
+import TournamentEditPage from '../views/TournamentEditPage.vue';
+import TournamentManagePage from '../views/TournamentManagePage.vue';
+import MatchScoreboardPage from '../views/MatchScoreboardPage.vue';
+import MatchScoreboardFictivePage from "../views/MatchScoreboardFictivePage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: "/tournament/non-started/:id", component: TournamentEditPage },
     { path: "/tournament/started/:id", component: TournamentManagePage },
     { path: "/match/:id", component: MatchScoreboardPage }, 
+    { path: "/match/fictive", component: MatchScoreboardFictivePage },
   ],
 })
 

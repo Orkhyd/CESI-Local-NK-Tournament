@@ -12,31 +12,25 @@
     </div>
 
     <!-- affichage des phases -->
-    <div v-elseclass="stepper - container">
-      <!-- navigation -->
-      <VaStepper v-model="currentStep" :steps="stepperSteps" :navigation-disabled="!allPoolsComplete" controls-hidden>
-        <!-- etape 1 : Poules initiales -->
-        <template #step-content-0>
-          <div v-for="(phase, phaseIndex) in phases" :key="`phase_${phaseIndex}`" class="phase-block">
-            <h2 style="margin-bottom: 5px;">{{ phase.label }}</h2>
-            <div class="pools-grid">
-              <Pool v-for="(pool, idx) in filteredPools(phase.pools)" :key="`pool_${phaseIndex}_${idx}`" :pool="pool"
-                @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
-                :search-participant="props.searchParticipant" :participants="props.participants" />
-            </div>
-          </div>
-        </template>
-
-        <!-- etape 2 : poule finale, affichée uniquement si une poule finale existe -->
-        <template #step-content-1 v-if="finalPool">
-          <div class="final-pool-container">
-            <h2 class="final-pool-title">🏆 Poule Finale 🏆</h2>
-            <Pool :pool="finalPool" class="final-pool" @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
-              :search-participant="props.searchParticipant" :participants="props.participants" />
-          </div>
-        </template>
-      </VaStepper>
+    <!-- affichage des poules initiales -->
+    <div v-if="phases?.length > 1 || phases[0]?.pools?.length > 1">
+      <h2 style="margin-bottom: 10px;">Poules Initiales</h2>
+      <div v-for="(phase, phaseIndex) in phases" :key="`phase_${phaseIndex}`" class="phase-block">
+        <div class="pools-grid">
+          <Pool v-for="(pool, idx) in filteredPools(phase.pools)" :key="`pool_${phaseIndex}_${idx}`" :pool="pool"
+            @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
+            :search-participant="props.searchParticipant" :participants="props.participants" />
+        </div>
+      </div>
     </div>
+
+    <!-- affichage de la poule finale -->
+    <div v-if="finalPool" class="final-pool-container">
+      <h2 class="final-pool-title">🏆 Poule Finale 🏆</h2>
+      <Pool :pool="finalPool" class="final-pool" @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
+        :search-participant="props.searchParticipant" :participants="props.participants" />
+    </div>
+
 
     <!-- modal du match -->
     <MatchModal v-if="matchEditorOpen" :matchId="currentMatchId" @close="closeMatchEditor" />
@@ -76,7 +70,6 @@ const poolManagerId = ref(null);
 const matchEditorOpen = ref(false);
 const currentMatchId = ref(null);
 const refreshMatches = ref(0);
-const currentStep = ref(0); // etape actuelle du stepper
 
 // charge ou crée un poolmanager et récupère les phases
 const loadOrCreatePoolManager = async () => {
@@ -114,22 +107,29 @@ const loadOrCreatePoolManager = async () => {
 };
 
 const finalPool = computed(() => {
-  if (!phases.value.length || !phases.value[0]?.pools) return null;
+  if (!phases.value.length || !phases.value[0]?.pools?.length) {
+    return null;
+  }
 
-  // si une seule poule existe, elle est considérée comme la finale
+  // si une seule poule existe, elle est automatiquement la poule finale
   if (phases.value[0].pools.length === 1) {
     return phases.value[0].pools[0];
   }
 
-  // sinon, recherche une poule qui porte le label "Poule Finale"
-  return phases.value[0].pools.find(pool => pool.label === "Poule Finale") || null;
+  // sinnon, on cherche une poule nommée "Poule Finale"
+  return phases.value.flatMap(phase => phase.pools).find(pool => pool.label === "Poule Finale") || null;
 });
 
 
 const filteredPools = (pools) => {
   if (!pools) return [];
+
+  // si une seule poule existe, elle est déjà affichée en tant que poule finale
+  if (pools.length === 1) return [];
+
   return pools.filter(pool => pool?.label !== "Poule Finale");
 };
+
 
 const showMatchEditor = (match) => {
   currentMatchId.value = match.idMatch;
@@ -170,21 +170,6 @@ onMounted(async () => {
 });
 
 
-// def les étapes du stepper
-const stepperSteps = computed(() => {
-  // si une seule poule, on affiche une seule étape
-  if (phases.value.length === 1 && phases.value[0].pools.length === 1) {
-    return [{ label: 'Phase Unique' }]; // affichage d'une seule étape
-  }
-  
-  // sinon, on affiche les étapes classiques
-  return [
-    { label: 'Poules Initiales', completed: allPoolsComplete.value },
-    { label: 'Poule Finale', disabled: !allPoolsComplete.value },
-  ];
-});
-
-
 // verif si toutes les poules initiales sont terminées
 const allPoolsComplete = computed(() => {
   if (!phases.value.length || !phases.value[0]?.pools?.length) return false;
@@ -192,13 +177,6 @@ const allPoolsComplete = computed(() => {
   return phases.value[0].pools
     .filter(pool => pool?.label !== "Poule Finale")
     .every(pool => pool.isComplete);
-});
-
-// si une seule poule existe, la poule finale est la poule unique
-watchEffect(() => {
-  if (phases.value.length === 1 && phases.value[0].pools.length === 1) {
-    currentStep.value = 0; // reste sur la phase 1 si une seule poule
-  }
 });
 
 // genere les matchs de la poule finale

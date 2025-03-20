@@ -40,6 +40,7 @@
                 <th>Participant</th>
                 <th>MJ/MT</th>
                 <th>MG</th>
+                <th>MN</th>
                 <th>MP</th>
                 <th>IP</th>
                 <th>IC</th>
@@ -51,13 +52,14 @@
             </thead>
             <tbody>
               <tr v-for="(standing, index) in sortedStandings" :key="standing.participant.id" class="ligne-participant"
-                :class="[getMedalClass(index), { 'same-rank': sortedStandings.filter(s => s.rank === standing.rank).length > 1 }]">
+                :class="[{ 'same-rank': sortedStandings.filter(s => s.rank === standing.rank).length > 1 }]">
                 <td>
                   <span class="rank" :class="{'qualified-first': standing.position === 1}">
                     {{ standing.position }}
                     <!-- affiche l icône d'alerte si plusieurs joueurs partagent la première place -->
                     <VaIcon v-if="standing.position === 1 && sortedStandings.filter(s => s.position === 1).length > 1"
-                      name="warning" class="alert-icon" title="La place du joueur dans le classement n'est pas réelle car il est a égalité avec un/d'autres joueur(s)."/>
+                      name="warning" class="alert-icon"
+                      title="La place du joueur dans le classement n'est pas réelle car il est a égalité avec un/d'autres joueur(s)." />
                   </span>
                 </td>
 
@@ -77,12 +79,20 @@
 
                   <div class="match-history">
                     <span v-for="(match, index) in getMatchHistory(standing.participant.id)" :key="index"
-                      class="history-bubble" :class="{ win: match.won, lose: !match.won && match.played }">
+                      class="history-bubble" :class="{
+                        win: match.won,
+                        lose: !match.won && match.played,
+                        draw: match.draw,
+                        'tie-break': match.tieBreak
+                      }">
+                      {{ match.won ? 'V' : (match.draw ? 'N' : (match.played ? 'P' : '')) }}
                     </span>
                   </div>
+
                 </td>
                 <td>{{ standing.mj }}/{{ standing.mt }}</td>
                 <td>{{ standing.mg }}</td>
+                <td>{{ standing.mn }}</td>
                 <td>{{ standing.mp }}</td>
                 <td>{{ standing.ip }}</td>
                 <td>{{ standing.ic }}</td>
@@ -210,17 +220,30 @@ const poolMatches = ref([]);
 async function fetchPoolMatches() {
   const rawMatches = await getMatchesByPool(props.pool.id);
 
-  // separe les matchs en normaux et supplémentaires
+  // separe les matchs normaux et les matchs additionnels
   const normalMatches = rawMatches.filter(match => !match.idMatch.includes('%ADDITIONNAL-MATCH'));
-  const additionalMatches = rawMatches.filter(match => match.idMatch.includes('%ADDITIONNAL-MATCH'));
 
-  // appliquer l'algorithme d'équilibrage pour maximiser le repos des joueurs
+  // separe les matchs additionnels en terminés et non terminés
+  const additionalMatchesFinished = rawMatches
+    .filter(match => match.idMatch.includes('%ADDITIONNAL-MATCH') && match.idWinner !== null)
+    .sort((a, b) => a.createdAt - b.createdAt); // trie les terminés par ordre de création
+
+  const additionalMatchesPending = rawMatches
+    .filter(match => match.idMatch.includes('%ADDITIONNAL-MATCH') && match.idWinner === null)
+    .sort((a, b) => a.createdAt - b.createdAt); // trie les non terminés par ordre de création
+
+  // applique l'algorithme d'équilibrage uniquement aux matchs normaux
   const sortedNormalMatches = balanceMatchOrder(normalMatches);
-  const sortedAdditionalMatches = balanceMatchOrder(additionalMatches);
 
-  // fusionnne en mettant d'abord les matchs normaux, puis les supplémentaires
-  poolMatches.value = [...sortedNormalMatches, ...sortedAdditionalMatches];
+  // fusionne dans le bon ordre
+  poolMatches.value = [
+    ...sortedNormalMatches, // matchs normaux équilibrés
+    ...additionalMatchesFinished, // maatchs additionnels terminés
+    ...additionalMatchesPending // matchs additionnels non terminés
+  ];
 }
+
+
 
 function balanceMatchOrder(matches) {
   const scheduledMatches = [];
@@ -332,11 +355,12 @@ const getMatchHistory = (participantId) => {
   return poolMatches.value
     .filter(match => match.idPlayer1 === participantId || match.idPlayer2 === participantId)
     .map(match => ({
-      won: match.idWinner === participantId,  // true si gagné, False sinon
-      played: match.idWinner !== null // true si le match est terminé
+      won: match.idWinner === participantId,  
+      played: match.idWinner !== null, 
+      draw: match.idWinner === -1,
+      tieBreak: match.idMatch.includes('%ADDITIONNAL-MATCH') // verif si c'est un match de départage
     }));
 };
-
 
 // fonction edit : ouvre editeur de match si match pas fini
 function editMatch(match) {
@@ -361,14 +385,6 @@ function getParticipantName(participantId) {
 // fonction recup count matchs finis
 function getCompletedMatchCount() {
   return poolMatches.value.filter(match => match.idWinner !== null).length;
-}
-
-// fonction qui applique classe medal en fonction de l'index
-function getMedalClass(index) {
-  if (index === 0) return 'gold';
-  if (index === 1) return 'silver';
-  if (index === 2) return 'bronze';
-  return '';
 }
 </script>
 
@@ -733,14 +749,20 @@ function getMedalClass(index) {
   background-color: #f5f5f5;
 }
 
-/* Style pour les bulles d'historique des matchs */
+/* style pour les bulles d'historique des matchs */
 .history-bubble {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
+  display: inline-flex;
+  width: 12px; 
+  height: 12px; 
   border-radius: 50%;
-  margin: 2px;
+  margin: 1px;
+  align-items: center;
+  justify-content: center; 
+  font-size: 8px; 
+  font-weight: bold;
+  color: white; 
 }
+
 
 .history-bubble.win {
   background-color: green;
@@ -750,9 +772,21 @@ function getMedalClass(index) {
   background-color: red;
 }
 
+.history-bubble.draw {
+  background-color: yellow;
+  color: black;
+}
+
 .history-bubble:not(.win):not(.lose) {
   background-color: #ccc;
 }
+
+.history-bubble.tie-break {
+  outline: 1.5px dashed orange;
+  margin-left: 2px;
+  outline-offset: 1.5px; /* Distance entre la bulle et la bordure */
+}
+
 
 .participant-item {
   display: flex;

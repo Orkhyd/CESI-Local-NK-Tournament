@@ -1,49 +1,51 @@
 <template>
-
   <div class="home-wrapper">
-    <!-- titre principal -->
-    <h1 class="title">Accueil du Tournoi</h1>
+    <div class="top-section">
+      <h1 class="main-title">NK MASTER TOURNAMENT</h1>
+    </div>
 
-    <!-- affichage conditionnel : tournoi existant ou non -->
-    <div v-if="tournoi">
-      <!-- sous-titre pour le tournoi en cours -->
-      <h2 class="subtitle">Tournoi en cours :</h2>
+    <div class="bottom-section">
+      <div class="section-title left-title">Tournoi</div>
+      <div class="section-title right-title">Scoreboard</div>
 
-      <!-- composant pour afficher les détails du tournoi -->
-      <TournamentCard :tournoi="tournoi" />
+      <div class="left-section">
+        <img src="@/assets/img/combat-nippon.jpg" alt="Nippon Kempo" class="background-image" />
+        <div class="content">
+          <div v-if="tournoi" class="tournament-content">
+            <TournamentCard :tournoi="tournoi" />
+            <div class="button-group">
+              <VaButton color="danger" @click="openDeleteModal" class="btn"> Supprimer le tournoi </VaButton>
+              <VaButton color="#0c2432" @click="loadTournoi" class="btn"> Accéder au tournoi </VaButton>
+            </div>
+          </div>
+          <div v-else class="no-tournament">
+            <VaButton color="#0c2432" @click="openModal" class="create-tournament-btn"> Créer un Tournoi </VaButton>
+          </div>
+        </div>
+      </div>
 
-      <!-- boutons pour continuer ou supprimer le tournoi -->
-      <div class="button-group">
-        <VaButton color="primary" @click="loadTournoi"> Continuer </VaButton>
-        <VaButton color="danger" @click="openDeleteModal"> Supprimer </VaButton>
+      <div class="right-section">
+        <div class="background-overlay"></div>
+        <div class="content">
+          <VaButton color="#0c2432" @click="openFictiveScoreboard" class="fictive-scoreboard-btn">
+            Ouvrir Scoreboard Fictif
+          </VaButton>
+        </div>
       </div>
     </div>
 
-    <!-- affichage si aucun tournoi n'est trouvé -->
-    <div v-else>
-      <h2 class="subtitle">Aucun tournoi trouvé</h2>
-      <VaButton color="primary" class="create-btn" @click="openModal"> Créer un Tournoi </VaButton>
-    </div>
-
-    <!-- modale de création de tournoi -->
     <TournamentModal v-if="tournamentModalOpen" @create="handleCreateTournoi" @close="tournamentModalOpen = false" />
 
-    <!-- modale de confirmation de suppression -->
     <VaModal v-model="isDeleteModalOpen" hide-default-actions class="tournament-modal">
       <div class="modal-card">
-        <!-- titre et icône de la modale -->
         <div class="modal-title">
           <VaIcon name="warning" class="modal-icon" />
           Confirmation
         </div>
-
-        <!-- corps de la modale -->
         <div class="modal-body">
           <p class="modal-text">Êtes-vous sûr de vouloir supprimer ce tournoi ?</p>
           <p class="modal-warning">Toutes les données seront perdues.</p>
         </div>
-
-        <!-- boutons d'action de la modale -->
         <div class="modal-actions">
           <VaButton color="secondary" outline @click="closeDeleteModal">Annuler</VaButton>
           <VaButton color="danger" :loading="isDeleting" @click="resetTournoi">Supprimer</VaButton>
@@ -54,228 +56,279 @@
 </template>
 
 <script setup>
-// ------------------------------------------------------------------------------------
-// imports
-// ------------------------------------------------------------------------------------
-
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { TournamentService } from "@/replicache/services/tournamentService";
 import { getTournaments } from "@/replicache/stores/tournamentStore";
 import TournamentCard from "@/components/TournamentCard.vue";
 import TournamentModal from "@/components/TournamentModal.vue";
-import { rep } from "@/replicache/stores/tournamentStore"; 
-
-// ------------------------------------------------------------------------------------
-// initialisation des variables
-// ------------------------------------------------------------------------------------
+import { rep } from "@/replicache/stores/tournamentStore";
 
 const router = useRouter();
-const tournoi = ref(null); // stocke les données du tournoi actuel
-const tournamentModalOpen = ref(false); // référence vers la modale de création de tournoi
-const isDeleteModalOpen = ref(false); // état de la modale de suppression
-const isDeleting = ref(false); // état de chargement lors de la suppression
+const tournoi = ref(null);
+const tournamentModalOpen = ref(false);
+const isDeleteModalOpen = ref(false);
+const isDeleting = ref(false);
 
-
-// ------------------------------------------------------------------------------------
-// hooks
-// ------------------------------------------------------------------------------------
-
-// Au montage du composant, récupère le dernier tournoi depuis Replicache
 onMounted(async () => {
   const tournaments = await getTournaments(rep);
   tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
 });
 
-// ------------------------------------------------------------------------------------
-// fonctions
-// ------------------------------------------------------------------------------------
-
-// ouvre la modale de création de tournoi
 const openModal = () => {
   tournamentModalOpen.value = true;
 };
 
-// gere la création d'un nouveau tournoi avec Replicache
+const openFictiveScoreboard = () => {
+  if (window.electron && window.electron.openFictiveMatchWindow) {
+    window.electron.openFictiveMatchWindow("open-fictive-match-window");
+  }
+};
+
 const handleCreateTournoi = async (newTournoi) => {
-  const id = crypto.randomUUID(); // Génère un ID unique
+  const id = crypto.randomUUID();
   try {
     await TournamentService.create(id, newTournoi.name, newTournoi.startingDate);
-
-    // recup les tournois après la création
     const tournaments = await getTournaments(rep);
-
-    // met à jour la référence du tournoi actif
     tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
-
-    tournamentModalOpen.value = false; // ferme la modale après création
+    tournamentModalOpen.value = false;
   } catch (error) {
     console.error("Erreur lors de la création du tournoi :", error);
   }
 };
 
-// redirige vers la page du tournoi en cours
 const loadTournoi = () => {
   if (tournoi.value) {
     const routePath = tournoi.value.started 
       ? `/tournament/started/${tournoi.value.id}` 
       : `/tournament/non-started/${tournoi.value.id}`;
-    
     router.push({ path: routePath });
   }
 };
 
-
-// ouvre la modale de confirmation de suppression
 const openDeleteModal = () => {
   isDeleteModalOpen.value = true;
 };
 
-// ferme la modale de suppression
 const closeDeleteModal = () => {
   isDeleteModalOpen.value = false;
 };
 
-// supp le tournoi et ferme la modale avec une animation fluide
 const resetTournoi = async () => {
-  isDeleting.value = true; // active l'état de chargement
-  await TournamentService.delete(tournoi.value.id); // supp le tournoi dans Replicache
-  tournoi.value = null; // reinit les données du tournoi
+  isDeleting.value = true;
+  await TournamentService.delete(tournoi.value.id);
+  tournoi.value = null;
   isDeleteModalOpen.value = false;
   isDeleting.value = false;
 };
 </script>
 
 <style scoped>
-/* ------------------------------------------------------------------------------------ */
-/* styles globaux */
-/* ------------------------------------------------------------------------------------ */
-
-/* wrapper principal centré */
 .home-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
   height: 100vh;
-  text-align: center;
-  padding: 20px;
-}
-
-/* ------------------------------------------------------------------------------------ */
-/* styles des titres */
-/* ------------------------------------------------------------------------------------ */
-
-.title {
-  font-size: 32px;
-  font-weight: bold;
-  margin-bottom: 24px;
+  background-color: #ffffff;
   color: #0c2432;
 }
 
-.subtitle {
-  font-size: 20px;
-  font-weight: 500;
-  color: #555;
-  margin-bottom: 16px;
+.top-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0c2432;
+  color: #ffffff;
 }
 
-/* ------------------------------------------------------------------------------------ */
-/* styles des boutons */
-/* ------------------------------------------------------------------------------------ */
+.main-title {
+  font-size: 80px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+.bottom-section {
+  flex: 1;
+  display: flex;
+  padding: 20px;
+  background-color: #ffffff;
+  gap: 20px;
+  position: relative;
+}
+
+.section-title {
+  position: absolute;
+  top: 20px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #0c2432;
+}
+
+.left-title {
+  left: 20px;
+}
+
+.right-title {
+  right: 20px;
+}
+
+.left-section {
+  flex: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.08;
+}
+
+.content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.tournament-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.no-tournament {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
 
 .button-group {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
-  width: 100%;
-  max-width: 400px;
+  gap: 20px;
+  margin-top: 10px;
 }
 
-.create-btn {
-  margin-top: 20px;
-  font-size: 18px;
-  padding: 10px 20px;
+.btn {
+  padding: 5px;
 }
 
-.test-btn {
-  margin: 20px;
-  font-size: 16px;
-  width: 200px;
-  padding: 8px 16px;
-}
-
-
-/* ------------------------------------------------------------------------------------ */
-/* styles de la modale de suppression */
-/* ------------------------------------------------------------------------------------ */
-
-.tournament-modal {
+.right-section {
+  flex: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  width: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  position: fixed;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.right-section::before {
+  content: "";
+  position: absolute;
   top: 0;
   left: 0;
-  z-index: 1000;
+  width: 100%;
+  height: 100%;
+  background-image: url("@/assets/img/scoreboard-img.png");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.04;
+}
+
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(12, 36, 50, 0.2);
+}
+
+.create-tournament-btn,
+.fictive-scoreboard-btn {
+  background-color: #0c2432;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.create-tournament-btn:hover,
+.fictive-scoreboard-btn:hover {
+  background-color: #1a3a4d;
+}
+
+.tournament-modal {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
   text-align: center;
-  max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  margin: auto;
 }
 
-/* titre et icône de la modale */
 .modal-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0c2432;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 15px;
   gap: 10px;
 }
 
 .modal-icon {
-  font-size: 30px;
-  color: #d50708;
+  color: #ff4444;
 }
 
-/* texte de la modale */
 .modal-body {
-  text-align: center;
+  margin: 20px 0;
 }
 
 .modal-text {
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 5px;
+  font-size: 18px;
+  color: #0c2432;
 }
 
 .modal-warning {
   font-size: 14px;
-  color: #d50708;
-  font-weight: bold;
-  margin-bottom: 15px;
+  color: #ff4444;
+  margin-top: 10px;
 }
 
-/* boutons de la modale */
 .modal-actions {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 20px;
 }
 </style>

@@ -34,8 +34,6 @@
         <component v-if="isParticipantsLoaded" :is="categoryComponent" :key="categoryKey"
           :tournamentId="props.tournamentId" :category="props.category" :participants="participants"
          :searchParticipant="searchParticipant" />
-
-
       </div>
 
       <!-- onglet "stats" -->
@@ -57,6 +55,7 @@ import PoolList from "@/components/Pool/PoolList.vue";
 import CategoryStatistics from "@/components/Statistics/CategoryStatistics.vue";
 import ParticipantList from "./Bracket/ParticipantsList.vue";
 
+
 const props = defineProps({
   category: {
     type: Object,
@@ -67,6 +66,8 @@ const props = defineProps({
     required: true,
   },
 });
+
+// fonction pour generer le pd
 
 
 const showParticipants = ref(false);
