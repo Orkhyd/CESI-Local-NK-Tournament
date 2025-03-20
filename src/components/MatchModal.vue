@@ -129,14 +129,16 @@
             🏆 {{ idWinner === match?.idPlayer1 ? player1Name : player2Name }} sera déclaré vainqueur du match.
           </p>
           <p v-else class="modal-text">
-            ⚠️ Le score est égal. Vous devez désigner un vainqueur.
+            ⚠️ Le score est égal.
+          <p v-if="match?.idMatchType === 1">Vous devez désigner un vainqueur.</p>
+          <p v-else="match?.idMatchType === 1">Vous devez désigner un vainqueur ou choisir le match nul.</p>
           </p>
           <p v-if="!idWinner" class="warning-text">
             Cette décision peut être basée sur une décision arbitrale ou un abandon.
             Une fois validée, elle sera <strong>irréversible</strong>.
           </p>
 
-          <!-- sélection du vainqueur avec des checkbox -->
+          <!-- select du vainqueur avec des checkbox -->
           <div v-if="!idWinner" class="winner-selection">
             <VaCheckbox v-model="selectedWinner" :true-value="match?.idPlayer1" :false-value="null"
               @update:model-value="clearOtherCheckbox(match?.idPlayer2)" :label="player1Name">
@@ -146,10 +148,17 @@
               class="checkbox-player-2-modal">
               🏆 {{ player2Name }}
             </VaCheckbox>
+
+            <!-- option pour déclarer un match nul (uniquement en mode poule) -->
+            <div v-if="match?.idMatchType === 2" class="draw-option">
+              <VaCheckbox v-model="selectedWinner" :true-value="-1" :false-value="null"
+                @update:model-value="clearOtherCheckbox(null)" label="Match nul (égalité)">
+              </VaCheckbox>
+            </div>
           </div>
 
           <div class="modal-actions">
-            <VaButton color="danger" @click="confirmWinner" :disabled="!selectedWinner && !idWinner">
+            <VaButton color="danger" @click="confirmWinner" :disabled="isConfirmDisabled">
               Confirmer
             </VaButton>
             <VaButton color="secondary" @click="showWinnerConfirmation = false"> Annuler </VaButton>
@@ -194,9 +203,14 @@ const isCounterDisabledP2 = ref(false);
 const showWinnerConfirmation = ref(false);
 const selectedWinner = ref(null);
 
+const isConfirmDisabled = computed(() => {
+  return idWinner.value === null && selectedWinner.value === null;
+});
+
+
 // permett de désélectionner l'autre checkbox quand on en coche une
 const clearOtherCheckbox = (otherId) => {
-  if (selectedWinner.value === otherId) {
+  if (selectedWinner.value === otherId || (otherId === null && selectedWinner.value !== -1)) {
     selectedWinner.value = null;
   }
 };
@@ -220,13 +234,26 @@ const disableCounters = (player) => {
 // fction pour confirmer définitivement le vainqueur
 const confirmWinner = async () => {
   const finalWinner = selectedWinner.value || idWinner.value; // prend le gagnant sélectionné ou normal
-  await matchService.update(match.value.idMatch, match.value.idMatchType, {
-    ipponsPlayer1: ipponsPlayer1.value,
-    ipponsPlayer2: ipponsPlayer2.value,
-    keikokusPlayer1: keikokusPlayer1.value,
-    keikokusPlayer2: keikokusPlayer2.value,
-    idWinner: finalWinner,
-  });
+
+  // si le match est de type "poule" et que l'egallite est choisie, mettre idWinner à -1
+  if (match.value?.idMatchType === 2 && finalWinner === -1) {
+    await matchService.update(match.value.idMatch, match.value.idMatchType, {
+      ipponsPlayer1: ipponsPlayer1.value,
+      ipponsPlayer2: ipponsPlayer2.value,
+      keikokusPlayer1: keikokusPlayer1.value,
+      keikokusPlayer2: keikokusPlayer2.value,
+      idWinner: -1, // match nul
+    });
+  } else {
+    // sinon, mettre à jour le gagnant normalement
+    await matchService.update(match.value.idMatch, match.value.idMatchType, {
+      ipponsPlayer1: ipponsPlayer1.value,
+      ipponsPlayer2: ipponsPlayer2.value,
+      keikokusPlayer1: keikokusPlayer1.value,
+      keikokusPlayer2: keikokusPlayer2.value,
+      idWinner: finalWinner,
+    });
+  }
 
   emit('update');
   showWinnerConfirmation.value = false;
@@ -545,6 +572,21 @@ watch([ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2], async ()
   flex: 2;
   transition: opacity 0.3s ease;
   font-size: 10px !important;
+}
+
+.draw-option {
+  display: flex;
+  justify-content: center;
+  align-items: center; 
+  gap: 8px; 
+  margin-top: 10px; 
+}
+
+
+.draw-option .va-checkbox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .additional-btn.hidden {

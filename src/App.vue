@@ -1,7 +1,18 @@
 <template>
-  <RouterView />
+  <VaConfig :colors="{
+        variables: {
+          primary: primaryColor,
+        },
+      }">
+    <RouterView />
+  </VaConfig>
 </template>
 
+<script setup>
+import { ref } from "vue";
+
+const primaryColor = ref("#0c2432");
+</script>
 
 <style scoped>
 html, body, #app {
@@ -11,6 +22,4 @@ html, body, #app {
   display: flex !important;
   flex-direction: column;
 }
-
-
 </style>

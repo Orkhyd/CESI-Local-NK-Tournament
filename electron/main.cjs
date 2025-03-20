@@ -65,3 +65,35 @@ ipcMain.on("open-match-window", (event, matchData) => {
     delete openWindows[matchId];
   });
 });
+
+ipcMain.on("open-fictive-match-window", () => {
+  const fictiveMatchId = "fictive-mode"; // id unique fictif
+
+  // verif si une fenêtre fictive est déjà ouverte
+  if (openWindows[fictiveMatchId] && !openWindows[fictiveMatchId].isDestroyed()) {
+    openWindows[fictiveMatchId].focus(); // ramene la fenêtre fictive au premier plan
+    return;
+  }
+
+  const fictiveMatchWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, "../src/preload.js"),
+      contextIsolation: true,
+      enableRemoteModule: false,
+      nodeIntegration: false,
+    },
+  });
+
+  fictiveMatchWindow.loadURL(`http://localhost:5173/match/fictive`);
+
+  // stocke la fenêtre fictive
+  openWindows[fictiveMatchId] = fictiveMatchWindow;
+
+  // supp l'entrée quand la fenêtre est fermée
+  fictiveMatchWindow.on("closed", () => {
+    delete openWindows[fictiveMatchId];
+  });
+});
+

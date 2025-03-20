@@ -62,6 +62,13 @@
             <span class="category-status" :class="category.status === 'Terminé' ? 'finished' : 'ongoing'">
               {{ category.status }}
             </span>
+
+            <!--  gagnant si la catégorie est terminée -->
+            <p v-if="category.status === 'Terminé' && category.winnerName" class="category-winner">
+              <VaIcon name="emoji_events" class="winner-icon" />
+              {{ category.winnerName }}
+            </p>
+
           </div>
 
         </div>
@@ -155,18 +162,27 @@ const refreshCategories = async () => {
 
 // formattage des catégories
 const formattedCategories = computed(() =>
-  categories.value.map((category) => ({
-    ...category,
-    name: category.name,
-    icon: category.typeId === 1 ? "grid_view" : "bar_chart",
-    genre: getGenderLabel(category.genderId),
-    type: getTypeLabel(category.typeId),
-    ageCategories: getAgeCategories(category.ageCategoryIds),
-    gradeRange: getGradeRange(category.minGradeId, category.maxGradeId),
-    participantCount: category.participants ? category.participants.length : 0,
-    status: category.idWinner ? "Terminé" : "En cours",
-  }))
+  categories.value.map((category) => {
+    // trouve le gagnant s'il y en a un
+    console.log(category.participants, category.idWinner)
+    const winner = category.participants?.find(p => p.id === category.idWinner);
+    console.log(winner)
+
+    return {
+      ...category,
+      name: category.name,
+      icon: category.typeId === 1 ? "grid_view" : "bar_chart",
+      genre: getGenderLabel(category.genderId),
+      type: getTypeLabel(category.typeId),
+      ageCategories: getAgeCategories(category.ageCategoryIds),
+      gradeRange: getGradeRange(category.minGradeId, category.maxGradeId),
+      participantCount: category.participants ? category.participants.length : 0,
+      status: category.idWinner ? "Terminé" : "En cours",
+      winnerName: winner ? winner?.firstName + ' ' + winner?.lastName : null // nom du gagnant
+    };
+  })
 );
+
 
 
 // libellé du genre
@@ -291,6 +307,21 @@ onMounted(async () => {
   margin: 8px 0;
 }
 
+.category-winner {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #154EC1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.winner-icon {
+  color: gold;
+  font-size: 1.2rem;
+}
+
 .category-type {
   font-size: 0.85rem;
 }
@@ -363,7 +394,8 @@ onMounted(async () => {
 .category-item.active .category-meta,
 .category-item.active .category-grade,
 .category-item.active .category-age
-.category-item.active .participant-count {
+.category-item.active .participant-count,
+.category-item.active .category-winner {
   color: white !important;
 }
 

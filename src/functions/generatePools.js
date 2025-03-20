@@ -45,18 +45,22 @@ export function generatePools(participants) {
     const poolSize = i < r ? q + 1 : q;
     const slice = realParticipants.slice(startIndex, startIndex + poolSize);
     startIndex += poolSize;
-    pools.push(buildPool(slice, `Poule ${i + 1}`, qualifyingPositions));
+  
+    // si une seule poule, elle doit directement s'appeler "Poule Finale"
+    const poolLabel = nbPools === 1 ? "Poule Finale" : `Poule ${i + 1}`;
+  
+    pools.push(buildPool(slice, poolLabel, qualifyingPositions));
   }
+  
 
   console.log(nbPools);
 
   // si on a plusieurs poules, on genere une poule finale vide avec un libellé spécifique
   if (nbPools > 1) {
-    const finalPool = buildPool([], "Poule Finale", []); // poule finale vide avec nom spécifique
+    const finalPool = buildPool([], "Poule Finale", []);
     pools.push(finalPool);
   }
-
-  console.log(pools);
+console.log(pools)
   return { structure: pools };
 }
 
@@ -65,7 +69,7 @@ function buildPool(participants, label, qualifyingPositions) {
   const matches = generateRoundRobinMatches(participants, label); // genere les matchs en round-robin
 
   return {
-    label, // On utilise directement le libellé passé en paramètre
+    label, // on utilise directement le libellé passé en paramètre
     participants,
     matches,
     isComplete: false,
@@ -92,7 +96,6 @@ function generateRoundRobinMatches(participants, label) {
       });
     }
   }
-
   return matches;
 }
 

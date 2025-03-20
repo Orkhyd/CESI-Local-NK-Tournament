@@ -14,7 +14,7 @@ app.use(
   })
 );
 
-// Vérifie si on est bien dans un environnement Electron
+// verif si on est bien dans un environnement Electron
 if (window && window.electron) {
   app.config.globalProperties.$electron = window.electron;
 }

@@ -9,7 +9,6 @@
         <div class="player-info">
           <div class="player-name">
             {{ player1 ? player1.firstName + ' ' + player1.lastName : "En attente" }}
-            <span v-if="match?.idWinner === match?.idPlayer1" class="winner-crown">👑</span>
           </div>
           <div class="club-name">
             {{ player1?.clubName || "Inconnu" }}
@@ -35,7 +34,6 @@
         <div class="player-info">
           <div class="player-name">
             {{ player2 ? player2.firstName + ' ' + player2.lastName : "En attente" }}
-            <span v-if="match?.idWinner === match?.idPlayer2" class="winner-crown">👑</span>
           </div>
           <div class="club-name">
             {{ player2?.clubName || "Inconnu" }}
@@ -71,32 +69,6 @@
     </div>
 
   </div>
-
-  <!-- effet IPPON -->
-  <div v-if="showIpponEffect" class="effect-container ippon-effect">
-    <span class="effect-text">IPPON !!!</span>
-    <span class="effect-player">{{ effectPlayerName }}</span>
-  </div>
-
-  <!-- effet KEIKOKU -->
-  <div v-if="showKeikokuEffect" class="effect-container keikoku-effect">
-    <span class="effect-text">KEIKOKU !!!</span>
-    <span class="effect-player">{{ effectPlayerName }}</span>
-  </div>
-
-  <!-- flash d'écran -->
-  <div v-if="showIpponEffect || showKeikokuEffect" class="screen-flash"></div>
-
-  <!-- effet FIN DU TEMPS -->
-  <div v-if="showTimeUpEffect" class="effect-container timeup-effect">
-    <span class="effect-text">{{ timeUpText }}</span>
-  </div>
-
-  <!-- affichage du gagnant -->
-  <div v-if="match?.idWinner" class="winner-banner">
-    🏆 MATCH TERMINÉ ! Victoire de {{ winnerName }}
-  </div>
-
 
 </template>
 
@@ -172,14 +144,6 @@ watch(match, (newMatch) => {
   }
 });
 
-// nom du vainqueur (affichee dans le message "MATCH TERMINÉ")
-const winnerName = computed(() => {
-  if (!match.value?.idWinner) return "";
-  return match.value.idWinner === match.value.idPlayer1
-    ? `${player1.value.firstName} ${player1.value.lastName}`
-    : `${player2.value.firstName} ${player2.value.lastName}`;
-});
-
 // watch pour détecter les IPPON / KEIKOKU et les infos du match
 watch(match, async (newMatch, oldMatch) => {
   if (!newMatch || !oldMatch) return;
@@ -191,61 +155,7 @@ watch(match, async (newMatch, oldMatch) => {
     player2.value = await getParticipantById(newMatch.idPlayer2);
   }
 
-  // verif si un IPPON a été marqué
-  if (newMatch.ipponsPlayer1 > oldMatch.ipponsPlayer1) {
-    triggerEffect("ippon", `${player1.value.firstName} ${player1.value.lastName}`);
-  }
-  if (newMatch.ipponsPlayer2 > oldMatch.ipponsPlayer2) {
-    triggerEffect("ippon", `${player2.value.firstName} ${player2.value.lastName}`);
-  }
-
-  // verif si un KEIKOKU a été commis
-  if (newMatch.keikokusPlayer1 > oldMatch.keikokusPlayer1) {
-    triggerEffect("keikoku", `${player1.value.firstName} ${player1.value.lastName}`);
-  }
-  if (newMatch.keikokusPlayer2 > oldMatch.keikokusPlayer2) {
-    triggerEffect("keikoku", `${player2.value.firstName} ${player2.value.lastName}`);
-  }
-
-  // Vérifie si le temps est écoulé
-  if (newMatch.timer.currentTime === 0 && oldMatch.timer.currentTime > 0) {
-    triggerTimeUpEffect("FIN DU TEMPS RÉGLEMENTAIRE");
-  }
-  if (newMatch.timer.additionalTime === 0 && oldMatch.timer.additionalTime > 0) {
-    triggerTimeUpEffect("FIN DU TEMPS ADDITIONNEL");
-  }
 });
-
-const showIpponEffect = ref(false);
-const showKeikokuEffect = ref(false);
-const showTimeUpEffect = ref(false);
-
-const effectPlayerName = ref(""); // stocke le nom du joueur ayant marqué
-const timeUpText = ref(""); // stocke le message de fin du temps
-
-const triggerEffect = (type, playerName) => {
-  effectPlayerName.value = playerName; // stocke le nom du joueur ayant marqué
-
-  if (type === "ippon") {
-    showIpponEffect.value = true;
-    setTimeout(() => {
-      showIpponEffect.value = false;
-    }, 3000);
-  } else if (type === "keikoku") {
-    showKeikokuEffect.value = true;
-    setTimeout(() => {
-      showKeikokuEffect.value = false;
-    }, 3000);
-  }
-};
-
-const triggerTimeUpEffect = (message) => {
-  timeUpText.value = message;
-  showTimeUpEffect.value = true;
-  setTimeout(() => {
-    showTimeUpEffect.value = false;
-  }, 4000);
-};
 
 function getCountry(natId) {
   return nationality.find(country => country.id === Number(natId));
@@ -279,7 +189,6 @@ const displayedTime = computed(() => {
   flex-direction: column;
   height: 100vh;
   min-height: 0;
-  gap: 10px;
 }
 
 /* chaque ligne prend exactement 1/3 de la hauteur */
@@ -435,170 +344,6 @@ const displayedTime = computed(() => {
   margin-bottom: 10px;
   justify-content: flex-end;
   font-size: clamp(2rem, 6vw, 10rem);
-}
-
-/* effet global */
-.effect-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(1);
-  text-align: center;
-  z-index: 9999;
-  animation: zoomInOut 3s ease-in-out;
-}
-
-/* texte principal */
-.effect-text {
-  font-size: 9vw;
-  font-weight: bold;
-  display: block;
-  text-transform: uppercase;
-  text-shadow: 0px 0px 40px rgba(255, 255, 255, 1), 0px 0px 60px rgba(255, 69, 0, 1);
-}
-
-/* noom du joueur */
-.effect-player {
-  font-size: 4vw;
-  font-weight: bold;
-  margin-top: 10px;
-  display: block;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0px 0px 20px rgba(255, 255, 255, 0.8), 0px 0px 40px rgba(255, 69, 0, 0.8);
-}
-
-/* IPPON -> Doré */
-.ippon-effect .effect-text {
-  color: gold;
-}
-
-.ippon-effect .effect-player {
-  color: #ffd700;
-}
-
-/* KEIKOKU -> Rouge */
-.keikoku-effect .effect-text {
-  color: red;
-}
-
-.keikoku-effect .effect-player {
-  color: #ff4d4d;
-}
-
-/* animation explosion badass */
-@keyframes zoomInOut {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-  }
-  20% {
-    transform: translate(-50%, -50%) scale(1.5);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-  }
-}
-
-/* efffet FIN DU TEMPS */
-.timeup-effect {
-  font-size: 6vw;
-  font-weight: bold;
-  color: white;
-  text-shadow: 0px 0px 40px rgba(255, 255, 255, 1), 0px 0px 60px rgba(255, 69, 0, 1);
-  background: rgba(0, 0, 0, 0.8);
-  padding: 20px;
-  border-radius: 10px;
-  animation: fadeInOut 4s ease-in-out;
-}
-
-/* animation d’apparition/disparition du message "FIN DU TEMPS" */
-@keyframes fadeInOut {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-  }
-  30% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
-}
-
-/* Flash d'écran */
-.screen-flash {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(255, 255, 255, 1);
-  animation: screenFlash 0.3s ease-in-out;
-  z-index: 9998;
-}
-
-@keyframes screenFlash {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-/* bannière "MATCH TERMINÉ" */
-.winner-banner {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 5vw;
-  font-weight: bold;
-  color: rgb(255, 255, 255);
-  text-shadow: 0px 0px 40px rgb(255, 0, 0), 0px 0px 60px rgba(255, 69, 0, 1);
-  background: rgba(0, 0, 0, 0.8);
-  padding: 20px 40px;
-  border-radius: 10px;
-  animation: fadeInOut 4s ease-in-out;
-  z-index: 9999;
-}
-
-/* couronne du vainqueur */
-.winner-crown {
-  font-size: 3vw;
-  margin-left: 10px;
-  animation: crownGlow 2s infinite alternate;
-}
-
-/* effet brillant de la couronne */
-@keyframes crownGlow {
-  0% {
-    text-shadow: 0px 0px 10px rgba(255, 215, 0, 0.5);
-  }
-  100% {
-    text-shadow: 0px 0px 20px rgba(255, 215, 0, 1);
-  }
-}
-
-/* animation d’apparition/disparition du message "MATCH TERMINÉ" */
-@keyframes fadeInOut {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-  }
-  30% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
 }
 
 </style>
