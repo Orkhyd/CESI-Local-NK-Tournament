@@ -264,7 +264,7 @@ onMounted(async () => {
 
 <style scoped>
 .tournament-brackets {
-  width: 80vw;
+  width: 100%;
   height: 75vh;
   overflow: auto;
   border: 1px solid #ccc;

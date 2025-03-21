@@ -26,7 +26,7 @@
 
       <!-- etat du tournoi -->
       <div class="status-container">
-        <VaChip :color="tournoi.started ? '#154EC1' : 'warning'" class="status-badge">
+        <VaChip :color="tournoi.started ? '#0c2432' : 'warning'" class="status-badge">
           <VaIcon
             :name="tournoi.started ? 'check_circle' : 'hourglass_empty'"
             class="status-icon"
@@ -40,7 +40,7 @@
           indeterminate
           :size="40"
           :thickness="0.2"
-          color="#154EC1"
+          color="#0c2432"
           class="progress-circle"
         />
       </div>
@@ -96,7 +96,7 @@ const formatDate = (date) => {
 /* icone principale */
 .icon-tournament {
   font-size: 80px;
-  color: #154EC1; 
+  color: #0c2432; 
   animation: float 3s ease-in-out infinite;
 }
 

@@ -337,7 +337,7 @@ watchEffect(async () => {
   right: 20px;
   width: 100px;
   height: 200px;
-  z-index: 1000;
+  z-index: 5;
   border: 1px solid rgba(0, 28, 42, 1);
   background-color: rgba(240, 240, 240, 1);
 }

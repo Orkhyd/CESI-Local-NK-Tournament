@@ -4,7 +4,8 @@ import { getMatchesByPool } from "@/replicache/stores/matchStore"
 import { determinePoolRanking } from "@/functions/determinePoolRanking";
 import { matchService } from "@/replicache/services/matchService";
 import { getPoolManagerById } from "./poolManagerStore";
-import { rep as categoryRep } from "../categoryStore"
+import { rep as categoryRep } from "../categoryStore";
+import { ParticipantService } from "@/replicache/services/participantService";
 
 export const rep = new Replicache({
   name: "pool",
@@ -65,7 +66,7 @@ export async function checkAndCompletePool(poolId) {
     return;
   }
 
-  // verifier s'il y a plusieurs joueurs ex aequo en premiere position
+  // verif s'il y a plusieurs joueurs ex aequo en premiere position
   const topPlayers = ranking.filter(p => p.rank === 1);
   if (topPlayers.length > 1) {
     // creer des matchs entre chaque paire des joueurs ex aequo
@@ -90,6 +91,14 @@ export async function checkAndCompletePool(poolId) {
 
   // si le premier est unique, marquer la poule comme complete
   await rep.mutate.updatePoule({ id: poolId, isComplete: true });
+
+  // seuls les participants classés à la première place se qualifient.
+  // on élimine donc touus ceux qui ne sont pas à la première place.
+  ranking.forEach(async (p) => {
+    if (p.rank !== 1) {
+      await ParticipantService.eliminateParticipant(p.participant.id);
+    }
+  });
 
   // recuperer toutes les poules du poolManager pour determiner si c'est la poule finale
   const poolManagerId = pool.poolManagerId;

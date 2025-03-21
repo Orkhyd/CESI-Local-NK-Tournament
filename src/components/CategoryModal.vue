@@ -766,7 +766,7 @@ const participantColumns = [
 .va-select-option--selected {
     background-color: #f9f9f9 !important; 
     font-weight: bold !important; 
-    border-left: 5px solid #154EC1;
+    border-left: 5px solid #0c2432;
 }
 
 .select-option {

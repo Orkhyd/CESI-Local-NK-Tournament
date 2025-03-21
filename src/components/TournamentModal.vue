@@ -113,7 +113,7 @@ defineExpose({ open });
   font-size: 11px;
   font-weight: bold;
   margin-bottom: 10px;
-  color: #154ec1;
+  color: #0c2432;
 }
 
 /* centrer le Date Picker */

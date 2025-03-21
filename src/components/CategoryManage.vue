@@ -1,7 +1,7 @@
 <template>
   <div class="category-manage">
     <!-- navbar avec onglets -->
-    <VaNavbar color="#154EC1" class="h-24">
+    <VaNavbar color="#0c2432" class="h-24">
       <template #left>
         <VaNavbarItem class="logo">
           Gestion de catégorie : {{ props.category.name }}
@@ -19,7 +19,7 @@
           <va-button @click="showParticipants = !showParticipants" round icon="visibility" color="#ffffff">
             Afficher les Participants
           </va-button>
-          <ParticipantList v-if="showParticipants" @find-participant="searchParticipant = $event"
+          <ParticipantsCategoryList v-if="showParticipants" @find-participant="searchParticipant = $event"
             :participants="participants" @close="showParticipants = !showParticipants" />
         </div>
       </template>
@@ -46,14 +46,14 @@
 
 
 <script setup>
-import { ref, watch, onMounted, computed } from "vue";
-import { getParticipantsByCategory } from "@/replicache/stores/participantStore";
+import { ref, watch, onMounted, onUnmounted, computed } from "vue";
+import { getParticipantsByCategory, rep as participantRep } from "@/replicache/stores/participantStore";
 
 // importation des composants conditionnels
 import BracketType from "@/components/Bracket/BracketType.vue";
 import PoolList from "@/components/Pool/PoolList.vue";
 import CategoryStatistics from "@/components/Statistics/CategoryStatistics.vue";
-import ParticipantList from "./Bracket/ParticipantsList.vue";
+import ParticipantsCategoryList from "./Bracket/ParticipantsCategoryList.vue";
 
 
 const props = defineProps({
@@ -111,7 +111,32 @@ watch(activeTab, (newTab) => {
 });
 
 // chg les participants au montage et si la catégorie change
-onMounted(fetchParticipants);
+let unsubscribeParticipants; // variable pour stocker la fonction de désabonnement
+
+onMounted(async () => {
+  await fetchParticipants();
+
+  // s'abonner aux changements dans les participants de la catégorie actuelle
+  unsubscribeParticipants = participantRep.subscribe(
+    async (tx) => {
+      // scanner tous les participants
+      const entries = await tx.scan({ prefix: "participant/" }).entries().toArray();
+      return entries; 
+    },
+    () => {
+      // dès qu'un changement est détecté, rafraîchir la liste
+      fetchParticipants();
+    }
+  );
+
+});
+
+onUnmounted(() => {
+  if (unsubscribeParticipants) {
+    unsubscribeParticipants();
+  }
+});
+
 watch(() => props.category.id, fetchParticipants);
 </script>
 

@@ -35,16 +35,6 @@ export const rep = new Replicache({
       };
 
       await tx.put(`match/${idMatch}`, updatedMatch);
-
-      // verif : Match Type 1 (tableau ) + Gagnant défini = Perdant éliminé
-      if (updates.idWinner && match.idMatchType === 1) {
-        let loserId = match.idPlayer1 === updates.idWinner ? match.idPlayer2 : match.idPlayer1;
-
-        if (loserId && loserId !== -1) {
-          // eliminer le participant
-          await ParticipantService.eliminateParticipant(loserId);
-        }
-      }
     },
 
     async delete(tx, { idMatch }) {
