@@ -36,7 +36,7 @@ export function generateBracket(participants) {
 
     // libelles predefinis pour les tours
     const roundLabels = {
-        1: "Finale",
+        1: "Finale & Petite-Finale",
         2: "1/2 finale",
         4: "1/4 de finale",
         8: "1/8 de finale",
@@ -97,9 +97,11 @@ export function generateBracket(participants) {
 
         // ajouter le tour avec ses matchs
         rounds.push({
+            order: roundNumber, // ordre des rounds
             label: roundLabels[matchCount] || `Tour ${roundLetters[roundNumber]}`,
             matches: matches
         });
+        
 
         // preparer les participants pour le prochain tour (les gagnants)
         // preparer les participants pour le prochain tour (les gagnants)
@@ -116,6 +118,32 @@ export function generateBracket(participants) {
 
         roundNumber++;
     }
+    // ajout de la petite finale
+    if (rounds.length > 0) {
+        const finaleRound = rounds[rounds.length - 1];
+        if (finaleRound.matches.length === 1) { // verif qu'il s'agit bien de la finale
+            const finalMatch = finaleRound.matches[0];
+            const prev1 = finalMatch.previousMatch1;
+            const prev2 = finalMatch.previousMatch2;
+            if (prev1 && prev2) {
+                const pfId = `PF-${idGenerate}`;
+                const pfMatch = {
+                    idMatch: pfId,
+                    previousMatch1: prev1,
+                    previousMatch2: prev2,
+                    player1: { id: -2, lastName: `Perdant de ${prev1.split('-')[0]}` },
+                    player2: { id: -2, lastName: `Perdant de ${prev2.split('-')[0]}` },
+                    score1: null,
+                    score2: null,
+                    winner: null,
+                    keikoku1: 0,
+                    keikoku2: 0
+                };
+                finaleRound.matches.push(pfMatch);
+            }
+        }
+    }
+
     return {
         structure: rounds,
     };

@@ -26,6 +26,10 @@ export const matchService = {
         await declareCategoryWinner(match, updates.idWinner); // declare le gagnant du match gagnant de la category
       } else {
         await propagateWinnerToNextBracketMatch(idMatch, updates.idWinner); // propage le gagnant au match d'apres
+
+        const loserId = (match.idPlayer1 === updates.idWinner) ? match.idPlayer2 : match.idPlayer1;
+        await propagateLoserToPetiteFinale(idMatch, loserId); // propage le perdant vers les petites finales (matchs PF-xxx)
+
       }
     }
 
@@ -141,6 +145,36 @@ async function propagateWinnerToNextBracketMatch(idMatch, idWinner) {
   }
 }
 
+// envois les perdants de la demi finale vers la petite finale
+async function propagateLoserToPetiteFinale(idMatch, idLoser) {
+  const allMatches = await rep.query(async (tx) => {
+    const matches = [];
+    for await (const value of tx.scan()) {
+      matches.push(value);
+    }
+    return matches;
+  });
+
+  // cherche les matchs PF qui ont ce match comme précédent
+  const petiteFinaleMatch = allMatches.find(m =>
+    m.idMatch.startsWith("PF-") &&
+    (m.idPreviousMatch1 === idMatch || m.idPreviousMatch2 === idMatch)
+  );
+
+  if (!petiteFinaleMatch) return;
+
+  const updatedMatch = { ...petiteFinaleMatch };
+
+  if (updatedMatch.idPreviousMatch1 === idMatch) {
+    updatedMatch.idPlayer1 = idLoser;
+  }
+  if (updatedMatch.idPreviousMatch2 === idMatch) {
+    updatedMatch.idPlayer2 = idLoser;
+  }
+
+  await rep.mutate.update({ idMatch: updatedMatch.idMatch, ...updatedMatch });
+}
+
 async function checkIfFinalMatchBracket(match) {
   // recup tous les rounds de ce bracket
   const actualRound = await getRoundById(match.idRound);
@@ -151,8 +185,9 @@ async function checkIfFinalMatchBracket(match) {
   const currentRound = rounds.find(r => r.id === match.idRound);
   if (!currentRound) return false;
 
-  // verif si ce round est la "Finale"
-  return currentRound.label.toLowerCase() === "finale";
+  // verif si ce match est une vraie finale (et non une petite finale)
+  return currentRound.label.toLowerCase() === "finale & petite-finale" && !match.idMatch.startsWith("PF-");
+
 }
 
 async function declareCategoryWinner(match, idWinner) {

@@ -41,8 +41,6 @@ export const rep = new Replicache({
         let loserId = match.idPlayer1 === updates.idWinner ? match.idPlayer2 : match.idPlayer1;
 
         if (loserId && loserId !== -1) {
-          console.log(`🔍 Suppression du participant perdu avec ID : ${loserId}`);
-
           // eliminer le participant
           await ParticipantService.eliminateParticipant(loserId);
         }
@@ -112,7 +110,6 @@ export async function getMatchesByPool(idPool) {
       const matchData = entry[1]; // recup l'objet match
 
       // on verif que l'objet match possède bien la propriété idPool et qu'elle correspond
-      console.log(matchData.idPool, idPool)
       if (matchData && matchData.idPool === idPool) {
         matches.push(matchData);
       }

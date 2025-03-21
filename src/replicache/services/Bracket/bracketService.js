@@ -27,7 +27,7 @@ export const bracketService = {
 
       // enregistrement des rounds et des matchs dans replicache
       for (const round of generatedBracket.structure) {
-        const idRound = await roundService.create(idBracket, round.label); // cree un round
+        const idRound = await roundService.create(idBracket, round.label, round.order); // cree un round
 
         for (const match of round.matches) {
           await matchService.create({

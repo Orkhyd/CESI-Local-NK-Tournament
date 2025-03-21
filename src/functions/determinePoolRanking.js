@@ -1,6 +1,5 @@
 export function determinePoolRanking(participants, matches) {
   if (!participants || !matches) return [];
-  console.log(participants, matches);
 
   // initialisation des statistiques pour chaque participant
   const stats = {};

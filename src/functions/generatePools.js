@@ -53,14 +53,11 @@ export function generatePools(participants) {
   }
   
 
-  console.log(nbPools);
-
   // si on a plusieurs poules, on genere une poule finale vide avec un libellé spécifique
   if (nbPools > 1) {
     const finalPool = buildPool([], "Poule Finale", []);
     pools.push(finalPool);
   }
-console.log(pools)
   return { structure: pools };
 }
 

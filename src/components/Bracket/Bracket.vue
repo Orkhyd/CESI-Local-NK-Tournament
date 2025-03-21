@@ -1,27 +1,31 @@
 <template>
+  <!-- Conteneur des rounds -->
   <div id="bracketContainer" class="tournament-brackets" ref="bracketContainer">
     <div class="bracket">
-      <!-- boucle sur chaque round (phase du tournoi) -->
       <template v-for="(round, roundIndex) in rounds" :key="round.id">
         <div class="round-container">
-          <!-- affichage du nom du round (Finale, Demi-finale, etc.) -->
           <div class="round-label">
-            {{ getRoundLabel(round.matches.length, roundIndex, round.label) }}
+            {{ round.label }}
           </div>
-
           <div class="round">
-            <!-- boucle sur les matchs du round en cours -->
+            <!-- Matchs du round -->
             <template v-for="(match, matchIndex) in round.matches" :key="match.idMatch" class="match-match">
               <MatchCard :match="match" :disabled="match.idWinner !== null" :participants="participants"
                 @updateBracket="loadRounds" :id="'match-' + match.idMatch" ref="matchRefs"
+                :ref="round.label === 'Finale' ? 'finaleMatchCard' : null"
                 :class="{ 'highlight-match': highlightedMatchId === match.idMatch }" />
-              <!-- ddesactive le match s'il a déjà un gagnant -->
             </template>
           </div>
         </div>
       </template>
     </div>
+
+    <!-- Petite finale affichée en position absolue sous la finale -->
+    <div v-if="petiteFinale" class="petite-finale-absolute">
+      <MatchCard :match="petiteFinale" :disabled="petiteFinale.idWinner !== null" :participants="participants" @updateBracket="loadRounds"/>
+    </div>
   </div>
+
   <canvas id="minimap"></canvas>
 </template>
 
@@ -59,6 +63,10 @@ const highlightedMatchId = ref(null); // match en surbrillance quand recherche d
 
 const bracketContainer = ref(null); // ref au conteneur scrollable
 
+// petite finale
+const petiteFinale = ref(null);
+
+
 /**
  * fnnction pour charger les rounds et les matchs associés
  */
@@ -88,6 +96,8 @@ const loadRounds = async () => {
           .flat()
           .filter(match => match.idRound === round.id)
           .map(match => {
+            const isPetiteFinale = match.idMatch.startsWith("PF-");
+
             // traitement pour récupérer player1, player2, etc.
             let player1 = props.participants.find(p => p.id === match.idPlayer1) || null;
             let player2 = props.participants.find(p => p.id === match.idPlayer2) || null;
@@ -95,15 +105,17 @@ const loadRounds = async () => {
             if (!player1 && match.idPreviousMatch1) {
               const previousMatch = matchMap.get(match.idPreviousMatch1);
               player1 = previousMatch && !previousMatch.idWinner
-                ? { id: match.idPreviousMatch1, lastName: `*Gagnant de ${match.idPreviousMatch1.split("-")[0]}` }
+                ? { id: match.idPreviousMatch1, lastName: `${isPetiteFinale ? "*Perdant de" : "*Gagnant de"} ${match.idPreviousMatch1.split("-")[0]}` }
                 : props.participants.find(p => p.id === previousMatch?.idWinner) || { id: previousMatch?.idWinner, lastName: "Inconnu" };
+
             }
 
             if (!player2 && match.idPreviousMatch2) {
               const previousMatch = matchMap.get(match.idPreviousMatch2);
               player2 = previousMatch && !previousMatch.idWinner
-                ? { id: match.idPreviousMatch2, lastName: `*Gagnant de ${match.idPreviousMatch2.split("-")[0]}` }
+                ? { id: match.idPreviousMatch2, lastName: `${isPetiteFinale ? "*Perdant de" : "*Gagnant de"} ${match.idPreviousMatch2.split("-")[0]}` }
                 : props.participants.find(p => p.id === previousMatch?.idWinner) || { id: previousMatch?.idWinner, lastName: "Inconnu" };
+
             }
 
             return {
@@ -131,7 +143,20 @@ const loadRounds = async () => {
 
 
       // trier les rounds par le nombre de matchs (du plus grand au plus petit)
-      updatedRounds.sort((a, b) => b.matches.length - a.matches.length);
+      updatedRounds.sort((a, b) => a.order - b.order);
+
+      let pfMatch = null;
+      const roundsSansPF = updatedRounds.map(round => {
+        if (round.label === 'Finale & Petite-Finale' && round.matches.length > 1) {
+          // extraire le match dont l'id commence par "PF-" ( petite ifnal;e )
+          pfMatch = round.matches.find(m => m.idMatch.startsWith('PF-'));
+          // garde uniquement le match de base dans ce round
+          round.matches = round.matches.filter(m => !m.idMatch.startsWith('PF-'));
+        }
+        return round;
+      });
+      rounds.value = roundsSansPF;
+      petiteFinale.value = pfMatch;
 
       // mettre a jour les rounds avec les matchs associes
       rounds.value = updatedRounds;
@@ -141,26 +166,6 @@ const loadRounds = async () => {
   } catch (error) {
     console.error("❌ erreur lors de la recuperation des rounds et matchs :", error);
   }
-};
-
-
-/**
- * ffonction qui retourne le nom du round en fonction du nombre de matchs
- */
-const getRoundLabel = (matchCount, roundIndex, roundLabel) => {
-  const labels = {
-    1: "Finale",
-    2: "Demi-finale",
-    4: "Quart de finale",
-    8: "8ème de finale",
-    16: "16ème de finale",
-  };
-
-  // si le round a un vrai label (ex: "1/4 de finale"), on l'utilise
-  if (roundLabel) return roundLabel;
-
-  // sinon, utilise la correspondance avec le nombre de matchs
-  return labels[matchCount] || `Tour ${roundIndex + 1}`;
 };
 
 // permet de trovuer le match d'un joueur le plus avancé ( dans le tableau )
@@ -218,9 +223,25 @@ watch(() => props.searchParticipant, async (searchParticipant) => {
 onMounted(async () => {
   if (props.bracket?.id && props.participants?.length) {
     isDataReady.value = true;
-    await loadRounds(); 
+    await loadRounds();
 
     await nextTick();
+
+    // recup les élémentss de la finale
+    const finaleMatchContainer = document.querySelector('.round-container:last-child .match');
+    const finaleMatchElement = document.querySelector('.round-container:last-child .match .match-content');
+
+    if (finaleMatchElement && petiteFinale.value) {
+      // calculer la position de la petite finale
+      const petiteFinaleElement = document.querySelector('.petite-finale-absolute');
+      if (petiteFinaleElement) {
+        const finaleTop = finaleMatchElement.offsetTop;
+        const finaleHeight = finaleMatchElement.offsetHeight;
+
+        petiteFinaleElement.style.top = `${finaleTop + finaleHeight + 50}px`; // 50px en dessous de la finale
+        petiteFinaleElement.style.left = `${finaleMatchContainer.offsetLeft - 25}px`;
+      }
+    }
 
     // init pagemap après que le contenu est rendu
     if (bracketContainer.value) {
@@ -248,6 +269,7 @@ onMounted(async () => {
   overflow: auto;
   border: 1px solid #ccc;
   padding: 10px;
+  position: relative;
 }
 
 /* style pour les titres des rounds (ex : "Demi-finale") */
@@ -338,7 +360,6 @@ onMounted(async () => {
   animation: highlightAnimation 0.5s ease-in-out alternate infinite;
 }
 
-
 @keyframes highlightAnimation {
   from {
     transform: scale(1);
@@ -349,11 +370,24 @@ onMounted(async () => {
   }
 }
 
+/* désactive les traits de liaison pour la petite finale */
+.petite-finale-absolute .match::before,
+.petite-finale-absolute .match::after {
+  display: none !important;
+}
+
+.petite-finale-absolute {
+  position: absolute;
+  z-index: 0.9;
+  background: white;
+  padding: 10px;
+}
+
 #minimap {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 100px; 
+  width: 100px;
   height: 200px;
   z-index: 1000;
   border: 1px solid rgba(0, 28, 42, 1);

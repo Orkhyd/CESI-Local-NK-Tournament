@@ -164,9 +164,7 @@ const refreshCategories = async () => {
 const formattedCategories = computed(() =>
   categories.value.map((category) => {
     // trouve le gagnant s'il y en a un
-    console.log(category.participants, category.idWinner)
     const winner = category.participants?.find(p => p.id === category.idWinner);
-    console.log(winner)
 
     return {
       ...category,

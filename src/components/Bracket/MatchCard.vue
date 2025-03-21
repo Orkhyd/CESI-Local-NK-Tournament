@@ -1,5 +1,6 @@
 <template>
-  <div class="match" :class="{ 'disabled-match': isDisabled }" @click="openMatchModal">
+  <div class="match" :class="[{ 'disabled-match': isDisabled }, isPetiteFinale ? 'petite-finale-match' : '']"
+    @click="openMatchModal">
     <div class="match-content">
       <span class="match-id">{{ match.idMatch.split("-")[0] }}</span>
       <div class="players">
@@ -97,11 +98,6 @@ const openPlayerModal = (option, player) => {
   }
 };
 
-// fermer la modale
-const closePlayerModal = () => {
-  showPlayerModal.value = false;
-};
-
 const emit = defineEmits(["updateBracket"]);
 
 const refreshBracket = () => {
@@ -119,9 +115,13 @@ const isDisabled = computed(() => {
     props.match.player1?.lastName === "BYE" ||
     props.match.player2?.lastName === "BYE" ||
     props.match.player1?.lastName?.startsWith("*Gagnant de") ||
-    props.match.player2?.lastName?.startsWith("*Gagnant de")
+    props.match.player2?.lastName?.startsWith("*Gagnant de") ||
+    props.match.player2?.lastName?.startsWith("*Perdant de") ||
+    props.match.player2?.lastName?.startsWith("*Perdant de")
   );
 });
+
+const isPetiteFinale = computed(() => props.match.idMatch.startsWith("PF-"));
 
 // ouvre la modale si le match n est pas desactive
 const openMatchModal = () => {
@@ -201,6 +201,7 @@ const getFlagUrl = (flagBase64) => {
   text-align: center;
   cursor: pointer;
   transition: opacity 0.3s, transform 0.2s;
+  z-index: 1;
 }
 
 
@@ -250,6 +251,9 @@ const getFlagUrl = (flagBase64) => {
   z-index: 1;
 }
 
+.petite-finale-match {
+  transform: scale(0.85);
+}
 
 /* animation pour voir les matchs e ncours */
 @keyframes rotating-dash {
