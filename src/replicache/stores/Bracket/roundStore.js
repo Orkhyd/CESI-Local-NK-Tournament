@@ -5,8 +5,8 @@ export const rep = new Replicache({
   name: "round",
   licenseKey: "l70ce33fc0dee46abb6f056086da4d872",
   mutators: {
-    async create(tx, { id, idBracket, label }) {
-      await tx.put(`round/${id}`, new Round(id, idBracket, label));
+    async create(tx, { id, idBracket, label, order }) {
+      await tx.put(`round/${id}`, new Round(id, idBracket, label, order));
     },
 
     async update(tx, { id, ...updates }) {

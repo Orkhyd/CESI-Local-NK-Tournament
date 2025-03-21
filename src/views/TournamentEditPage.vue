@@ -175,7 +175,6 @@ const cancelImport = () => {
 // confirmer l'importation de participants
 const confirmImport = async (selectedItems) => {
   let successCount = 0;
-  console.log("modale ouvre");
   isImporting.value = true; // active le chargement
 
   // force vue à mettre à jour le DOM avant de continuer
