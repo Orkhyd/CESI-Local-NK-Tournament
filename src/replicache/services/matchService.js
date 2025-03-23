@@ -5,6 +5,7 @@ import { getMatchesByPool } from "@/replicache/stores/matchStore";
 import { getRoundsByBracket, getRoundById } from "@/replicache/stores/Bracket/roundStore";
 import { getBracketById } from "@/replicache/stores/Bracket/bracketStore";
 import { rep as categoryRep, getCategoryByBracketId } from "@/replicache/stores/categoryStore";
+import { ParticipantService } from "@/replicache/services/participantService";
 
 export const matchService = {
   create: async (data) => {
@@ -27,7 +28,9 @@ export const matchService = {
       } else {
         await propagateWinnerToNextBracketMatch(idMatch, updates.idWinner); // propage le gagnant au match d'apres
 
-        const loserId = (match.idPlayer1 === updates.idWinner) ? match.idPlayer2 : match.idPlayer1;
+        const loserId = (match.idPlayer1 === updates.idWinner) ? match.idPlayer2 : match.idPlayer1; // identifie le perdant : si le joueur 1 est le gagnant, le perdant est le joueur 2, sinon inversement
+
+        await ParticipantService.eliminateParticipant(loserId); // elimine immédiatement le perdant
         await propagateLoserToPetiteFinale(idMatch, loserId); // propage le perdant vers les petites finales (matchs PF-xxx)
 
       }

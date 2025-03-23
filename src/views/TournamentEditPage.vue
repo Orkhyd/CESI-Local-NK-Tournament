@@ -1,39 +1,49 @@
 <template>
   <div class="tournament-layout">
-    <!-- titre -->
+    <!-- Titre et bouton d'accueil -->
     <div class="header-container">
       <VaButton @click="goToHomePage" class="home-button" color="primary">
         ⬅ Accueil
       </VaButton>
       <div class="page-title">Paramétrage du Tournoi</div>
+    </div>
+
+    <!-- Tabs pour basculer entre Participants et Catégories -->
+    <VaTabs v-model="activeTab" grow>
+      <template #tabs class="tabs">
+        <VaTab name="participants">Participants</VaTab>
+        <VaTab name="categories">Catégories</VaTab>
+      </template>
+    </VaTabs>
+
+    <!-- Contenu des tabs -->
+    <div class="content-container">
+      <!-- Participants -->
+      <div v-if="activeTab === 'participants'" class="participant-section">
+        <ParticipantList :participants="formattedParticipants" @edit="handleEditParticipant"
+          @create="handleOpenParticipantModal" @delete="handleDeleteParticipant"
+          @import-participant="handleImportedParticipants" />
+      </div>
+
+      <!-- Catégories -->
+      <div v-if="activeTab === 'categories'" class="category-section">
+        <VaButton @click="handleOpenCategoryModal" class="create-category-button" color="primary">
+          Créer une catégorie
+        </VaButton>
+        <CategoryList :categories="formattedCategories" :participants="formattedParticipants" @edit="handleEditCategory"
+          @create="handleOpenCategoryModal" @delete="handleDeleteCategory" />
+      </div>
+    </div>
+
+    <!-- Bouton de validation en bas à droite -->
+    <div class="validation-button-container">
       <VaButton @click="validateCategories" :disabled="!canValidateCategories" :title="validationMessage"
         color="success" class="validate-categories-button">
         TERMINER LE PARAMETRAGE DU TOURNOI
       </VaButton>
     </div>
 
-    <!-- coonteneur des catégories et des participants -->
-    <div class="content-container">
-      <!-- catégories en haut -->
-      <div class="category-section">
-        <h2 class="section-title">Catégories</h2>
-        <VaButton @click="handleOpenCategoryModal" class="action-button create-category-button" color="primary">
-          Créer une catégorie
-        </VaButton>
-        <CategoryList :categories="formattedCategories" :participants="formattedParticipants" @edit="handleEditCategory"
-          @create="handleOpenCategoryModal" @delete="handleDeleteCategory" />
-      </div>
-
-      <!-- Participants en bas -->
-      <div class="participant-section">
-        <h2 class="section-title">Participants</h2>
-        <ParticipantList :participants="formattedParticipants" @edit="handleEditParticipant"
-          @create="handleOpenParticipantModal" @delete="handleDeleteParticipant"
-          @import-participant="handleImportedParticipants" />
-      </div>
-    </div>
-
-    <!-- modales -->
+    <!-- Modales -->
     <ParticipantModal v-if="selectedParticipant !== null" :modelValue="selectedParticipant !== null"
       :participant="selectedParticipant" @save="handleSaveParticipant"
       @update:modelValue="handleCloseParticipantModal" />
@@ -42,13 +52,13 @@
       :categories="categories" :participants="formattedParticipants" @save="handleSaveCategory"
       @update:modelValue="handleCloseCategoryModal" />
 
-    <!-- modale d'import des participants -->
+    <!-- Modale d'import des participants -->
     <ImportParticipantsModal v-model="showImportModal" v-if="showImportModal"
       :importedParticipants="importedParticipants" :registeredParticipants="participants" :importColumns="importColumns"
       :getCountry="getCountry" :getFlagUrl="getFlagUrl" :getGradeName="getGradeName" @cancelImport="cancelImport"
       @confirmImport="confirmImport" />
 
-    <!-- modale de confirmation de tournoi -->
+    <!-- Modale de confirmation de tournoi -->
     <VaModal v-model="showValidationModal" hide-default-actions class="validation-modal">
       <div class="modal-card">
         <div class="modal-title">
@@ -68,7 +78,7 @@
       </div>
     </VaModal>
 
-    <!-- modale de chargement d'importation de participant -->
+    <!-- Modale de chargement d'importation de participant -->
     <VaModal v-model="isImporting" hide-default-actions class="loading-modal">
       <VaInnerLoading :loading="true">
         <div class="loading-content">
@@ -77,7 +87,6 @@
         </div>
       </VaInnerLoading>
     </VaModal>
-
   </div>
 </template>
 
@@ -139,6 +148,8 @@ const getCountry = (natId) => {
 const getFlagUrl = (flagBase64) => {
   return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
 };
+
+const activeTab = ref("participants"); // affiche les participants par defaut
 
 // gestion participants importes
 const handleImportedParticipants = (participants) => {
@@ -473,21 +484,21 @@ const confirmTournamentValidation = async () => {
 
   try {
     await TournamentService.start(tournamentId.value); // majl'état du tournoi en "démarré"
-    
+
     showValidationModal.value = false; // ferme la modale
-    
-    toast.init({ 
-      message: "Le tournoi est maintenant validé et ne peut plus être modifié !", 
+
+    toast.init({
+      message: "Le tournoi est maintenant validé et ne peut plus être modifié !",
       color: "success", position: 'bottom-center'
     });
 
     router.push(`/tournament/started/${tournamentId.value}`);
-    
+
   } catch (error) {
     console.error("Erreur lors de la validation du tournoi :", error);
-    toast.init({ 
-      message: "Une erreur est survenue lors de la validation du tournoi.", 
-      color: "danger" , position: 'bottom-center'
+    toast.init({
+      message: "Une erreur est survenue lors de la validation du tournoi.",
+      color: "danger", position: 'bottom-center'
     });
   }
 };
@@ -497,6 +508,14 @@ const confirmTournamentValidation = async () => {
 
 <style scoped>
 /* header contenant le bouton et le titre */
+.tournament-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: relative;
+  /* Pour positionner le bouton de validation */
+}
+
 .header-container {
   display: flex;
   align-items: center;
@@ -505,195 +524,148 @@ const confirmTournamentValidation = async () => {
   margin-bottom: 15px;
 }
 
-/* style du bouton d'accueil */
-.home-button {
-  padding: 1px 2px;
-  font-size: 14px;
-  width: 100px;
-  font-weight: bold;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.validate-categories-button {
-  padding: 1px 2px;
-  font-size: 14px;
-  width: 400px;
-  font-weight: bold;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-/* style du titre centré */
 .page-title {
   flex: 1;
   text-align: center;
   font-size: 40px;
   font-weight: bold;
-  color: #154EC1;
+  color: #0c2432;
   font-family: Courier, monospace;
+  margin-right: 20px;
 }
 
-.nationality-cell {
+.home-button {
+  padding: 1px 2px;
+  font-size: 14px;
+  width: 100px;
+  margin: 5px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.content-container {
+  flex: 1;
   display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+  /* Espace entre les tabs et le contenu */
+}
+
+.participant-section,
+.category-section {
+  flex: 1;
+  padding: 15px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.va-tabs .va-tabs__container--grow .va-tab {
+  font-size: 20px !important;
+  font-weight: bold;
+}
+
+.validation-modal {
+  display: flex !important;
   align-items: center;
-  gap: 4px;
-}
-
-.nationality-flag {
-  width: 20px;
-  height: auto;
-  vertical-align: middle;
-}
-
-.import-modal {
+  justify-content: center;
   padding: 20px;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 30px;
+  width: 100%;
   text-align: center;
 }
 
-.va-virtual-scroller {
-    height: 50vh !important;
+.modal-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 20px;
 }
 
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: bold;
+.modal-icon {
+  color: #ffcc00;
+  margin-right: 10px;
+  font-size: 1.8rem;
+}
+
+.modal-body {
+  margin-bottom: 25px;
+}
+
+.modal-text {
+  font-size: 1rem;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.modal-warning {
+  font-size: 1rem;
+  color: #d32f2f;
   margin-bottom: 15px;
 }
 
 .modal-actions {
   display: flex;
   justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.gender-icon {
-  font-size: 18px;
-  color: #007bff;
-}
-
-/* layout global qui occupe toute la page */
-.tournament-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.category-section {
-  position: relative;
-}
-
-.create-category-button {
-  position: absolute;
-  right: 15px;
-  top: 10px;
-  height: 45px !important;
-}
-
-/* boutons bien centrés */
-.buttons-container {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-/* boutons stylisés */
-.action-button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  font-weight: bold;
-  border-radius: 8px;
-}
-
-/* conteneur des catégories et participants -pprend toute la place disponible */
-.content-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   gap: 20px;
 }
 
-.loading-modal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+.create-category-button {
+  display: block;
+  margin-left: auto;
+  padding: 6px 12px;
+  margin-bottom: 10px;
 }
 
-.loading-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.loading-icon {
-  font-size: 50px;
-  color: #154ec1;
+.validation-button-container {
+  margin: 5px;
   margin-bottom: 15px;
-  padding: 5px;
 }
 
-.loading-text {
-  font-size: 18px;
+.validate-categories-button {
+  padding: 1px 2px;
+  font-size: 14px;
+  display: flex;
+  width: 98%;
+  margin: auto;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
   font-weight: bold;
 }
 
-
-/* sections égales, prennent 50% de la largeur */
-.category-section,
-.participant-section {
-  display: flex;
-  flex-direction: column;
-  padding: 15px;
-  border-radius: 10px;
-  background: #f9f9f9;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  height: 100%;
-  overflow: hidden;
+/* Styles pour les tabs */
+.va-tabs {
+  margin-bottom: 20px;
+  /* Espace entre les tabs et le contenu */
 }
 
-.category-section {
-  flex: 4;
-}
-
-.participant-section {
-  flex: 8;
-}
-
-/* titre des sections */
-.section-title {
-  padding-bottom: 5px;
-  font-size: 22px;
+.va-tab {
+  font-size: 16px;
   font-weight: bold;
-  color: #262824;
-  margin-bottom: 5px;
 }
 
-.category-section,
-.participant-section {
-  display: flex;
-  flex-direction: column;
+.va-tab--active {
+  color: #0c2432;
+  /* Couleur de l'onglet actif */
 }
 
-.category-section>*:not(.section-title),
-.participant-section>*:not(.section-title) {
-  flex: 1;
-  /* permet de scroller à l'intérieur si nécessaire */
-}
-
-/* responsive : en colonne sur petit écran */
+/* Responsive */
 @media screen and (max-width: 1024px) {
   .content-container {
     flex-direction: column;
   }
 
-  .category-section,
-  .participant-section {
+  .participant-section,
+  .category-section {
     width: 100%;
     height: auto;
   }

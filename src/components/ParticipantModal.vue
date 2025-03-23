@@ -27,7 +27,7 @@
                   :error-messages="errors.birthDate" @update:modelValue="validateForm" />
               </div>
               <div class="form-item">
-                <VaInput v-model="form.weight" label="Poids *" type="number" clearable placeholder="Entrez le poids"
+                <VaInput v-model="form.weight" label="Poids" type="number" clearable placeholder="Entrez le poids"
                   :error-messages="errors.weight" @input="validateForm">
                   <template #appendInner>
                     <span>kg</span>
@@ -293,7 +293,7 @@ const validateForm = () => {
     firstName: form.value.firstName ? "" : "nom requis",
     lastName: form.value.lastName ? "" : "prenom requis",
     birthDate: form.value.birthDate ? "" : "date naissance requise",
-    weight: form.value.weight ? "" : "poids requis",
+    weight: form.value.weight !== null && form.value.weight < 0 ? "le poids doit être positif" : "",
     nationalityId: form.value.nationalityId ? "" : "nationalite requise",
     clubName: form.value.clubName ? "" : "nom club requis",
     genderId: form.value.genderId ? "" : "genre requis",
@@ -363,7 +363,7 @@ const confirmSubmission = () => {
 .va-select-option--selected {
     background-color: #f9f9f9 !important; 
     font-weight: bold !important; 
-    border-left: 5px solid #154EC1;
+    border-left: 5px solid #0c2432;
 }
 
 .select-option {

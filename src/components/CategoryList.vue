@@ -188,8 +188,7 @@ const deleteCategory = () => {
 /* conteneur tableau */
 .category-list-container {
   width: 100%;
-  height: 100vh;
-  max-height: 200px;;
+  height: 65vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -223,7 +222,7 @@ const deleteCategory = () => {
 
 /* assure table ne depasse pas hauteur ecran */
 .category-table {
-  max-height: calc(100vh - 100px);
+  height: 100vh;
   overflow-y: auto;
 }
 

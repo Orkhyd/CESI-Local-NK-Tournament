@@ -13,7 +13,7 @@
 
       </div>
 
-      <VaDataTable :items="filteredParticipants" :columns="columns" class="participants-table" striped virtual-scroller
+      <VaDataTable :items="filteredParticipants" :columns="columns" class="participants-table" striped
         sticky-header sticky-footer footer-clone no-data-html="Aucun participant trouvé">
         <template #cell(status)="{ row }">
           <VaChip :color="row.source?.categoryId === -1 ? 'danger' : 'success'" class="status-chip">
@@ -268,6 +268,7 @@ const columns = [
 /* wrapper de la table */
 .table-wrapper {
   width: 100%;
+  height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -303,7 +304,7 @@ const columns = [
   padding: 12px;
   font-size: 14px;
   font-weight: bold;
-  color: #154EC1;
+  color: #0c2432;
   text-align: center;
   width: auto; 
 }
@@ -432,7 +433,7 @@ const columns = [
 .participants-table {
   width: 100%;
   overflow: auto;
-  height: 38vh !important;
+  height: 65vh;
   display: flex;
   flex-direction: column;
 }
@@ -446,4 +447,5 @@ const columns = [
 .va-data-table td {
   width: auto; 
 }
+
 </style>

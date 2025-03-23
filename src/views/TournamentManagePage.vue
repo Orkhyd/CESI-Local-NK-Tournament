@@ -252,7 +252,7 @@ onMounted(async () => {
 .page-title {
   font-size: 1.8rem;
   font-weight: bold;
-  color: #154EC1;
+  color: #0c2432;
   flex: 1;
   text-align: center;
   display: flex;
@@ -286,7 +286,7 @@ onMounted(async () => {
   gap: 8px;
   font-size: 1.2rem;
   font-weight: bold;
-  color: #154EC1;
+  color: #0c2432;
   margin-bottom: 16px;
 }
 
@@ -308,7 +308,7 @@ onMounted(async () => {
 .category-winner {
   font-size: 1rem;
   font-weight: bold;
-  color: #154EC1;
+  color: #0c2432;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -382,7 +382,7 @@ onMounted(async () => {
 }
 
 .category-item.active {
-  background: #154EC1;
+  background: #0c2432;
   color: white;
   font-weight: bold;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
@@ -403,6 +403,6 @@ onMounted(async () => {
 
 .category-item.active .category-type {
   background: white;
-  color: #154EC1;
+  color: #0c2432;
 }
 </style>
