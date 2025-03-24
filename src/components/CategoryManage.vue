@@ -15,6 +15,9 @@
       </template>
       <template #right>
         <div v-if="activeTab !== 'statistics'">
+          <va-button @click="exportToPDF" round icon="picture_as_pdf" color="#ffffff" class="mr-2">
+            Exporter en PDF
+          </va-button>
           <!-- cache le bouton si on est sur la partie statistiques de la catégoorie -->
           <va-button @click="showParticipants = !showParticipants" round icon="visibility" color="#ffffff">
             Afficher les Participants
@@ -33,7 +36,7 @@
         <!-- chargement dynamique des composants -->
         <component v-if="isParticipantsLoaded" :is="categoryComponent" :key="categoryKey"
           :tournamentId="props.tournamentId" :category="props.category" :participants="participants"
-         :searchParticipant="searchParticipant" />
+          :searchParticipant="searchParticipant" />
       </div>
 
       <!-- onglet "stats" -->
@@ -54,6 +57,9 @@ import BracketType from "@/components/Bracket/BracketType.vue";
 import PoolList from "@/components/Pool/PoolList.vue";
 import CategoryStatistics from "@/components/Statistics/CategoryStatistics.vue";
 import ParticipantsCategoryList from "./Bracket/ParticipantsCategoryList.vue";
+
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 
 const props = defineProps({
@@ -121,7 +127,7 @@ onMounted(async () => {
     async (tx) => {
       // scanner tous les participants
       const entries = await tx.scan({ prefix: "participant/" }).entries().toArray();
-      return entries; 
+      return entries;
     },
     () => {
       // dès qu'un changement est détecté, rafraîchir la liste
@@ -136,6 +142,47 @@ onUnmounted(() => {
     unsubscribeParticipants();
   }
 });
+
+const pdfClass = computed(() => {
+  if (!props.category || !props.category.typeId) return null;
+  return props.category.typeId === 1 ? '.pool-pdf' : '.bracket';
+});
+
+const exportToPDF = async () => {
+  try {
+    // elément à exporter
+    const element = document.querySelector(pdfClass.value);
+    if (!element) {
+      console.error("Élément PDF non trouvé");
+      return;
+    }
+
+    // config
+    const canvas = await html2canvas(element, {
+      scrollX: -window.scrollX,
+      scrollY: -window.scrollY,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
+      scale: 1,
+      useCORS: true,
+      allowTaint: true
+    });
+
+    // Calcalculeculer les dimensions du PDF
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+      unit: 'px',
+      format: [canvas.width, canvas.height]
+    });
+
+    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+    pdf.save(`${props.category.name}_bracket.pdf`);
+
+  } catch (error) {
+    console.error("Erreur lors de l'export PDF:", error);
+  }
+};
 
 watch(() => props.category.id, fetchParticipants);
 </script>

@@ -13,7 +13,7 @@
 
     <!-- affichage des phases -->
     <!-- affichage des poules initiales -->
-    <div v-if="phases?.length > 1 || phases[0]?.pools?.length > 1">
+    <div v-if="phases?.length > 1 || phases[0]?.pools?.length > 1" class="pool-pdf">
       <h2 style="margin-bottom: 10px;">Poules Initiales</h2>
       <div v-for="(phase, phaseIndex) in phases" :key="`phase_${phaseIndex}`" class="phase-block">
         <div class="pools-grid">
@@ -25,7 +25,7 @@
     </div>
 
     <!-- affichage de la poule finale -->
-    <div v-if="finalPool" class="final-pool-container">
+    <div v-if="finalPool" class="final-pool-container pool-pdf">
       <h2 class="final-pool-title">🏆 Poule Finale 🏆</h2>
       <Pool :pool="finalPool" class="final-pool" @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
         :search-participant="props.searchParticipant" :participants="props.participants" />
@@ -73,7 +73,7 @@ const refreshMatches = ref(0);
 
 // charge ou crée un poolmanager et récupère les phases
 const loadOrCreatePoolManager = async () => {
-  if (loading.value) return; 
+  if (loading.value) return;
   loading.value = true;
   try {
     const existingPoolManager = await getPoolManagerByCategory(props.category.id);
@@ -160,12 +160,12 @@ onMounted(async () => {
         '.match-card': 'rgba(203, 203, 255, 0.5)', // Couleur pour la poule finale
         '.standings': 'rgba(210, 210, 210, 0.9)', // Couleur pour la poule finale
       },
-      back: 'rgba(240, 240, 240, 1)', 
-      view: 'rgba(0, 0, 0, 0.2)', 
-      drag: 'rgba(0, 0, 0, 0.2)', 
+      back: 'rgba(240, 240, 240, 1)',
+      view: 'rgba(0, 0, 0, 0.2)',
+      drag: 'rgba(0, 0, 0, 0.2)',
       interval: 1,
     });
-    
+
   }
 });
 
@@ -213,7 +213,6 @@ watchEffect(async () => {
   overflow-y: auto;
   padding: 1rem;
   box-sizing: border-box;
-  background: #f8f9fa;
 }
 
 .main-title {
@@ -262,7 +261,10 @@ watchEffect(async () => {
   margin-bottom: 20px;
 }
 
-
+.pool-pdf {
+  min-width: fit-content;
+  white-space: nowrap;
+}
 
 .phase-block {
   margin-bottom: 40px;
