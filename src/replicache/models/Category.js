@@ -1,5 +1,5 @@
 export class Category {
-    constructor(id, tournamentId, name, genderId, typeId, ageCategoryIds, minGradeId, maxGradeId) {
+    constructor(id, tournamentId, name, genderId, typeId, ageCategoryIds, minGradeId, maxGradeId, weightRange) {
       this.id = id;
       this.tournamentId = tournamentId;
       this.name = name;
@@ -8,6 +8,7 @@ export class Category {
       this.ageCategoryIds = ageCategoryIds;
       this.minGradeId = minGradeId;
       this.maxGradeId = maxGradeId;
+      this.weightRange = weightRange;
       this.idWinner = null;
     }
   }

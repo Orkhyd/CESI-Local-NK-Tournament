@@ -1,4 +1,4 @@
-import { Replicache } from "/node_modules/.vite/deps/replicache.js?v=602aba82";
+import { Replicache } from "replicache";
 import { Category } from "/src/replicache/models/index.js";
 
 export const rep = new Replicache({
@@ -14,7 +14,8 @@ export const rep = new Replicache({
         data.typeId,
         data.ageCategoryIds,
         data.minGradeId,
-        data.maxGradeId
+        data.maxGradeId,
+        data.weightRange
       ));      
     },
     async update(tx, { id, ...updates }) {
