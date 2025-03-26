@@ -82,7 +82,6 @@
     <VaModal v-model="isImporting" hide-default-actions class="loading-modal">
       <VaInnerLoading :loading="true">
         <div class="loading-content">
-          <VaIcon name="cloud-download" class="loading-icon" />
           <p class="loading-text">Importation des participants en cours...</p>
         </div>
       </VaInnerLoading>
@@ -186,15 +185,14 @@ const cancelImport = () => {
 // confirmer l'importation de participants
 const confirmImport = async (selectedItems) => {
   let successCount = 0;
-  isImporting.value = true; // active le chargement
+  isImporting.value = true;
 
-  // force vue à mettre à jour le DOM avant de continuer
   await nextTick();
 
-  // fnction pour importer un participant à la fois sans bloquer l'affichage de la vue
   const importParticipant = async (index) => {
     if (index >= selectedItems.length) {
-      isImporting.value = false; // desactive le chargement quand tout est terminé
+      await refreshParticipants();
+      isImporting.value = false;
       showImportModal.value = false;
       importedParticipants.value = [];
 
@@ -225,11 +223,9 @@ const confirmImport = async (selectedItems) => {
       toast.init({ message: `${p.firstName} ${p.lastName} impossible à importer`, color: "danger", position: "bottom-center" });
     }
 
-    // ne pas bloquer le thread principal et laisser le navigateur respirer
-    setTimeout(() => importParticipant(index + 1), 0);
+    setTimeout(() => importParticipant(index + 1), 0); // pour pas bloquer le thread principal
   };
 
-  // demarrer l'importation avec le premier participant
   importParticipant(0);
 };
 
@@ -325,21 +321,24 @@ const handleSaveParticipant = async (participantData, silent = false) => {
 
     if (participantData.id) {
       await ParticipantService.update(participantData.id, formattedData);
-      if (!silent) {
-        toast.init({ message: "Le participant a bien été mis à jour!", color: "success", position: 'bottom-center' });
-      }
     } else {
       await ParticipantService.create(tournamentId.value, formattedData);
-      if (!silent) {
-        toast.init({ message: "Le participant a bien été créé!", color: "success", position: 'bottom-center' });
-      }
     }
-    await refreshParticipants();
-    handleCloseParticipantModal();
+
+    // PAS DE refreshParticipants ici en cas d'import car sinon trop de refresh == pas optimisé et prend trop de temps !!
+    if (!silent) {
+      await refreshParticipants();
+      toast.init({ message: participantData.id ? "Le participant a bien été mis à jour!" : "Le participant a bien été créé!", color: "success", position: 'bottom-center' });
+    }
+
+    if (!silent) {
+      handleCloseParticipantModal();
+    }
   } catch (error) {
     console.error("erreur enregistrement participant:", error);
   }
 };
+
 
 // ouvre modale crea categorie
 const handleOpenCategoryModal = () => {
@@ -550,7 +549,12 @@ const confirmTournamentValidation = async () => {
   flex-direction: column;
   gap: 20px;
   margin-top: 20px;
-  /* Espace entre les tabs et le contenu */
+}
+
+.loading-modal .va-modal__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .participant-section,
