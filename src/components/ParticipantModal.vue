@@ -361,18 +361,18 @@ const confirmSubmission = () => {
 }
 
 .va-select-option--selected {
-    background-color: #f9f9f9 !important; 
-    font-weight: bold !important; 
-    border-left: 5px solid #0c2432;
+  background-color: #f9f9f9 !important;
+  font-weight: bold !important;
+  border-left: 5px solid #0c2432;
 }
 
 .select-option {
-    padding: 8px;
-    cursor: pointer;
+  padding: 8px;
+  cursor: pointer;
 }
 
 .select-option:hover {
-    background-color: #f4f4f4;
+  background-color: #f4f4f4;
 }
 
 .confirmation-container {
@@ -406,5 +406,4 @@ const confirmSubmission = () => {
   font-size: 0.9rem;
   color: #333;
 }
-
 </style>
