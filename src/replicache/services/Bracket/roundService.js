@@ -2,7 +2,7 @@ import { rep } from "@/replicache/stores/Bracket/roundStore";
 
 export const roundService = {
   create: async (idBracket, label, order) => {
-    const idRound = crypto.randomUUID(); // 🔥 Correct UUID
+    const idRound = crypto.randomUUID();
 
     await rep.mutate.create({
       id: idRound,

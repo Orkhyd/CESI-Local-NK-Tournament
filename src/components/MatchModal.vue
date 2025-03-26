@@ -5,7 +5,7 @@
     <div class="arena">
       <!-- entête -->
       <div class="header">
-        <h1>COMBAT N°{{ match?.idMatch }}</h1>
+        <h1>Gestion du combat</h1>
         <button class="scoreboard-btn" @click="openScoreboard">
           <va-icon name="scoreboard" size="40px" title="Ouvrir le scoreboard du match." />
         </button>

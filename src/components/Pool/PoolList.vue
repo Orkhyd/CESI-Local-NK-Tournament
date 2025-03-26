@@ -148,7 +148,6 @@ const poolListScroll = ref(null); // ref au conteneur scrollable
 onMounted(async () => {
   await loadOrCreatePoolManager();
 
-  // Attendre que le DOM soit mis à jour
   await nextTick();
 
   // Initialiser pagemap après que le contenu est rendu

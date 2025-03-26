@@ -101,7 +101,7 @@ const tournamentId = computed(() => route.params.id);
 const tournament = ref(null);
 const categories = ref([]);
 const activeCategory = ref(null);
-const showSidebar = ref(true); // Sidebar visible par défaut
+const showSidebar = ref(true);
 
 // recup du tournoi via Replicache
 const fetchTournament = async () => {
