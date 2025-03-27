@@ -1,29 +1,8 @@
-import { Replicache } from "replicache";
-import { Round } from "@/replicache/models/Bracket/Round";
-
-export const rep = new Replicache({
-  name: "round",
-  licenseKey: "l70ce33fc0dee46abb6f056086da4d872",
-  mutators: {
-    async create(tx, { id, idBracket, label, order }) {
-      await tx.put(`round/${id}`, new Round(id, idBracket, label, order));
-    },
-
-    async update(tx, { id, ...updates }) {
-      const round = await tx.get(`round/${id}`);
-      if (!round) return;
-      const updatedRound = { ...round, ...updates };
-      await tx.put(`round/${id}`, updatedRound);
-    },
-
-    async delete(tx, { id }) {
-      await tx.del(`round/${id}`);
-    }
-  },
-});
+import { getReplicache } from "@/replicache/replicache";
 
 // recup tous les rounds d'un bracket
 export async function getRoundsByBracket(idBracket) {
+  const rep = getReplicache();
   return await rep.query(async (tx) => {
     const rounds = [];
     for await (const value of tx.scan()) {
@@ -37,6 +16,7 @@ export async function getRoundsByBracket(idBracket) {
 
 // recup un round par son ID
 export async function getRoundById(idRound) {
+  const rep = getReplicache();
   return await rep.query(async (tx) => {
     return await tx.get(`round/${idRound}`);
   });

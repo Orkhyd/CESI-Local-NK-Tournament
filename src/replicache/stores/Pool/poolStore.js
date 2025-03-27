@@ -1,31 +1,9 @@
-import { Pool } from "@/replicache/models/Pool/Pool";
 import { getMatchesByPool } from "@/replicache/stores/matchStore";
 import { determinePoolRanking } from "@/functions/determinePoolRanking";
 import { matchService } from "@/replicache/services/matchService";
 import { getPoolManagerById } from "./poolManagerStore";
 import { ParticipantService } from "@/replicache/services/participantService";
-import { getReplicache, registerMutators } from '@/replicache/replicache.js';
-
-registerMutators({
-  // crée une poule
-  async createPoule(tx, data) {
-    const pool = new Pool(data);
-    await tx.put(`poule/${pool.id}`, pool.toJSON());
-  },
-
-  // met à jour une poule
-  async updatePoule(tx, { id, ...updates }) {
-    const poule = await tx.get(`poule/${id}`);
-    if (!poule) return;
-    const updatedPool = new Pool({ ...poule, ...updates });
-    await tx.put(`poule/${id}`, updatedPool.toJSON());
-  },
-
-  // supp une poule
-  async deletePoule(tx, { id }) {
-    await tx.del(`poule/${id}`);
-  },
-});
+import { getReplicache } from '@/replicache/replicache.js';
 
 // recup toutes les poules d'un PoolManager
 export async function getPoulesByPoolManagerId(poolManagerId) {
@@ -70,7 +48,7 @@ export async function checkAndCompletePool(poolId) {
     for (let i = 0; i < topPlayers.length; i++) {
       for (let j = i + 1; j < topPlayers.length; j++) {
         const matchId = crypto.randomUUID() + '%ADDITIONNAL-MATCH'; // id unique pour le match
-        await matchService.create({
+        await matchService.createMatch({
           idMatch: matchId,
           idPool: poolId,
           idMatchType: 2, // id poule
@@ -87,7 +65,7 @@ export async function checkAndCompletePool(poolId) {
   }
 
   // si le premier est unique, marquer la poule comme complete
-  await rep.mutate.updatePoule({ id: poolId, isComplete: true });
+  await rep.mutate.updatePool({ id: poolId, isComplete: true });
 
   // seuls les participants classés à la première place se qualifient.
   // on élimine donc tous ceux qui ne sont pas à la première place.
@@ -112,7 +90,7 @@ export async function checkAndCompletePool(poolId) {
     const poolManager = await getPoolManagerById(poolManagerId);
     const categoryId = poolManager.categoryId;
     if (categoryId) {
-      await categoryRep.mutate.update({
+      await rep.mutate.updateCategory({
         id: categoryId,
         idWinner: topParticipant.id
       });
@@ -130,7 +108,7 @@ export async function checkAndCompletePool(poolId) {
     }
 
     // mettre a jour la poule finale avec le nouveau participant
-    await rep.mutate.updatePoule({
+    await rep.mutate.updatePool({
       id: finalPool.id,
       participants: [...(finalPool.participants || []), topParticipant]
     });

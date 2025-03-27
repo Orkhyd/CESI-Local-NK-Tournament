@@ -1,14 +1,15 @@
-import { rep } from "@/replicache/stores/Bracket/bracketStore";
 import { roundService } from "@/replicache/services/Bracket/roundService";
 import { matchService } from "@/replicache/services/matchService";
 import { generateBracket } from "@/functions/generateBracket";
 import { getBracketByCategory } from "@/replicache/stores/Bracket/bracketStore";
 import { Mutex } from 'async-mutex';
+import { getReplicache } from "@/replicache/replicache";
 
 const bracketCreationMutex = new Mutex();
 
 export const bracketService = {
-  create: async (categoryId, participants) => {
+  createBracket: async (categoryId, participants) => {
+    const rep = getReplicache();
     const release = await bracketCreationMutex.acquire(); // verrouillage
     try {
       const existingBracket = await getBracketByCategory(categoryId);
@@ -20,17 +21,17 @@ export const bracketService = {
       const generatedBracket = generateBracket(participants);
 
       // sauvegarde du bracket sans les rounds et matchs
-      await rep.mutate.create({
+      await rep.mutate.createBracket({
         id: idBracket,
         categoryId,
       });
 
       // enregistrement des rounds et des matchs dans replicache
       for (const round of generatedBracket.structure) {
-        const idRound = await roundService.create(idBracket, round.label, round.order); // cree un round
+        const idRound = await roundService.createRound(idBracket, round.label, round.order); // cree un round
 
         for (const match of round.matches) {
-          await matchService.create({
+          await matchService.createMatch({
             idMatch: match.idMatch,
             idRound, // on assigne bien l'uuid
             idPool: null,
@@ -50,14 +51,18 @@ export const bracketService = {
     }
   },
 
-  update: async (idBracket, updates) => {
-    await rep.mutate.update({ idBracket, ...updates });
+  updateBracket: async (idBracket, updates) => {
+    const rep = getReplicache();
+
+    await rep.mutate.updateBracket({ idBracket, ...updates });
   },
 
   /**
    * supprime un bracket
    */
-  delete: async (idBracket) => {
-    await rep.mutate.delete({ idBracket });
+  deleteBracket: async (idBracket) => {
+    const rep = getReplicache();
+
+    await rep.mutate.deleteBracket({ idBracket });
   },
 };

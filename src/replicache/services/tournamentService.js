@@ -1,14 +1,21 @@
-import { rep } from '../stores/tournamentStore';
+import { getReplicache } from "../replicache";
 
 export const TournamentService = {
-  create: (id, name, startDate) => rep.mutate.create({ id, name, startDate }),
+  createTournament: (id, name, startDate) => {
 
-  delete: async (id) => {
+    const rep = getReplicache();
+    rep.mutate.createTournament({ id, name, startDate });
+  },
+
+  deleteTournament: async (id) => {
     await deleteAllIndexedDB();
     location.reload(); // recharge la page pour tout réinitialiser
   },
 
-  start: (id) => rep.mutate.toggleState({ id, started: true })
+  startTournament: (id) => {
+    const rep = getReplicache();
+    rep.mutate.toggleState({ id, started: true });
+  }
 };
 
 

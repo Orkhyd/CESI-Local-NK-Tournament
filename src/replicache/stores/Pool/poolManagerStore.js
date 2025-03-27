@@ -1,33 +1,8 @@
-import { Replicache } from "replicache";
-import { PoolManager } from "@/replicache/models/Pool/PoolManager";
-
-export const rep = new Replicache({
-  name: "poolManager",
-  licenseKey: "l70ce33fc0dee46abb6f056086da4d872",
-  mutators: {
-     // crée une instance de PoolManager
-     async createPoolManager(tx, data) {
-      const poolManager = new PoolManager(data);
-      await tx.put(`poolManager/${poolManager.id}`, poolManager.toJSON());
-    },
-
-    // maj une instance de PoolManager
-    async updatePoolManager(tx, { id, ...updates }) {
-      const poolManager = await tx.get(`poolManager/${id}`);
-      if (!poolManager) return;
-      const updatedPoolManager = new PoolManager({ ...poolManager, ...updates });
-      await tx.put(`poolManager/${id}`, updatedPoolManager.toJSON());
-    },
-
-    // supp une instance de PoolManager
-    async deletePoolManager(tx, { id }) {
-      await tx.del(`poolManager/${id}`);
-    },
-  },
-});
+import { getReplicache } from "@/replicache/replicache";
 
 // recup un PoolManager par son categoryId
 export async function getPoolManagerByCategory(categoryId) {
+  const rep = getReplicache();
   return await rep.query(async (tx) => {
     const scanResults = await tx.scan({ prefix: 'poolManager/' }).entries().toArray();
     if (!Array.isArray(scanResults)) return null;
@@ -44,6 +19,7 @@ export async function getPoolManagerByCategory(categoryId) {
 
 // recup un PoolManager par son ID
 export async function getPoolManagerById(poolManagerId) {
+  const rep = getReplicache();
   return await rep.query(async (tx) => {
     const poolManager = await tx.get(`poolManager/${poolManagerId}`);
     return poolManager ? poolManager : null;

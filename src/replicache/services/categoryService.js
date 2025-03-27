@@ -1,8 +1,9 @@
-import { rep } from "@/replicache/stores/categoryStore";
-import { ParticipantService } from "@/replicache/services/participantService"; 
+import { ParticipantService } from "@/replicache/services/participantService";
+import { getReplicache } from "../replicache";
 
 export const CategoryService = {
-  create: async (tournamentId, data) => {
+  createCategory: async (tournamentId, data) => {
+    const rep = getReplicache();
     const categoryId = crypto.randomUUID(); // genere un id aleatoire
     const newCategory = {
       id: categoryId,
@@ -15,21 +16,24 @@ export const CategoryService = {
       maxGradeId: data.maxGradeId,
       participantIds: [],
     };
-  
-    await rep.mutate.create(newCategory);
-  
-    return newCategory; // retourne l'objet creer
-  },  
 
-  update: async (id, updates) => {
-    await rep.mutate.update({ id, updates });
+    await rep.mutate.createCategory(newCategory);
+
+    return newCategory; // retourne l'objet creer
   },
 
-  delete: async (id) => {
-    await rep.mutate.delete({ id });
+  updateCategory: async (id, updates) => {
+    const rep = getReplicache();
+    await rep.mutate.updateCategory({ id, updates });
+  },
+
+  deleteCategory: async (id) => {
+    const rep = getReplicache();
+    await rep.mutate.deleteCategory({ id });
   },
 
   addParticipant: async (categoryId, participantId) => {
+    const rep = getReplicache();
     await rep.mutate.linkParticipant({ categoryId, participantId });
   },
 

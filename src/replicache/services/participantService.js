@@ -1,11 +1,11 @@
-import { rep } from '../stores/participantStore';
+import { getReplicache } from "../replicache";
 
 export const ParticipantService = {
   // créa d un participant pr un tournoi
-  create: async (tournamentId, data) => {
+  createParticipant: async (tournamentId, data) => {
     const id = crypto.randomUUID();
-
-    await rep.mutate.create({
+    const rep = getReplicache();
+    await rep.mutate.createParticipant({
       id,
       tournamentId,
       firstName: data.firstName,
@@ -18,25 +18,29 @@ export const ParticipantService = {
       gradeId: data.gradeId,
     });
   },
-  
-  // modif des infos d un participant
-  update: async (id, data) => await rep.mutate.update({ id, ...data }),
-  
-  // supp d un participant
-  delete: async (id) => await rep.mutate.delete({ id }),
 
-  updateCategory: async (participantId, categoryId) => {   
+  // modif des infos d un participant
+  updateParticipant: async (id, data) => {
+    const rep = getReplicache();
+    await rep.mutate.updateParticipant({ id, ...data });
+  },
+
+  // supp d un participant
+  deleteParticipant: async (id) => {
+    const rep = getReplicache();
+    await rep.mutate.deleteParticipant({ id });
+  },
+
+  updateCategory: async (participantId, categoryId) => {
+    const rep = getReplicache();
     if (!participantId) {
       throw new Error("❌ Erreur : l'ID du participant est introuvable !");
     }
-    
-    await rep.mutate.update({ id: participantId, categoryId });
+    await rep.mutate.updateCategory({ id: participantId, categoryId });
   },
 
   eliminateParticipant: async (idParticipant) => {
-    
-    await rep.mutate.eliminate({ id: idParticipant });
+    const rep = getReplicache();
+    await rep.mutate.eliminateParticipant({ id: idParticipant });
   }
-  
-  
 };

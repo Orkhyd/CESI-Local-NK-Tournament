@@ -1,5 +1,5 @@
-import { Category } from '/src/replicache/models/index.js'
-import { registerMutators } from '../replicache.js'
+import { Category } from '/src/replicache/models/index.js';
+import { registerMutators } from '../replicache.js';
 
 const categoryMutators = {
   createCategory: async (tx, { id, tournamentId, ...data }) => {
@@ -15,28 +15,27 @@ const categoryMutators = {
         data.minGradeId,
         data.maxGradeId,
       ),
-    )
+    );
   },
 
   updateCategory: async (tx, { id, ...updates }) => {
-    const c = await tx.get(`category/${id}`)
-    if (!c) return
+    const c = await tx.get(`category/${id}`);
+    if (!c) return;
 
     const updatedCategory = {
       ...c,
       ...updates,
       ...(updates.updates ?? {}),
       idWinner: updates.idWinner ?? updates.updates?.idWinner ?? c.idWinner,
-    }
+    };
 
-    await tx.put(`category/${id}`, updatedCategory)
+    await tx.put(`category/${id}`, updatedCategory);
   },
 
   deleteCategory: async (tx, { id }) => {
-    await tx.del(`category/${id}`)
+    await tx.del(`category/${id}`);
   },
-}
+};
 
-registerMutators(categoryMutators)
-
-export default categoryMutators
+registerMutators(categoryMutators);
+export default categoryMutators;

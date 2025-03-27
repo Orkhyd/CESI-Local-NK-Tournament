@@ -1,11 +1,11 @@
-// poolService.js
-import { rep } from "@/replicache/stores/Pool/poolStore";
+import { getReplicache } from "@/replicache/replicache";
 
 export const poolService = {
   // crée une poule
-  create: async ({ poolManagerId, label, qualifyingPositions, participants }) => {
+  createPool: async ({ poolManagerId, label, qualifyingPositions, participants }) => {
+    const rep = getReplicache();
     const idPool = crypto.randomUUID();
-    await rep.mutate.createPoule({
+    await rep.mutate.createPool({
       id: idPool,
       poolManagerId,
       label,
@@ -16,12 +16,14 @@ export const poolService = {
   },
 
   // met à jour une poule
-  update: async (idPool, updates) => {
-    await rep.mutate.updatePoule({ id: idPool, ...updates });
+  updatePool: async (idPool, updates) => {
+    const rep = getReplicache();
+    await rep.mutate.updatePool({ id: idPool, ...updates });
   },
 
   // supp une poule
-  delete: async (idPool) => {
-    await rep.mutate.deletePoule({ id: idPool });
+  deletePool: async (idPool) => {
+    const rep = getReplicache();
+    await rep.mutate.deletePool({ id: idPool });
   },
 };

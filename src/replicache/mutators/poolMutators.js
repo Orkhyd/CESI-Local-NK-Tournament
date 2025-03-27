@@ -1,0 +1,27 @@
+import { Pool } from "../models/Pool/Pool";
+
+const { registerMutators } = require("../replicache");
+
+const poolMutators = {
+  // crée une poule
+  createPool: async (tx, data) => {
+    const pool = new Pool(data);
+    await tx.put(`poule/${pool.id}`, pool.toJSON());
+  },
+
+  // met à jour une poule
+  updatePool: async (tx, { id, ...updates }) => {
+    const poule = await tx.get(`poule/${id}`);
+    if (!poule) return;
+    const updatedPool = new Pool({ ...poule, ...updates });
+    await tx.put(`poule/${id}`, updatedPool.toJSON());
+  },
+
+  // supp une poule
+  deletePool: async (tx, { id }) => {
+    await tx.del(`poule/${id}`);
+  },
+};
+
+registerMutators(poolMutators);
+export default poolMutators;

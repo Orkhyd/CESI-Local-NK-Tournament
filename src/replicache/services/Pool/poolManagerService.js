@@ -1,10 +1,11 @@
-import { rep } from "@/replicache/stores/Pool/poolManagerStore";
 import { generatePools } from "@/functions/generatePools";
+import { getReplicache } from "@/replicache/replicache";
 import { poolService } from "@/replicache/services/Pool/poolService";
 import { matchService } from "@/replicache/services/matchService";
 
 export const poolManagerService = {
-  create: async (categoryId, participants) => {
+  createPoolManager: async (categoryId, participants) => {
+    const rep = getReplicache();
     const idPoolManager = crypto.randomUUID();
 
     // genere des poules avec la fonction centrale
@@ -19,7 +20,7 @@ export const poolManagerService = {
     // crea des poules et des matchs
     for (const pool of generatedPools.structure) {
       // creee une poule via PoolService
-      const idPool = await poolService.create({
+      const idPool = await poolService.createPool({
         poolManagerId: idPoolManager,
         label: pool.label,
         qualifyingPositions: pool.qualifyingPositions,
@@ -28,7 +29,7 @@ export const poolManagerService = {
 
       // cree les matchs de la poule via MatchService
       for (const match of pool.matches) {
-        await matchService.create({
+        await matchService.createMatch({
           idMatch: match.idMatch,
           idRound: null,
           idPool,
@@ -44,10 +45,11 @@ export const poolManagerService = {
   },
 
   // supp une instance de PoolManager et ses poules
-  delete: async (poolManagerId) => {
+  deletePoolManager: async (poolManagerId) => {
+    const rep = getReplicache();
     const poules = await poolService.getPoulesByPoolManagerId(poolManagerId);
     for (const poule of poules) {
-      await poolService.delete(poule.id);
+      await poolService.deletePool(poule.id);
     }
     await rep.mutate.deletePoolManager({ id: poolManagerId });
   },

@@ -301,7 +301,7 @@ const handleCloseParticipantModal = () => {
 // suppr participant
 const handleDeleteParticipant = async (participant) => {
   try {
-    await ParticipantService.delete(participant.source.id);
+    await ParticipantService.deleteParticipant(participant.source.id);
     await refreshParticipants();
     toast.init({ message: "Le participant a bien été supprimé!", color: "success", position: 'bottom-center' });
   } catch (error) {
@@ -324,12 +324,12 @@ const handleSaveParticipant = async (participantData, silent = false) => {
     };
 
     if (participantData.id) {
-      await ParticipantService.update(participantData.id, formattedData);
+      await ParticipantService.updateParticipant(participantData.id, formattedData);
       if (!silent) {
         toast.init({ message: "Le participant a bien été mis à jour!", color: "success", position: 'bottom-center' });
       }
     } else {
-      await ParticipantService.create(tournamentId.value, formattedData);
+      await ParticipantService.createParticipant(tournamentId.value, formattedData);
       if (!silent) {
         toast.init({ message: "Le participant a bien été créé!", color: "success", position: 'bottom-center' });
       }
@@ -390,11 +390,11 @@ const handleSaveCategory = async ({ category, participants }) => {
   try {
     let categoryId;
     if (cleanData.id) {
-      await CategoryService.update(cleanData.id, cleanData);
+      await CategoryService.updateCategory(cleanData.id, cleanData);
       categoryId = cleanData.id;
       toast.init({ message: "La catégorie a bien été mise à jour!", color: "success", position: 'bottom-center' });
     } else {
-      const createdCategory = await CategoryService.create(tournamentId.value, cleanData);
+      const createdCategory = await CategoryService.createCategory(tournamentId.value, cleanData);
       categoryId = createdCategory.id;
       toast.init({ message: "La catégorie a bien été créée!", color: "success", position: 'bottom-center' });
     }
@@ -483,7 +483,7 @@ const confirmTournamentValidation = async () => {
   if (!tournamentId.value) return;
 
   try {
-    await TournamentService.start(tournamentId.value); // majl'état du tournoi en "démarré"
+    await TournamentService.startTournament(tournamentId.value); // majl'état du tournoi en "démarré"
 
     showValidationModal.value = false; // ferme la modale
 

@@ -73,7 +73,7 @@ const refreshMatches = ref(0);
 
 // charge ou crée un poolmanager et récupère les phases
 const loadOrCreatePoolManager = async () => {
-  if (loading.value) return; 
+  if (loading.value) return;
   loading.value = true;
   try {
     const existingPoolManager = await getPoolManagerByCategory(props.category.id);
@@ -81,7 +81,7 @@ const loadOrCreatePoolManager = async () => {
     if (existingPoolManager) {
       poolManagerId.value = existingPoolManager.id;
     } else {
-      poolManagerId.value = await poolManagerService.create(props.category.id, props.participants);
+      poolManagerId.value = await poolManagerService.createPoolManager(props.category.id, props.participants);
     }
 
     const poules = await getPoulesByPoolManagerId(poolManagerId.value);
@@ -160,12 +160,12 @@ onMounted(async () => {
         '.match-card': 'rgba(203, 203, 255, 0.5)', // Couleur pour la poule finale
         '.standings': 'rgba(210, 210, 210, 0.9)', // Couleur pour la poule finale
       },
-      back: 'rgba(240, 240, 240, 1)', 
-      view: 'rgba(0, 0, 0, 0.2)', 
-      drag: 'rgba(0, 0, 0, 0.2)', 
+      back: 'rgba(240, 240, 240, 1)',
+      view: 'rgba(0, 0, 0, 0.2)',
+      drag: 'rgba(0, 0, 0, 0.2)',
       interval: 1,
     });
-    
+
   }
 });
 

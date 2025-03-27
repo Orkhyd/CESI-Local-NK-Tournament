@@ -62,7 +62,6 @@ import { TournamentService } from "@/replicache/services/tournamentService";
 import { getTournaments } from "@/replicache/stores/tournamentStore";
 import TournamentCard from "@/components/TournamentCard.vue";
 import TournamentModal from "@/components/TournamentModal.vue";
-import { rep } from "@/replicache/stores/tournamentStore";
 
 const router = useRouter();
 const tournoi = ref(null);
@@ -71,7 +70,7 @@ const isDeleteModalOpen = ref(false);
 const isDeleting = ref(false);
 
 onMounted(async () => {
-  const tournaments = await getTournaments(rep);
+  const tournaments = await getTournaments();
   tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
 });
 
@@ -88,8 +87,8 @@ const openFictiveScoreboard = () => {
 const handleCreateTournoi = async (newTournoi) => {
   const id = crypto.randomUUID();
   try {
-    await TournamentService.create(id, newTournoi.name, newTournoi.startingDate);
-    const tournaments = await getTournaments(rep);
+    await TournamentService.createTournament(id, newTournoi.name, newTournoi.startingDate);
+    const tournaments = await getTournaments();
     tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
     tournamentModalOpen.value = false;
   } catch (error) {
@@ -99,8 +98,8 @@ const handleCreateTournoi = async (newTournoi) => {
 
 const loadTournoi = () => {
   if (tournoi.value) {
-    const routePath = tournoi.value.started 
-      ? `/tournament/started/${tournoi.value.id}` 
+    const routePath = tournoi.value.started
+      ? `/tournament/started/${tournoi.value.id}`
       : `/tournament/non-started/${tournoi.value.id}`;
     router.push({ path: routePath });
   }
@@ -116,7 +115,7 @@ const closeDeleteModal = () => {
 
 const resetTournoi = async () => {
   isDeleting.value = true;
-  await TournamentService.delete(tournoi.value.id);
+  await TournamentService.deleteTournament(tournoi.value.id);
   tournoi.value = null;
   isDeleteModalOpen.value = false;
   isDeleting.value = false;
