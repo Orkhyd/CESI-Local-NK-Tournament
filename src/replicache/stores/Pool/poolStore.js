@@ -1,39 +1,35 @@
-import { Replicache } from "replicache";
 import { Pool } from "@/replicache/models/Pool/Pool";
-import { getMatchesByPool } from "@/replicache/stores/matchStore"
+import { getMatchesByPool } from "@/replicache/stores/matchStore";
 import { determinePoolRanking } from "@/functions/determinePoolRanking";
 import { matchService } from "@/replicache/services/matchService";
 import { getPoolManagerById } from "./poolManagerStore";
-import { rep as categoryRep } from "../categoryStore";
 import { ParticipantService } from "@/replicache/services/participantService";
+import { getReplicache, registerMutators } from '@/replicache/replicache.js';
 
-export const rep = new Replicache({
-  name: "pool",
-  licenseKey: "l70ce33fc0dee46abb6f056086da4d872",
-  mutators: {
-    // crée une poule
-    async createPoule(tx, data) {
-      const pool = new Pool(data);
-      await tx.put(`poule/${pool.id}`, pool.toJSON());
-    },
+registerMutators({
+  // crée une poule
+  async createPoule(tx, data) {
+    const pool = new Pool(data);
+    await tx.put(`poule/${pool.id}`, pool.toJSON());
+  },
 
-    // met à jour une poule
-    async updatePoule(tx, { id, ...updates }) {
-      const poule = await tx.get(`poule/${id}`);
-      if (!poule) return;
-      const updatedPool = new Pool({ ...poule, ...updates });
-      await tx.put(`poule/${id}`, updatedPool.toJSON());
-    },
+  // met à jour une poule
+  async updatePoule(tx, { id, ...updates }) {
+    const poule = await tx.get(`poule/${id}`);
+    if (!poule) return;
+    const updatedPool = new Pool({ ...poule, ...updates });
+    await tx.put(`poule/${id}`, updatedPool.toJSON());
+  },
 
-    // supp une poule
-    async deletePoule(tx, { id }) {
-      await tx.del(`poule/${id}`);
-    },
+  // supp une poule
+  async deletePoule(tx, { id }) {
+    await tx.del(`poule/${id}`);
   },
 });
 
 // recup toutes les poules d'un PoolManager
 export async function getPoulesByPoolManagerId(poolManagerId) {
+  const rep = getReplicache();
   return await rep.query(async (tx) => {
     const allPoules = await tx.scan({ prefix: "poule/" }).entries().toArray();
     return allPoules
@@ -44,6 +40,7 @@ export async function getPoulesByPoolManagerId(poolManagerId) {
 
 // verifie et rend la poule terminé si tout les matchs sont finis !
 export async function checkAndCompletePool(poolId) {
+  const rep = getReplicache();
   // recuperer les matchs de la poule
   const poolMatches = await getMatchesByPool(poolId);
 
@@ -93,7 +90,7 @@ export async function checkAndCompletePool(poolId) {
   await rep.mutate.updatePoule({ id: poolId, isComplete: true });
 
   // seuls les participants classés à la première place se qualifient.
-  // on élimine donc touus ceux qui ne sont pas à la première place.
+  // on élimine donc tous ceux qui ne sont pas à la première place.
   ranking.forEach(async (p) => {
     if (p.rank !== 1) {
       await ParticipantService.eliminateParticipant(p.participant.id);
