@@ -1,6 +1,6 @@
 import { Bracket } from "../models/Bracket/Bracket";
 
-const { registerMutators } = require("../replicache");
+import { registerMutators } from "../replicache";
 
 const bracketMutators = {
   createBracket: async (tx, { id, categoryId }) => {

@@ -1,6 +1,6 @@
 import { Pool } from "../models/Pool/Pool";
 
-const { registerMutators } = require("../replicache");
+import { registerMutators } from "../replicache";
 
 const poolMutators = {
   // crée une poule

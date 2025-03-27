@@ -2,7 +2,7 @@ import { Match } from "@/replicache/models/Match";
 import { registerMutators } from "../replicache";
 
 const matchMutators = {
-  create: async (tx, { idMatch, idMatchType, idRound, idPool, idPlayer1, idPlayer2, idPreviousMatch1, idPreviousMatch2, ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2, idWinner }) => {
+  createMatch: async (tx, { idMatch, idMatchType, idRound, idPool, idPlayer1, idPlayer2, idPreviousMatch1, idPreviousMatch2, ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2, idWinner }) => {
     await tx.put(`match/${idMatch}`, new Match(
       idMatch,
       idMatchType,
@@ -20,7 +20,7 @@ const matchMutators = {
     ));
   },
 
-  update: async (tx, { idMatch, ...updates }) => {
+  updateMatch: async (tx, { idMatch, ...updates }) => {
     const match = await tx.get(`match/${idMatch}`);
     if (!match) return;
 
@@ -33,7 +33,7 @@ const matchMutators = {
     await tx.put(`match/${idMatch}`, updatedMatch);
   },
 
-  delete: async (tx, { idMatch }) => {
+  deleteMatch: async (tx, { idMatch }) => {
     await tx.del(`match/${idMatch}`);
   },
 

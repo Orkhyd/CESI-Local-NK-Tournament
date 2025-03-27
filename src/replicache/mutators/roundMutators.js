@@ -1,6 +1,6 @@
 import { Round } from "../models/Bracket/Round";
 
-const { registerMutators } = require("../replicache");
+import { registerMutators } from "../replicache";
 
 const roundMutators = {
   createMutators: async (tx, { id, idBracket, label, order }) => {

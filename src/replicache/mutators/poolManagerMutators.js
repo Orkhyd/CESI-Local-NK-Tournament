@@ -1,5 +1,5 @@
-const { PoolManager } = require("../models/Pool/PoolManager");
-const { registerMutators } = require("../replicache");
+import { PoolManager } from "../models/Pool/PoolManager";
+import { registerMutators } from "../replicache";
 
 const poolManagerMutators = {
   // crée une instance de PoolManager

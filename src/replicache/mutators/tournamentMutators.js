@@ -2,10 +2,10 @@ import { Tournament } from '../models';
 import { registerMutators } from '../replicache';
 
 const tournamentMutators = {
-  create: async (tx, { id, name, startDate }) => {
+  createTournament: async (tx, { id, name, startDate }) => {
     await tx.put(`tournament/${id}`, new Tournament(id, name, startDate));
   },
-  delete: async (tx, { id }) => {
+  deleteTournament: async (tx, { id }) => {
     await tx.del(`tournament/${id}`);
   },
   toggleState: async (tx, { id, started }) => {

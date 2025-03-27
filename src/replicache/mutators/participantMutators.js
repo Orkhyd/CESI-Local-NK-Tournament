@@ -1,10 +1,10 @@
 import { Participant } from '../models';
 import { toRaw } from 'vue';
-import { registerMutators } from '../replicache';
+import { getReplicache, registerMutators } from '../replicache';
 
 const participantMutators = {
   // créa d un nv participant avec un id unique
-  create: async (tx, { id, tournamentId, ...data }) => {
+  createParticipant: async (tx, { id, tournamentId, ...data }) => {
 
     // conversion des donnees reactives en obj brut
     const rawData = toRaw(data);
@@ -25,7 +25,7 @@ const participantMutators = {
   },
 
   // maj des infos d un participant si il existe
-  update: async (tx, { id, ...updates }) => {
+  updateParticipant: async (tx, { id, ...updates }) => {
     const p = await tx.get(`participant/${id}`);
 
     if (p) {
@@ -40,16 +40,17 @@ const participantMutators = {
 
 
   // supp d un participant via son id
-  delete: async (tx, { id }) => {
+  deleteParticipant: async (tx, { id }) => {
     await tx.del(`participant/${id}`);
   },
 
   updateCategory: async (participantId, categoryId) => {
+    const rep = getReplicache();
     await rep.mutate.updateCategory({ id: participantId, categoryId });
   },
 
   // eliminer un participant
-  eliminate: async (tx, { id }) => {
+  eliminateParticipant: async (tx, { id }) => {
     const participant = await tx.get(`participant/${id}`);
     if (!participant) {
       console.error(`❌ Le participant ${id} n'a pas été trouvé !`);
