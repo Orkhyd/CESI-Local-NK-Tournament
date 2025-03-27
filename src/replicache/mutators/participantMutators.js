@@ -44,9 +44,9 @@ const participantMutators = {
     await tx.del(`participant/${id}`);
   },
 
-  updateCategory: async (participantId, categoryId) => {
+  updateParticipantCategory: async (participantId, categoryId) => {
     const rep = getReplicache();
-    await rep.mutate.updateCategory({ id: participantId, categoryId });
+    await rep.mutate.updateParticipant({ id: participantId, categoryId });
   },
 
   // eliminer un participant

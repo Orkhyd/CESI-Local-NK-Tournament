@@ -31,12 +31,12 @@ export const ParticipantService = {
     await rep.mutate.deleteParticipant({ id });
   },
 
-  updateCategory: async (participantId, categoryId) => {
+  updateParticipantCategory: async (participantId, categoryId) => {
     const rep = getReplicache();
     if (!participantId) {
       throw new Error("❌ Erreur : l'ID du participant est introuvable !");
     }
-    await rep.mutate.updateCategory({ id: participantId, categoryId });
+    await rep.mutate.updateParticipant({ id: participantId, categoryId });
   },
 
   eliminateParticipant: async (idParticipant) => {

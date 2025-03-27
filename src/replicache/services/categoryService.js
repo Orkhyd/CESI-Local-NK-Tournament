@@ -40,7 +40,7 @@ export const CategoryService = {
   linkParticipants: async (categoryId, participantIds) => {
     await Promise.all(
       participantIds.map(async (participantId) => {
-        await ParticipantService.updateCategory(participantId, categoryId);
+        await ParticipantService.updateParticipantCategory(participantId, categoryId);
       })
     );
   }

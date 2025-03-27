@@ -366,7 +366,7 @@ const handleDeleteCategory = async (category) => {
       const participantIds = linkedParticipants.map((p) => p.id);
       await CategoryService.linkParticipants(-1, participantIds);
     }
-    await CategoryService.delete(category.source?.id);
+    await CategoryService.deleteCategory(category.source?.id);
     await refreshCategories();
     await refreshParticipants();
     toast.init({ message: "La catégorie a bien été supprimée!", color: "success", position: 'bottom-center' });
