@@ -3,7 +3,6 @@ import { replicacheInstance as rep } from "../replicache";
 
 export const CategoryService = {
   createCategory: async (tournamentId, data) => {
-    // // const rep = getReplicache();
     const categoryId = crypto.randomUUID(); // genere un id aleatoire
     const newCategory = {
       id: categoryId,
