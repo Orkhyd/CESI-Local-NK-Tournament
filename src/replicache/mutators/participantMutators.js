@@ -46,7 +46,6 @@ const participantMutators = {
   },
 
   updateParticipantCategory: async (participantId, categoryId) => {
-    // const rep = getReplicache();
     await rep.mutate.updateParticipant({ id: participantId, categoryId });
   },
 

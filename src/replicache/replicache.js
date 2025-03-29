@@ -31,10 +31,6 @@ export function setupMutators() {
   registerMutators(tournamentMutators);
 }
 
-export function getReplicache() {
-  return replicacheInstance;
-}
-
 export default {
   install: (app) => {
     const rep = new Replicache({

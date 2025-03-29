@@ -415,7 +415,6 @@ onMounted(async () => {
     match.value.timer.additionalTime = -1;
   }
 
-  // const rep = getReplicache();
   unsubscribeMatch = rep.subscribe(
     async (tx) => await tx.get(`match/${props.matchId}`),
     async (updatedMatch) => {

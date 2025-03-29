@@ -3,7 +3,6 @@ import { replicacheInstance as rep } from "@/replicache/replicache";
 
 // recupere tous les matchs d'un round specifique
 export async function getMatchesByRound(idRound) {
-  // const rep = getReplicache();
 
   return await rep.query(async (tx) => {
     const matches = [];
@@ -28,7 +27,6 @@ export async function getMatchesByRound(idRound) {
 }
 
 export async function getMatchesByPool(idPool) {
-  // const rep = getReplicache();
   return await rep.query(async (tx) => {
     const matches = [];
     const scanResults = await tx.scan({ prefix: "/match" }).entries().toArray();
@@ -53,14 +51,12 @@ export async function getMatchesByPool(idPool) {
 }
 
 export async function getMatchById(idMatch) {
-  // const rep = getReplicache();
   return await rep.query(async (tx) => {
     return await tx.get(`match/${idMatch}`);
   });
 }
 
 export async function getMatchesByParticipant(participantId) {
-  // const rep = getReplicache();
   return await rep.query(async (tx) => {
     const matches = [];
     const scanResults = await tx.scan({ prefix: "/match" }).entries().toArray();

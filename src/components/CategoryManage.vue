@@ -116,7 +116,6 @@ let unsubscribeParticipants; // variable pour stocker la fonction de désabonnem
 
 onMounted(async () => {
   await fetchParticipants();
-  // const rep = getReplicache();
   // s'abonner aux changements dans les participants de la catégorie actuelle
   unsubscribeParticipants = rep.subscribe(
     async (tx) => {

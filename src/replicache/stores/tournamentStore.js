@@ -1,7 +1,6 @@
 import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export async function getTournaments() {
-  // const rep = getReplicache();
 
   return await rep.query(async tx => {
     const tournaments = [];

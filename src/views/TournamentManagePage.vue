@@ -106,8 +106,7 @@ const showSidebar = ref(true); // Sidebar visible par défaut
 const fetchTournament = async () => {
   if (!tournamentId.value) return;
   try {
-    // const rep = getReplicache();
-    tournament.value = await rep.query(async (tx) => {
+      tournament.value = await rep.query(async (tx) => {
       return await tx.get(`tournament/${tournamentId.value}`);
     });
   } catch (error) {
@@ -132,7 +131,6 @@ const refreshCategories = async () => {
       fetchedCategories.map(async (category) => {
         const participants = await getParticipantsByCategory(tournamentId.value, category.id);
         const fullCategory = { ...category, participants };
-        // const rep = getReplicache();
 
         // souscrire aux changements de cette caté
         const unsubscribe = rep.subscribe(

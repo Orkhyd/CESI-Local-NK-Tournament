@@ -7,7 +7,6 @@ import { replicacheInstance as rep } from "@/replicache/replicache";
 
 // recup toutes les poules d'un PoolManager
 export async function getPoulesByPoolManagerId(poolManagerId) {
-  // const rep = getReplicache();
   return await rep.query(async (tx) => {
     const allPoules = await tx.scan({ prefix: "poule/" }).entries().toArray();
     return allPoules
@@ -18,7 +17,6 @@ export async function getPoulesByPoolManagerId(poolManagerId) {
 
 // verifie et rend la poule terminé si tout les matchs sont finis !
 export async function checkAndCompletePool(poolId) {
-  // const rep = getReplicache();
   // recuperer les matchs de la poule
   const poolMatches = await getMatchesByPool(poolId);
 

@@ -24,17 +24,14 @@ export const CategoryService = {
   },
 
   updateCategory: async (id, updates) => {
-    // const rep = getReplicache();
     await rep.mutate.updateCategory({ id, updates });
   },
 
   deleteCategory: async (id) => {
-    // const rep = getReplicache();
     await rep.mutate.deleteCategory({ id });
   },
 
   addParticipant: async (categoryId, participantId) => {
-    // const rep = getReplicache();
     await rep.mutate.linkParticipant({ categoryId, participantId });
   },
 

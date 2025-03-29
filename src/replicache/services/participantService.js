@@ -4,7 +4,6 @@ export const ParticipantService = {
   // créa d un participant pr un tournoi
   createParticipant: async (tournamentId, data) => {
     const id = crypto.randomUUID();
-    // const rep = getReplicache();
     await rep.mutate.createParticipant({
       id,
       tournamentId,
@@ -21,18 +20,15 @@ export const ParticipantService = {
 
   // modif des infos d un participant
   updateParticipant: async (id, data) => {
-    // const rep = getReplicache();
     await rep.mutate.updateParticipant({ id, ...data });
   },
 
   // supp d un participant
   deleteParticipant: async (id) => {
-    // const rep = getReplicache();
     await rep.mutate.deleteParticipant({ id });
   },
 
   updateParticipantCategory: async (participantId, categoryId) => {
-    // const rep = getReplicache();
     if (!participantId) {
       throw new Error("❌ Erreur : l'ID du participant est introuvable !");
     }
@@ -40,7 +36,6 @@ export const ParticipantService = {
   },
 
   eliminateParticipant: async (idParticipant) => {
-    // const rep = getReplicache();
     await rep.mutate.eliminateParticipant({ id: idParticipant });
   }
 };
