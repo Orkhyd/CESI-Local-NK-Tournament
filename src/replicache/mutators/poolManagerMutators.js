@@ -5,7 +5,7 @@ const poolManagerMutators = {
   // crée une instance de PoolManager
   createPoolManager: async (tx, data) => {
     const poolManager = new PoolManager(data);
-    await tx.put(`poolManager/${poolManager.id}`, poolManager.toJSON());
+    await tx.set(`poolManager/${poolManager.id}`, poolManager.toJSON());
   },
 
   // maj une instance de PoolManager
@@ -13,7 +13,7 @@ const poolManagerMutators = {
     const poolManager = await tx.get(`poolManager/${id}`);
     if (!poolManager) return;
     const updatedPoolManager = new PoolManager({ ...poolManager, ...updates });
-    await tx.put(`poolManager/${id}`, updatedPoolManager.toJSON());
+    await tx.set(`poolManager/${id}`, updatedPoolManager.toJSON());
   },
 
   // supp une instance de PoolManager

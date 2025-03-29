@@ -6,7 +6,7 @@ const poolMutators = {
   // crée une poule
   createPool: async (tx, data) => {
     const pool = new Pool(data);
-    await tx.put(`poule/${pool.id}`, pool.toJSON());
+    await tx.set(`poule/${pool.id}`, pool.toJSON());
   },
 
   // met à jour une poule
@@ -14,7 +14,7 @@ const poolMutators = {
     const poule = await tx.get(`poule/${id}`);
     if (!poule) return;
     const updatedPool = new Pool({ ...poule, ...updates });
-    await tx.put(`poule/${id}`, updatedPool.toJSON());
+    await tx.set(`poule/${id}`, updatedPool.toJSON());
   },
 
   // supp une poule

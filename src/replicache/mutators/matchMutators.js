@@ -3,7 +3,7 @@ import { registerMutators } from "../replicache";
 
 const matchMutators = {
   createMatch: async (tx, { idMatch, idMatchType, idRound, idPool, idPlayer1, idPlayer2, idPreviousMatch1, idPreviousMatch2, ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2, idWinner }) => {
-    await tx.put(`match/${idMatch}`, new Match(
+    await tx.set(`match/${idMatch}`, new Match(
       idMatch,
       idMatchType,
       idRound,
@@ -30,7 +30,7 @@ const matchMutators = {
       idWinner: updates.idWinner ?? match.idWinner,
     };
 
-    await tx.put(`match/${idMatch}`, updatedMatch);
+    await tx.set(`match/${idMatch}`, updatedMatch);
   },
 
   deleteMatch: async (tx, { idMatch }) => {
@@ -51,7 +51,7 @@ const matchMutators = {
       },
     };
 
-    await tx.put(`match/${idMatch}`, updatedMatch);
+    await tx.set(`match/${idMatch}`, updatedMatch);
   },
 };
 registerMutators(matchMutators);

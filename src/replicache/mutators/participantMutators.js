@@ -10,7 +10,7 @@ const participantMutators = {
     const rawData = toRaw(data);
 
     // enreg ds la bd avec les infos du participant
-    await tx.put(`participant/${id}`, new Participant(
+    await tx.set(`participant/${id}`, new Participant(
       id,
       tournamentId,
       rawData.firstName,
@@ -31,7 +31,7 @@ const participantMutators = {
     if (p) {
       const updatedParticipant = { ...p, ...updates };
 
-      await tx.put(`participant/${id}`, updatedParticipant);
+      await tx.set(`participant/${id}`, updatedParticipant);
 
     } else {
       console.error("⚠️ Aucune entrée trouvée pour cet ID, mise à jour impossible !");
@@ -57,7 +57,7 @@ const participantMutators = {
       return;
     }
 
-    await tx.put(`participant/${id}`, { ...participant, isEliminated: true });
+    await tx.set(`participant/${id}`, { ...participant, isEliminated: true });
   },
 };
 registerMutators(participantMutators);
