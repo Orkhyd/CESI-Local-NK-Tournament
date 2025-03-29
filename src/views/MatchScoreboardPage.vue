@@ -119,7 +119,7 @@ onMounted(async () => {
   if (match.value.idPlayer2 && match.value.idPlayer2 !== -1) {
     player2.value = await getParticipantById(match.value.idPlayer2);
   }
-  const rep = getReplicache();
+  // const rep = getReplicache();
   unsubscribe = rep.subscribe(
     async (tx) => await tx.get(`match/${matchId.value}`),
     (result) => {

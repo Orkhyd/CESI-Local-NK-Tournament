@@ -1,9 +1,9 @@
-import { getReplicache } from "../replicache";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const TournamentService = {
   createTournament: (id, name, startDate) => {
 
-    const rep = getReplicache();
+    // const rep = getReplicache();
     rep.mutate.createTournament({ id, name, startDate });
   },
 
@@ -13,7 +13,7 @@ export const TournamentService = {
   },
 
   startTournament: (id) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     rep.mutate.toggleState({ id, started: true });
   }
 };

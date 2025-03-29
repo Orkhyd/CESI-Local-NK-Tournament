@@ -1,7 +1,5 @@
 import { Pool } from "../models/Pool/Pool";
 
-import { registerMutators } from "../replicache";
-
 const poolMutators = {
   // crée une poule
   createPool: async (tx, data) => {
@@ -23,5 +21,4 @@ const poolMutators = {
   },
 };
 
-registerMutators(poolMutators);
 export default poolMutators;

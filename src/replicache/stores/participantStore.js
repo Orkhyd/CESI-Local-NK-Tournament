@@ -1,8 +1,8 @@
-import { getReplicache } from "../replicache";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 // récup ts les participants pr un tournoi donne
 export async function getParticipantsByTournament(tournamentId) {
-  const rep = getReplicache();
+  // const rep = getReplicache();
   if (!rep) return [];
 
   return await rep.query(async tx => {
@@ -21,7 +21,7 @@ export async function getParticipantsByTournament(tournamentId) {
 
 // recup tout les participants d une categorie
 export async function getParticipantsByCategory(tournamentId, categoryId) {
-  const rep = getReplicache();
+  // const rep = getReplicache();
   if (!rep) return [];
 
   return await rep.query(async tx => {
@@ -40,7 +40,7 @@ export async function getParticipantsByCategory(tournamentId, categoryId) {
 
 // recup un participant par son id
 export async function getParticipantById(id) {
-  const rep = getReplicache();
+  // const rep = getReplicache();
   // verif que l'instance Replicache est prête
   if (!rep) return null;
 

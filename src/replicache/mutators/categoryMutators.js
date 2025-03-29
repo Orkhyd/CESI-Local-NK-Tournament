@@ -1,9 +1,9 @@
 import { Category } from '/src/replicache/models/index.js';
-import { registerMutators } from '../replicache.js';
 
 const categoryMutators = {
   createCategory: async (tx, { id, tournamentId, ...data }) => {
-    await tx.put(
+    console.log("create category mutators", data);
+
     await tx.set(
       `category/${id}`,
       new Category(
@@ -29,6 +29,7 @@ const categoryMutators = {
       ...(updates.updates ?? {}),
       idWinner: updates.idWinner ?? updates.updates?.idWinner ?? c.idWinner,
     };
+    console.log("update category mutators", updatedCategory);
 
     await tx.set(`category/${id}`, updatedCategory);
   },
@@ -38,5 +39,4 @@ const categoryMutators = {
   },
 };
 
-registerMutators(categoryMutators);
 export default categoryMutators;

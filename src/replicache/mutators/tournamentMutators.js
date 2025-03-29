@@ -1,5 +1,4 @@
 import { Tournament } from '../models';
-import { registerMutators } from '../replicache';
 
 const tournamentMutators = {
   createTournament: async (tx, { id, name, startDate }) => {
@@ -14,5 +13,4 @@ const tournamentMutators = {
   },
 };
 
-registerMutators(tournamentMutators);
 export default tournamentMutators;

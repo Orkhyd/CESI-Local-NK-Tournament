@@ -1,5 +1,4 @@
 import { Match } from "@/replicache/models/Match";
-import { registerMutators } from "../replicache";
 
 const matchMutators = {
   createMatch: async (tx, { idMatch, idMatchType, idRound, idPool, idPlayer1, idPlayer2, idPreviousMatch1, idPreviousMatch2, ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2, idWinner }) => {
@@ -54,5 +53,4 @@ const matchMutators = {
     await tx.set(`match/${idMatch}`, updatedMatch);
   },
 };
-registerMutators(matchMutators);
 export default matchMutators;

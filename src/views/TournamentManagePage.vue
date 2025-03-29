@@ -89,7 +89,7 @@ import { getCategoriesByTournament } from "@/replicache/stores/categoryStore";
 import { getParticipantsByCategory } from "@/replicache/stores/participantStore";
 import CategoryManage from "@/components/CategoryManage.vue";
 import { categoriesAge, grades, genders, categoriesTypes } from "@/replicache/models/constants";
-import { getReplicache } from "@/replicache/replicache";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 // recup de l'ID du tournoi via la route
 const route = useRoute();
@@ -106,7 +106,7 @@ const showSidebar = ref(true); // Sidebar visible par défaut
 const fetchTournament = async () => {
   if (!tournamentId.value) return;
   try {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     tournament.value = await rep.query(async (tx) => {
       return await tx.get(`tournament/${tournamentId.value}`);
     });
@@ -132,7 +132,7 @@ const refreshCategories = async () => {
       fetchedCategories.map(async (category) => {
         const participants = await getParticipantsByCategory(tournamentId.value, category.id);
         const fullCategory = { ...category, participants };
-        const rep = getReplicache();
+        // const rep = getReplicache();
 
         // souscrire aux changements de cette caté
         const unsubscribe = rep.subscribe(

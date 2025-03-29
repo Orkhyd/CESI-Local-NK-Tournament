@@ -4,16 +4,9 @@ import router from "./router";
 import { createVuestic } from "vuestic-ui";
 import "vuestic-ui/css";
 import "material-design-icons-iconfont/dist/material-design-icons.css";
-import replicache from "./replicache/replicache";
+import replicache, { setupMutators } from "./replicache/replicache";
 
-import "./replicache/mutators/bracketMutators";
-import "./replicache/mutators/categoryMutators";
-import "./replicache/mutators/matchMutators";
-import "./replicache/mutators/participantMutators";
-import "./replicache/mutators/poolManagerMutators";
-import "./replicache/mutators/poolMutators";
-import "./replicache/mutators/roundMutators";
-import "./replicache/mutators/tournamentMutators";
+setupMutators();
 
 const app = createApp(App);
 

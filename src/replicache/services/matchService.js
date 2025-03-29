@@ -5,16 +5,16 @@ import { getRoundsByBracket, getRoundById } from "@/replicache/stores/Bracket/ro
 import { getBracketById } from "@/replicache/stores/Bracket/bracketStore";
 import { getCategoryByBracketId } from "@/replicache/stores/categoryStore";
 import { ParticipantService } from "@/replicache/services/participantService";
-import { getReplicache } from "../replicache";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const matchService = {
   createMatch: async (data) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     await rep.mutate.createMatch({ ...data });
   },
 
   updateMatch: async (idMatch, idMatchType, updates) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     await rep.mutate.updateMatch({ idMatch, ...updates });
 
     // en mode tableau et si ya un gagnant
@@ -47,27 +47,27 @@ export const matchService = {
   },
 
   deleteMatch: async (idMatch) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     await rep.mutate.deleteMatch({ idMatch });
   },
 
   startTimer: async (idMatch) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     await rep.mutate.updateTimer({ idMatch, isRunning: true });
   },
 
   stopTimer: async (idMatch) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     await rep.mutate.updateTimer({ idMatch, isRunning: false });
   },
 
   resetTimer: async (idMatch) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     await rep.mutate.updateTimer({ idMatch, currentTime: 180, additionalTime: 0, isRunning: false });
   },
 
   addTime: async (idMatch, seconds) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     const match = await rep.query(async (tx) => await tx.get(`match/${idMatch}`));
     if (!match) return;
 
@@ -76,13 +76,13 @@ export const matchService = {
   },
 
   setAdditionalTime: async (idMatch, seconds) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     await rep.mutate.updateTimer({ idMatch, additionalTime: seconds });
   },
 
   generatePoolFinalMatchs: async (poolManagerId, finalPoolId, finalPoolParticipants, finalRoundId) => {
 
-    const rep = getReplicache();
+    // const rep = getReplicache();
     // verif avec getMatchesByPool : existe-t-il déjà des matchs pour ce round finaal ???
     const existingMatches = await getMatchesByPool(finalPoolId);
 
@@ -129,7 +129,7 @@ export const matchService = {
 
 /* met a jouur les matchs suivants en assignant le gagnant dans idPlayer1 ou idPlayer2  */
 async function propagateWinnerToNextBracketMatch(idMatch, idWinner) {
-  const rep = getReplicache();
+  // const rep = getReplicache();
   const allMatches = await rep.query(async (tx) => {
     const matches = [];
     for await (const value of tx.scan()) {
@@ -160,7 +160,7 @@ async function propagateWinnerToNextBracketMatch(idMatch, idWinner) {
 
 // envois les perdants de la demi finale vers la petite finale
 async function propagateLoserToPetiteFinale(idMatch, idLoser) {
-  const rep = getReplicache();
+  // const rep = getReplicache();
   const allMatches = await rep.query(async (tx) => {
     const matches = [];
     for await (const value of tx.scan()) {
@@ -205,7 +205,7 @@ async function checkIfFinalMatchBracket(match) {
 }
 
 async function declareCategoryWinner(match, idWinner) {
-  const rep = getReplicache();
+  // const rep = getReplicache();
   // trouver la catégorie liée à ce bracket
   const actualRound = await getRoundById(match.idRound);
   const bracket = await getBracketById(actualRound.idBracket);

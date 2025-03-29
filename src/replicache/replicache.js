@@ -1,8 +1,16 @@
 import { Replicache } from 'replicache';
+import participantMutators from './mutators/participantMutators';
+import tournamentMutators from './mutators/tournamentMutators';
+import bracketMutators from './mutators/bracketMutators';
+import categoryMutators from './mutators/categoryMutators';
+import matchMutators from './mutators/matchMutators';
+import poolManagerMutators from './mutators/poolManagerMutators';
+import poolMutators from './mutators/poolMutators';
+import roundMutators from './mutators/roundMutators';
 
 const mutators = {};
 
-let replicacheInstance = null;
+export let replicacheInstance = null;
 
 export function registerMutators(newMutators) {
   Object.assign(mutators, newMutators);
@@ -10,6 +18,17 @@ export function registerMutators(newMutators) {
   if (replicacheInstance) {
     console.log('Registered new mutators:', Object.keys(newMutators));
   }
+}
+
+export function setupMutators() {
+  registerMutators(bracketMutators);
+  registerMutators(categoryMutators);
+  registerMutators(matchMutators);
+  registerMutators(participantMutators);
+  registerMutators(poolManagerMutators);
+  registerMutators(poolMutators);
+  registerMutators(roundMutators);
+  registerMutators(tournamentMutators);
 }
 
 export function getReplicache() {
@@ -29,3 +48,5 @@ export default {
     app.provide('replicache', rep);
   },
 };
+
+

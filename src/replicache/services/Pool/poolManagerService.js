@@ -1,11 +1,11 @@
 import { generatePools } from "@/functions/generatePools";
-import { getReplicache } from "@/replicache/replicache";
 import { poolService } from "@/replicache/services/Pool/poolService";
 import { matchService } from "@/replicache/services/matchService";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const poolManagerService = {
   createPoolManager: async (categoryId, participants) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     const idPoolManager = crypto.randomUUID();
 
     // genere des poules avec la fonction centrale
@@ -46,7 +46,7 @@ export const poolManagerService = {
 
   // supp une instance de PoolManager et ses poules
   deletePoolManager: async (poolManagerId) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     const poules = await poolService.getPoulesByPoolManagerId(poolManagerId);
     for (const poule of poules) {
       await poolService.deletePool(poule.id);

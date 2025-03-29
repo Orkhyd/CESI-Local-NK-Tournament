@@ -1,6 +1,5 @@
 import { Bracket } from "../models/Bracket/Bracket";
 
-import { registerMutators } from "../replicache";
 
 const bracketMutators = {
   createBracket: async (tx, { id, categoryId }) => {
@@ -17,6 +16,5 @@ const bracketMutators = {
   }
 };
 
-registerMutators(bracketMutators);
 
 export default bracketMutators;

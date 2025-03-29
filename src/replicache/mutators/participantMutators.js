@@ -1,6 +1,7 @@
 import { Participant } from '../models';
 import { toRaw } from 'vue';
-import { getReplicache, registerMutators } from '../replicache';
+import { replicacheInstance as rep } from "@/replicache/replicache";
+
 
 const participantMutators = {
   // créa d un nv participant avec un id unique
@@ -45,7 +46,7 @@ const participantMutators = {
   },
 
   updateParticipantCategory: async (participantId, categoryId) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     await rep.mutate.updateParticipant({ id: participantId, categoryId });
   },
 
@@ -60,5 +61,4 @@ const participantMutators = {
     await tx.set(`participant/${id}`, { ...participant, isEliminated: true });
   },
 };
-registerMutators(participantMutators);
 export default participantMutators;

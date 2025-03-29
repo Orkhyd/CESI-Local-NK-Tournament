@@ -3,13 +3,13 @@ import { matchService } from "@/replicache/services/matchService";
 import { generateBracket } from "@/functions/generateBracket";
 import { getBracketByCategory } from "@/replicache/stores/Bracket/bracketStore";
 import { Mutex } from 'async-mutex';
-import { getReplicache } from "@/replicache/replicache";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 const bracketCreationMutex = new Mutex();
 
 export const bracketService = {
   createBracket: async (categoryId, participants) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
     const release = await bracketCreationMutex.acquire(); // verrouillage
     try {
       const existingBracket = await getBracketByCategory(categoryId);
@@ -52,7 +52,7 @@ export const bracketService = {
   },
 
   updateBracket: async (idBracket, updates) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
 
     await rep.mutate.updateBracket({ idBracket, ...updates });
   },
@@ -61,7 +61,7 @@ export const bracketService = {
    * supprime un bracket
    */
   deleteBracket: async (idBracket) => {
-    const rep = getReplicache();
+    // const rep = getReplicache();
 
     await rep.mutate.deleteBracket({ idBracket });
   },

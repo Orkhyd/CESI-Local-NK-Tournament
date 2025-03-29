@@ -1,5 +1,4 @@
 import { PoolManager } from "../models/Pool/PoolManager";
-import { registerMutators } from "../replicache";
 
 const poolManagerMutators = {
   // crée une instance de PoolManager
@@ -22,5 +21,4 @@ const poolManagerMutators = {
   },
 };
 
-registerMutators(poolManagerMutators);
 export default poolManagerMutators;

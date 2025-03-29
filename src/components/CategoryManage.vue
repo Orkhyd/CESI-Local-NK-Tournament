@@ -54,7 +54,7 @@ import BracketType from "@/components/Bracket/BracketType.vue";
 import PoolList from "@/components/Pool/PoolList.vue";
 import CategoryStatistics from "@/components/Statistics/CategoryStatistics.vue";
 import ParticipantsCategoryList from "./Bracket/ParticipantsCategoryList.vue";
-import { getReplicache } from "@/replicache/replicache";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 
 const props = defineProps({
@@ -116,7 +116,7 @@ let unsubscribeParticipants; // variable pour stocker la fonction de désabonnem
 
 onMounted(async () => {
   await fetchParticipants();
-  const rep = getReplicache();
+  // const rep = getReplicache();
   // s'abonner aux changements dans les participants de la catégorie actuelle
   unsubscribeParticipants = rep.subscribe(
     async (tx) => {
