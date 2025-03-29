@@ -1,18 +1,18 @@
 import { Round } from "../models/Bracket/Round";
 
 const roundMutators = {
-  createMutators: async (tx, { id, idBracket, label, order }) => {
+  createRound: async (tx, { id, idBracket, label, order }) => {
     await tx.set(`round/${id}`, new Round(id, idBracket, label, order));
   },
 
-  updateMutators: async (tx, { id, ...updates }) => {
+  updateRound: async (tx, { id, ...updates }) => {
     const round = await tx.get(`round/${id}`);
     if (!round) return;
     const updatedRound = { ...round, ...updates };
     await tx.set(`round/${id}`, updatedRound);
   },
 
-  deleteMutators: async (tx, { id }) => {
+  deleteRound: async (tx, { id }) => {
     await tx.del(`round/${id}`);
   }
 };
