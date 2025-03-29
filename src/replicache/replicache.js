@@ -14,10 +14,6 @@ export let replicacheInstance = null;
 
 export function registerMutators(newMutators) {
   Object.assign(mutators, newMutators);
-
-  if (replicacheInstance) {
-    console.log('Registered new mutators:', Object.keys(newMutators));
-  }
 }
 
 export function setupMutators() {

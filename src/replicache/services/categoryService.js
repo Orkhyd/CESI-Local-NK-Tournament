@@ -17,7 +17,6 @@ export const CategoryService = {
     };
 
     await rep.mutate.createCategory(newCategory);
-    console.log("create category");
 
     return newCategory; // retourne l'objet creer
   },
