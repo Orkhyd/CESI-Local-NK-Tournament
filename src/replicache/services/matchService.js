@@ -132,7 +132,7 @@ async function propagateWinnerToNextBracketMatch(idMatch, idWinner) {
   // const rep = getReplicache();
   const allMatches = await rep.query(async (tx) => {
     const matches = [];
-    for await (const value of tx.scan()) {
+    for await (const value of tx.scan({ prefix: "match/" })) {
       matches.push(value);
     }
     return matches;
@@ -163,7 +163,7 @@ async function propagateLoserToPetiteFinale(idMatch, idLoser) {
   // const rep = getReplicache();
   const allMatches = await rep.query(async (tx) => {
     const matches = [];
-    for await (const value of tx.scan()) {
+    for await (const value of tx.scan({ prefix: "match/" })) {
       matches.push(value);
     }
     return matches;

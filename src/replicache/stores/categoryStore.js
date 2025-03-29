@@ -9,7 +9,7 @@ export async function getCategoriesByTournament(tournamentId) {
     const categories = [];
 
     // scan tous les enregistrements et filtre uniquement ceux du tournoi
-    for await (const value of tx.scan()) {
+    for await (const value of tx.scan({ prefix: "category/" })) {
       if (value?.tournamentId === tournamentId) {
         categories.push(value);
       }

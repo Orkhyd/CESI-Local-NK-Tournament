@@ -9,7 +9,7 @@ export async function getParticipantsByTournament(tournamentId) {
     const participants = [];
 
     // scan ts les participants enreg et filtre pr le tournoi donne
-    for await (const value of tx.scan()) {
+    for await (const value of tx.scan({ prefix: "participant/" })) {
       if (value?.tournamentId === tournamentId) {
         participants.push(value);
       }
@@ -28,7 +28,7 @@ export async function getParticipantsByCategory(tournamentId, categoryId) {
     const participants = [];
 
     // parcours de tous les participants stockeees dans Replicache
-    for await (const value of tx.scan()) {
+    for await (const value of tx.scan({ prefix: "participant/" })) {
       // filtre des participants appartenant au tournoi et à la catego spécifiés
       if (value?.tournamentId === tournamentId && value?.categoryId === categoryId) {
         participants.push(value);

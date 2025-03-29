@@ -7,7 +7,7 @@ export async function getMatchesByRound(idRound) {
 
   return await rep.query(async (tx) => {
     const matches = [];
-    const scanResults = await tx.scan().entries().toArray(); // convertir en tableau
+    const scanResults = await tx.scan({ prefix: "/match" }).entries().toArray(); // convertir en tableau
 
     if (!Array.isArray(scanResults)) {
       return [];
@@ -31,7 +31,7 @@ export async function getMatchesByPool(idPool) {
   // const rep = getReplicache();
   return await rep.query(async (tx) => {
     const matches = [];
-    const scanResults = await tx.scan().entries().toArray();
+    const scanResults = await tx.scan({ prefix: "/match" }).entries().toArray();
 
     if (!Array.isArray(scanResults)) {
       return [];
@@ -63,7 +63,7 @@ export async function getMatchesByParticipant(participantId) {
   // const rep = getReplicache();
   return await rep.query(async (tx) => {
     const matches = [];
-    const scanResults = await tx.scan().entries().toArray();
+    const scanResults = await tx.scan({ prefix: "/match" }).entries().toArray();
 
     if (!Array.isArray(scanResults)) {
       return [];

@@ -1,5 +1,4 @@
 import { ParticipantService } from "@/replicache/services/participantService";
-// import { getReplicache } from "../replicache";
 import { replicacheInstance as rep } from "../replicache";
 
 export const CategoryService = {

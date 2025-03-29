@@ -1,4 +1,4 @@
-import { Participant } from '../models';
+import { Participant } from "/src/replicache/models/index.js";
 import { toRaw } from 'vue';
 import { replicacheInstance as rep } from "@/replicache/replicache";
 

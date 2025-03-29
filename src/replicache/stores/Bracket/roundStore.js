@@ -5,7 +5,7 @@ export async function getRoundsByBracket(idBracket) {
   // const rep = getReplicache();
   return await rep.query(async (tx) => {
     const rounds = [];
-    for await (const value of tx.scan()) {
+    for await (const value of tx.scan({ prefix: "round/" })) {
       if (value?.idBracket === idBracket) {
         rounds.push(value);
       }
