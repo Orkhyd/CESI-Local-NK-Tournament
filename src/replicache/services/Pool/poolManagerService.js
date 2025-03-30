@@ -16,8 +16,7 @@ export const poolManagerService = {
       categoryId,
     });
 
-    // crea des poules et des matchs
-    for (const pool of generatedPools.structure) {
+    await Promise.all(generatedPools.structure.map(async (pool) => {
       // creee une poule via PoolService
       const idPool = await poolService.createPool({
         poolManagerId: idPoolManager,
@@ -26,9 +25,8 @@ export const poolManagerService = {
         participants: pool.participants
       });
 
-      // cree les matchs de la poule via MatchService
-      for (const match of pool.matches) {
-        await matchService.createMatch({
+      await Promise.all(pool.matches.map(match =>
+        matchService.createMatch({
           idMatch: match.idMatch,
           idRound: null,
           idPool,
@@ -36,9 +34,9 @@ export const poolManagerService = {
           idPlayer1: match.player1 ? match.player1.id : -2,
           idPlayer2: match.player2 ? match.player2.id : -2,
           winner: match.winner,
-        });
-      }
-    }
+        })
+      ));
+    }));
 
     return idPoolManager;
   },
