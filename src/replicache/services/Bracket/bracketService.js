@@ -25,12 +25,14 @@ export const bracketService = {
         categoryId,
       });
 
-      // enregistrement des rounds et des matchs dans replicache
-      for (const round of generatedBracket.structure) {
-        const idRound = await roundService.createRound(idBracket, round.label, round.order); // cree un round
 
-        for (const match of round.matches) {
-          await matchService.createMatch({
+      await Promise.all(generatedBracket.structure.map(async (round) => {
+        // on cree une instance de round avec le service
+        const idRound = await roundService.createRound(idBracket, round.label, round.order);
+
+        // on cree les matchs de chaque round
+        await Promise.all(round.matches.map(match =>
+          matchService.createMatch({
             idMatch: match.idMatch,
             idRound, // on assigne bien l'uuid
             idPool: null,
@@ -40,9 +42,9 @@ export const bracketService = {
             idPreviousMatch1: match.previousMatch1,
             idPreviousMatch2: match.previousMatch2,
             idWinner: match.winner,
-          });
-        }
-      }
+          })
+        ));
+      }));
 
       return idBracket;
     } finally {
