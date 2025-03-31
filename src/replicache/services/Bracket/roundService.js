@@ -2,7 +2,7 @@ import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const roundService = {
   createRound: async (idBracket, label, order) => {
-    const idRound = crypto.randomUUID(); // 🔥 Correct UUID
+    const idRound = crypto.randomUUID();
 
     await rep.mutate.createRound({
       id: idRound,

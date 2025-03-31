@@ -89,7 +89,7 @@ export const matchService = {
         const idMatch = crypto.randomUUID(); // génère un ID unique
         const match = {
           idMatch,
-          idMatchType: 2, // match de poule
+          idMatchType: 2,
           idPool: finalPoolId,
           idRound: finalRoundId,
           idPlayer1: finalPoolParticipants[i].id,

@@ -41,36 +41,23 @@
 </template>
 
 <script setup>
-// -----------------------------------------------------------------
-// imports
-// -----------------------------------------------------------------
-
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useToast } from "vuestic-ui";
 
-// -----------------------------------------------------------------
-// initialisation des variables
-// -----------------------------------------------------------------
-
-// initialisation du router pour la redirection
 const router = useRouter();
 
-// initialisation des notifications
+
 const toast = useToast();
 
-// var pour stocker le mot de passe saisi
+
 const password = ref("");
 
-// var reactive pour afficher ou masquer le mot de passe
+
 const showPassword = ref(false);
 
 // recuperation du mot de passe correct depuis le fichier d environnement (.env)
 const correctPassword = import.meta.env.VITE_APP_MDP;
-
-// -----------------------------------------------------------------
-// fonctions
-// -----------------------------------------------------------------
 
 // fonction pour basculer entre affichage et masquage du mot de passe
 const togglePassword = () => {

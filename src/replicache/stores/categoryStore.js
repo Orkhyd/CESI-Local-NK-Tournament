@@ -1,6 +1,4 @@
 import { replicacheInstance as rep } from "@/replicache/replicache";
-
-// recup toutes les catégories d'un tournoi donné avec leurs participants
 export async function getCategoriesByTournament(tournamentId) {
   if (!rep) return [];
 

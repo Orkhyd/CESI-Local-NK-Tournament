@@ -13,7 +13,7 @@
 
     <!-- affichage des phases -->
     <!-- affichage des poules initiales -->
-    <div v-if="phases?.length > 1 || phases[0]?.pools?.length > 1">
+    <div v-if="phases?.length > 1 || phases[0]?.pools?.length > 1" class="pool-pdf">
       <h2 style="margin-bottom: 10px;">Poules Initiales</h2>
       <div v-for="(phase, phaseIndex) in phases" :key="`phase_${phaseIndex}`" class="phase-block">
         <div class="pools-grid">
@@ -25,7 +25,7 @@
     </div>
 
     <!-- affichage de la poule finale -->
-    <div v-if="finalPool" class="final-pool-container">
+    <div v-if="finalPool" class="final-pool-container pool-pdf">
       <h2 class="final-pool-title">🏆 Poule Finale 🏆</h2>
       <Pool :pool="finalPool" class="final-pool" @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
         :search-participant="props.searchParticipant" :participants="props.participants" />
@@ -148,7 +148,6 @@ const poolListScroll = ref(null); // ref au conteneur scrollable
 onMounted(async () => {
   await loadOrCreatePoolManager();
 
-  // Attendre que le DOM soit mis à jour
   await nextTick();
 
   // Initialiser pagemap après que le contenu est rendu
@@ -213,7 +212,6 @@ watchEffect(async () => {
   overflow-y: auto;
   padding: 1rem;
   box-sizing: border-box;
-  background: #f8f9fa;
 }
 
 .main-title {
@@ -262,7 +260,10 @@ watchEffect(async () => {
   margin-bottom: 20px;
 }
 
-
+.pool-pdf {
+  min-width: fit-content;
+  white-space: nowrap;
+}
 
 .phase-block {
   margin-bottom: 40px;

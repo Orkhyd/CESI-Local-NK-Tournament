@@ -1,5 +1,5 @@
 <template>
-    <VaModal v-model="isModalOpen" max-width="90vw" no-padding>
+    <VaModal v-model="isModalOpen" max-width="90vw" no-padding fullscreen>
 
         <template #content>
             <div class="modal-container">
@@ -31,8 +31,8 @@
                                     :error-messages="errors.genderId" @update:modelValue="validateForm">
                                     <template #option="{ option, selectOption }">
                                         <div class="select-option"
-                                            :class="{'va-select-option--selected': Number(form?.genderId?.value) === Number(option.value)}"
-                                            @click="selectOption(option)">                                        
+                                            :class="{ 'va-select-option--selected': Number(form?.genderId?.value) === Number(option.value) }"
+                                            @click="selectOption(option)">
                                             {{ option.text }}
                                         </div>
                                     </template>
@@ -92,6 +92,17 @@
                                     </template>
                                 </VaSelect>
                             </div>
+                            <div class="form-item slider-weight">
+                                <label class="slider-label">POIDS (kg) *</label>
+                                <VaSlider v-model="form.weightRange" range :min="0" :max="150" track-label-visible>
+                                    <template #trackLabel="{ value, order }">
+                                        <VaChip size="small" :color="order === 0 ? 'success' : 'danger'">
+                                            {{ order === 1 && value === 150 ? '150+' : value }}
+                                        </VaChip>
+                                    </template>
+                                </VaSlider>
+                            </div>
+
                         </div>
 
                         <!-- participants à droite -->
@@ -137,6 +148,12 @@
                                     </span>
                                 </template>
 
+                                <template #cell(weight)="{ row }">
+                                    <span :class="getCellClass('weight', row)" :title="getCellTitle('weight', row)">
+                                        {{ row.source.weight }}
+                                    </span>
+                                </template>
+
                                 <template #cell(nationalityId)="{ row }">
                                     <div class="nationality-cell">
                                         <img v-if="getCountry(row.source?.nationalityId)"
@@ -169,7 +186,7 @@
                         color="warning" class="error-message">
                         La catégorie est de type {{ currentType.nom }}. Il y a {{ selectedParticipantsCount }}
                         participants selectionnés. Le nombre de participants selectionnés doit être entre {{
-                        currentType.minParticipants }} et {{ currentType.maxParticipants }}.
+                            currentType.minParticipants }} et {{ currentType.maxParticipants }}.
                     </div>
                     <VaButton @click="showConfirmation = true" color="primary" :disabled="!isFormValid">
                         {{ isEditMode ? 'Enregistrer' : 'Créer' }}
@@ -213,21 +230,21 @@ const emit = defineEmits(["update:modelValue", "save"]);
 
 // reocuperer le nom du pays avec l'id
 const getCountry = (natId) => {
-  return nationality.find(country => country.id === Number(natId));
+    return nationality.find(country => country.id === Number(natId));
 };
 
 // recuperer l image en base 64
 const getFlagUrl = (flagBase64) => {
-  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
+    return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
 };
 
 // recuperer le echelle d'age entre le age min et max des categories d'age
 const getAgeRange = (ageCategoryId) => {
-  const category = categoriesAge.find(cat => Number(cat.id) === Number(ageCategoryId));
-  if (category) {
-    return `${category.ageMin} - ${category.ageMax} ans`;
-  }
-  return "";
+    const category = categoriesAge.find(cat => Number(cat.id) === Number(ageCategoryId));
+    if (category) {
+        return `${category.ageMin} - ${category.ageMax} ans`;
+    }
+    return "";
 };
 
 const filterByCriteria = ref(false);
@@ -239,31 +256,31 @@ const isModalOpen = computed({
 });
 
 const currentType = computed(() => {
-  if (!form.value.typeId) return null;
-  const typeId = form.value.typeId.value || form.value.typeId;
-  return categoriesTypes.find(t => Number(t.id) === Number(typeId));
+    if (!form.value.typeId) return null;
+    const typeId = form.value.typeId.value || form.value.typeId;
+    return categoriesTypes.find(t => Number(t.id) === Number(typeId));
 });
 
 
 // verif le nb de participants  selectionée en fonction du type de catégorie
 const validateParticipantsCount = () => {
-  if (form.value.typeId) {
-    const selectedType = categoriesTypes.find(t => Number(t.id) === Number(form.value.typeId.value));
-    if (selectedType) {
-      const minParticipants = selectedType.minParticipants;
-      const maxParticipants = selectedType.maxParticipants;
-      const selectedCount = selectedParticipants.value.length;
+    if (form.value.typeId) {
+        const selectedType = categoriesTypes.find(t => Number(t.id) === Number(form.value.typeId.value));
+        if (selectedType) {
+            const minParticipants = selectedType.minParticipants;
+            const maxParticipants = selectedType.maxParticipants;
+            const selectedCount = selectedParticipants.value.length;
 
-      if (selectedCount < minParticipants || selectedCount > maxParticipants) {
-        errors.value.typeId = `Le nombre de participants doit être entre ${minParticipants} et ${maxParticipants}.`;
-        return false;
-      } else {
-        errors.value.typeId = "";
-        return true;
-      }
+            if (selectedCount < minParticipants || selectedCount > maxParticipants) {
+                errors.value.typeId = `Le nombre de participants doit être entre ${minParticipants} et ${maxParticipants}.`;
+                return false;
+            } else {
+                errors.value.typeId = "";
+                return true;
+            }
+        }
     }
-  }
-  return true;
+    return true;
 };
 
 // avoir le style css de la cellule en fonction de si le partiicpant correspond au critere de la category
@@ -295,6 +312,16 @@ const getCellClass = (columnKey, row) => {
         }
     }
 
+    // verif poidss
+    if (columnKey === "weight" && form.value.weightRange) {
+        const [minWeight, maxWeight] = form.value.weightRange;
+        const participantWeight = participant.weight;
+        if (participantWeight < minWeight ||
+            (maxWeight === 150 ? participantWeight > 150 : participantWeight > maxWeight)) {
+            return "non-matching-cell";
+        }
+    }
+
     return "";
 };
 
@@ -302,7 +329,7 @@ const getCellTitle = (columnKey, row) => {
     const participant = row.source;
 
     // verif le genre
-    if (columnKey === "gender" && form.value.genderId && participant.genderId !== form.value.genderId.value  && form.value.genderId.value !== 3) {
+    if (columnKey === "gender" && form.value.genderId && participant.genderId !== form.value.genderId.value && form.value.genderId.value !== 3) {
         return "Le genre du participant ne correspond pas à la catégorie.";
     }
 
@@ -326,6 +353,16 @@ const getCellTitle = (columnKey, row) => {
         }
     }
 
+    // verif poids
+    if (columnKey === "weight" && form.value.weightRange) {
+        const [minWeight, maxWeight] = form.value.weightRange;
+        const participantWeight = participant.weight;
+        if (participantWeight < minWeight ||
+            (maxWeight === 150 ? participantWeight > 150 : participantWeight > maxWeight)) {
+            return `Le poids du participant (${participantWeight} kg) ne correspond pas à la plage sélectionnée (${minWeight}-${maxWeight === 150 ? '150+' : maxWeight} kg).`;
+        }
+    }
+
     return "";
 };
 
@@ -338,6 +375,7 @@ const form = ref({
     ageCategoryIds: [],
     minGradeId: null,
     maxGradeId: null,
+    weightRange: [0, 150],
 });
 
 // erreurs de validation
@@ -360,9 +398,9 @@ const isEditMode = computed(() => {
 });
 
 const totalParticipants = computed(() =>
-  props.participants.filter(p =>
-    p.categoryId === -1 || p.categoryId === props?.category?.source?.id
-  ).length
+    props.participants.filter(p =>
+        p.categoryId === -1 || p.categoryId === props?.category?.source?.id
+    ).length
 );
 
 const selectedParticipantsCount = computed(() => selectedParticipants.value.length);
@@ -376,19 +414,19 @@ const sortBy = ref("firstName"); // champ par lequel trier les participants
 const sortingOrder = ref("asc"); // ordre de tri : ascendant ou descendant
 
 const toggleSelection = (row) => {
-  if (!isRowSelectable(row.item)) return; // ne rien faire si la ligne est désactivée
+    if (!isRowSelectable(row.item)) return; // ne rien faire si la ligne est désactivée
 
-  const index = selectedParticipants.value.findIndex(p => p === row.item.id);
-  if (index === -1) {
-    selectedParticipants.value.push(row.item.id); // sélectionner la ligne
-  } else {
-    selectedParticipants.value.splice(index, 1); // désélectionner la ligne
-  }
+    const index = selectedParticipants.value.findIndex(p => p === row.item.id);
+    if (index === -1) {
+        selectedParticipants.value.push(row.item.id); // sélectionner la ligne
+    } else {
+        selectedParticipants.value.splice(index, 1); // désélectionner la ligne
+    }
 };
 
 
 const columnsWithName = [
-    { value: "firstName", text: "Prenom"  },
+    { value: "firstName", text: "Prenom" },
     { value: "lastName", text: "Nom" },
     { value: "birthDate", text: "Date de naissance" },
     { value: "gender", text: "Genre" },
@@ -417,32 +455,37 @@ const selectedParticipants = ref([]); // liste des participants sélectionnés p
 
 // participants filtres
 const filteredParticipants = computed(() => {
-  let participants = props.participants.filter(p => p.categoryId === -1 || p.categoryId === props?.category?.source?.id); // uniquement les participants libres
+    let participants = props.participants.filter(p => p.categoryId === -1 || p.categoryId === props?.category?.source?.id);
 
-  if (filterByCriteria.value) {
-    participants = participants.filter(p => {
-      // verif de l'âge
-      const isAgeMatching = form.value.ageCategoryIds.length === 0 || form.value.ageCategoryIds.some(ageCat => {
-        const category = categoriesAge.find(cat => cat.id == ageCat);
-        const age = calculateAge(p.birthDate);
-        return category && age >= category.ageMin && age <= category.ageMax;
-      });
+    if (filterByCriteria.value) {
+        participants = participants.filter(p => {
+            // verif de l'âge
+            const isAgeMatching = form.value.ageCategoryIds.length === 0 || form.value.ageCategoryIds.some(ageCat => {
+                const category = categoriesAge.find(cat => cat.id == ageCat);
+                const age = calculateAge(p.birthDate);
+                return category && age >= category.ageMin && age <= category.ageMax;
+            });
 
-      // verif du genre
-      const isGenderMatching = !form.value.genderId || p.genderId === form.value.genderId.value || form.value.genderId.value === 3;
+            // verif du genre
+            const isGenderMatching = !form.value.genderId || p.genderId === form.value.genderId.value || form.value.genderId.value === 3;
 
-      // verif du grade
-      const isGradeMatching = !form.value.minGradeId || !form.value.maxGradeId ||
-        (p.gradeId >= form.value.minGradeId.value && p.gradeId <= form.value.maxGradeId.value);
+            // verif du grade
+            const isGradeMatching = !form.value.minGradeId || !form.value.maxGradeId ||
+                (p.gradeId >= form.value.minGradeId.value && p.gradeId <= form.value.maxGradeId.value);
 
-      return isAgeMatching && isGenderMatching && isGradeMatching;
-    });
-  }
+            // verif du poids
+            const isWeightMatching = !form.value.weightRange ||
+                (p.weight >= form.value.weightRange[0] &&
+                    (form.value.weightRange[1] === 150 ? p.weight <= 150 : p.weight <= form.value.weightRange[1]));
 
-  return participants.map((p) => ({
-    ...p,
-    status: getStatusText(p), 
-  }));
+            return isAgeMatching && isGenderMatching && isGradeMatching && isWeightMatching;
+        });
+    }
+
+    return participants.map((p) => ({
+        ...p,
+        status: getStatusText(p),
+    }));
 });
 
 // gestion des statuts mis a jour dynamiquement
@@ -493,10 +536,10 @@ const genderOptions = computed(() =>
 );
 
 const typeOptions = computed(() =>
-  categoriesTypes.map((t) => ({
-    text: `${t.nom} (${t.minParticipants} à ${t.maxParticipants} participants)`,
-    value: Number(t.id),
-  }))
+    categoriesTypes.map((t) => ({
+        text: `${t.nom} (${t.minParticipants} à ${t.maxParticipants} participants)`,
+        value: Number(t.id),
+    }))
 );
 
 const ageCategoryOptions = computed(() =>
@@ -547,7 +590,7 @@ watch(
 
             const selectedAgeCategories = category.source.ageCategoryIds
                 ? category.source.ageCategoryIds
-                    .map(id => Number(id)) 
+                    .map(id => Number(id))
                     .filter(id => ageCategoryOptions.value.some(a => a.value === id))
                 : [];
 
@@ -568,6 +611,7 @@ watch(
                 ageCategoryIds: selectedAgeCategories || [],
                 minGradeId: selectedMinGrade || null,
                 maxGradeId: selectedMaxGrade || null,
+                weightRange: category.source.weightRange ? category.source.weightRange : [0, 150],
             };
         } else {
             form.value = {
@@ -578,6 +622,7 @@ watch(
                 ageCategoryIds: [],
                 minGradeId: null,
                 maxGradeId: null,
+                weightRange: [0, 150],
             };
         }
     },
@@ -655,7 +700,7 @@ const confirmSubmission = () => {
 };
 
 const isRowSelectable = (row) => {
-  return !(row.categoryId !== -1 && row.categoryId !== props.category?.source?.id);
+    return !(row.categoryId !== -1 && row.categoryId !== props.category?.source?.id);
 };
 
 // fermeture de la modale
@@ -666,9 +711,9 @@ const closeModal = () => {
 
 // colonnes de la table
 const participantColumns = [
-    { key: "status", label: "Statut", sortable: true},
-    { key: "firstName", label: "Prenom", sortable: true},
-    { key: "lastName", label: "Nom", sortable: true},
+    { key: "status", label: "Statut", sortable: true },
+    { key: "firstName", label: "Prenom", sortable: true },
+    { key: "lastName", label: "Nom", sortable: true },
     { key: "birthDate", label: "Date de naissance" },
     { key: "gender", label: "Genre", sortable: true },
     { key: "grade", label: "Grade", sortable: true },
@@ -688,8 +733,9 @@ const participantColumns = [
     display: flex;
     flex-direction: column;
     gap: 20px;
-    margin: auto;
+    height: 98vh;
     width: 100%;
+    box-sizing: border-box;
 }
 
 .modal-title {
@@ -702,6 +748,22 @@ const participantColumns = [
 .non-matching-cell {
     color: red !important;
     font-weight: bold;
+}
+
+.slider-weight {
+    margin: 6px 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 25px;
+}
+
+.slider-label {
+    margin-left: -25px;
+    color: var(--va-primary);
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    display: block;
 }
 
 .error-message {
@@ -728,25 +790,25 @@ const participantColumns = [
 }
 
 .va-virtual-scroller {
-    height: 80% !important;
+    height: 100% !important;
 }
 
 .option-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  border-bottom: 1px solid #e0e0e0;
-  transition: background-color 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.3s ease;
 }
 
 .option-container:hover {
-  background-color: #f9f9f9;
+    background-color: #f9f9f9;
 }
 
 .option-container .option-text {
-  font-size: 14px;
-  color: #333;
+    font-size: 14px;
+    color: #333;
 }
 
 .filter-container {
@@ -764,8 +826,8 @@ const participantColumns = [
 }
 
 .va-select-option--selected {
-    background-color: #f9f9f9 !important; 
-    font-weight: bold !important; 
+    background-color: #f9f9f9 !important;
+    font-weight: bold !important;
     border-left: 5px solid #0c2432;
 }
 
@@ -792,30 +854,30 @@ const participantColumns = [
 }
 
 .participants-summary {
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  margin-top: 10px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin-top: 10px;
 }
 
 .flex.justify-between.items-center {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
 .nationality-cell {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .nationality-flag {
-  width: 20px;
-  height: auto;
-  vertical-align: middle;
+    width: 20px;
+    height: auto;
+    vertical-align: middle;
 }
 
 .form-item {
@@ -830,10 +892,20 @@ const participantColumns = [
     flex-grow: 1;
 }
 
-.form-wrapper {
+.va-form {
+    flex-grow: 1;
     display: flex;
-    width: 100%;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.form-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
     gap: 20px;
+    height: 100%;
 }
 
 .participants-list {

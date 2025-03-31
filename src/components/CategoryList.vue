@@ -43,6 +43,10 @@
         </div>
       </template>
 
+      <template #cell(weightRange)="{ row }">
+        <span class="weight-range">{{ row.weightRangeText }}</span>
+      </template>
+
       <!-- actions-->
       <template #cell(actions)="{ row }">
         <VaButton preset="plain" icon="edit" @click="editCategory(row)" />
@@ -116,11 +120,13 @@ const emit = defineEmits(["edit", "delete"]);
 // calc formatted categories
 const formattedCategories = computed(() => {
   return props.categories.map((category) => {
-    // filtrer participants appartenant a categorie
     const filteredParticipants = props.participants.filter(
       (participant) => participant.categoryId === category.id
     );
-
+    const weightRange = category.weightRange || [0, 150];
+    const minW = weightRange[0];
+    const maxW = weightRange[1];
+    const weightRangeText = maxW === 150 ? `${minW} - 150+ kg` : `${minW} - ${maxW} kg`;
     return {
       ...category,
       genre: category.genre || "inconnu",
@@ -130,8 +136,9 @@ const formattedCategories = computed(() => {
         : "non defini",
       minGrade: category.minGrade || "inconnu",
       maxGrade: category.maxGrade || "inconnu",
-      participants: filteredParticipants, // ajout participants filtres
-      participantsCount: `${filteredParticipants.length} participants`, // nb participants affiche
+      weightRangeText, // AJOUT
+      participants: filteredParticipants,
+      participantsCount: `${filteredParticipants.length} participants`,
     };
   });
 });
@@ -155,6 +162,7 @@ const columns = [
   { key: "type", label: "type", sortable: true },
   { key: "ageCategories", label: "tranche age", sortable: true },
   { key: "grade", label: "grade", sortable: true },
+  { key: "weightRangeText", label: "Poids tournoi", sortable: false },
   { key: "actions", label: "actions", width: "80px" },
   { key: "participantsCount", label: "participants", sortable: false },
 ];
@@ -196,22 +204,25 @@ const deleteCategory = () => {
 
 .expandable-container {
   display: flex;
-  flex-direction: column; /* Permet de stacker proprement */
+  flex-direction: column;
   width: 100%;
 }
 
 .expandable-content {
-  max-height: 300px; /* Hauteur fixe avec scroll si nécessaire */
-  overflow-y: auto; /* Scroll interne si le contenu dépasse */
+  max-height: 300px;
+  overflow-y: auto;
   width: 100%;
   background: white;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 10px;
-  transition: max-height 0.3s ease-in-out; /* Animation fluide */
+  transition: max-height 0.3s ease-in-out;
 }
 
-
+.weight-range {
+  font-weight: bold;
+  color: var(--va-primary);
+}
 
 /* enleve padding cellules */
 :deep(.va-data-table__table .va-data-table__table-td) {

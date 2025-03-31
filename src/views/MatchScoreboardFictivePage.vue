@@ -236,8 +236,6 @@ onUnmounted(() => {
     clearInterval(timerInterval);
 });
 
-// gestion du modal
-// gestion des joueurs
 function openPlayerModal(playerNumber) {
     editedPlayer.value = playerNumber;
     const player = playerNumber === 1 ? player1.value : player2.value;

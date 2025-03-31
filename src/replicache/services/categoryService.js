@@ -13,6 +13,7 @@ export const CategoryService = {
       ageCategoryIds: data.ageCategoryIds,
       minGradeId: data.minGradeId,
       maxGradeId: data.maxGradeId,
+      weightRange: data.weightRange,
       participantIds: [],
     };
 

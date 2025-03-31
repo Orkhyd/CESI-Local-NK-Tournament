@@ -13,8 +13,8 @@
 
       </div>
 
-      <VaDataTable :items="filteredParticipants" :columns="columns" class="participants-table" striped
-        sticky-header sticky-footer footer-clone no-data-html="Aucun participant trouvé">
+      <VaDataTable :items="filteredParticipants" :columns="columns" class="participants-table" striped sticky-header
+        sticky-footer footer-clone no-data-html="Aucun participant trouvé">
         <template #cell(status)="{ row }">
           <VaChip :color="row.source?.categoryId === -1 ? 'danger' : 'success'" class="status-chip">
             {{ row.source?.categoryId === -1 ? "Non attribué" : "Attribué" }}
@@ -25,6 +25,7 @@
         <template #cell(gender)="{ row }">
           <VaIcon
             :name="row.source?.gender === 'Homme' ? 'male' : row.source?.gender === 'Femme' ? 'female' : 'help-circle-outline'"
+            :color="row.source?.gender === 'Homme' ? '#007bff' : row.source?.gender === 'Femme' ? '#ff69b4' : 'gray'"
             class="gender-icon" />
         </template>
 
@@ -110,7 +111,7 @@ const filterText = ref("");
 const filteredParticipants = computed(() => {
   if (!filterText.value) return props.participants.map(p => ({
     ...p,
-    status: p.categoryId === -1 ? "Non attribué" : "Attribué", // Ajoutez la propriété `status`
+    status: p.categoryId === -1 ? "Non attribué" : "Attribué",
   }));
 
   const searchLower = filterText.value.toLowerCase();
@@ -118,7 +119,7 @@ const filteredParticipants = computed(() => {
   return props.participants
     .map((p) => ({
       ...p,
-      status: p.categoryId === -1 ? "Non attribué" : "Attribué", // Ajoutez la propriété `status`
+      status: p.categoryId === -1 ? "Non attribué" : "Attribué",
     }))
     .filter((p) =>
       Object.values(p).some((val) =>
@@ -246,11 +247,11 @@ const columns = [
   { key: "firstName", label: "prenom", sortable: true },
   { key: "lastName", label: "nom", sortable: true },
   { key: "birthDate", label: "date naissance", sortable: true },
-  { key: "gender", label: "genre", sortable: true  },
-  { key: "grade", label: "grade", sortable: true  },
-  { key: "clubName", label: "club", sortable: true  },
-  { key: "weight", label: "poids", sortable: true  },
-  { key: "nationalityId", label: "nationalite", sortable: true  },
+  { key: "gender", label: "genre", sortable: true },
+  { key: "grade", label: "grade", sortable: true },
+  { key: "clubName", label: "club", sortable: true },
+  { key: "weight", label: "poids", sortable: true },
+  { key: "nationalityId", label: "nationalite", sortable: true },
   { key: "actions", label: "actions", width: "80px" },
 ];
 </script>
@@ -286,8 +287,10 @@ const columns = [
   font-weight: bold;
   text-align: center;
   border-top: 2px solid #ccc;
-  z-index: 10; /* Assurez-vous que le footer est au-dessus des autres éléments */
-  width: 100%; /* Prend toute la largeur */
+  z-index: 10;
+  /* Assurez-vous que le footer est au-dessus des autres éléments */
+  width: 100%;
+  /* Prend toute la largeur */
 }
 
 /* assure tfoot bien affiché */
@@ -295,8 +298,8 @@ const columns = [
   background: #ffffff;
   position: sticky;
   bottom: 0;
-  z-index: 10; 
-  width: 100%; 
+  z-index: 10;
+  width: 100%;
 }
 
 /* empeche footer reduit */
@@ -306,7 +309,7 @@ const columns = [
   font-weight: bold;
   color: #0c2432;
   text-align: center;
-  width: auto; 
+  width: auto;
 }
 
 .nationality-cell {
@@ -403,7 +406,9 @@ const columns = [
 }
 
 /* style uniforme boutons */
-.import-input, .export-button, .action-button {
+.import-input,
+.export-button,
+.action-button {
   padding: 8px 12px;
   font-size: 14px;
   font-weight: bold;
@@ -445,7 +450,6 @@ const columns = [
 
 .va-data-table th,
 .va-data-table td {
-  width: auto; 
+  width: auto;
 }
-
 </style>

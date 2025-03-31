@@ -22,7 +22,8 @@
 
     <!-- Petite finale affichée en position absolue sous la finale -->
     <div v-if="petiteFinale" class="petite-finale-absolute">
-      <MatchCard :match="petiteFinale" :disabled="petiteFinale.idWinner !== null" :participants="participants" @updateBracket="loadRounds"/>
+      <MatchCard :match="petiteFinale" :disabled="petiteFinale.idWinner !== null" :participants="participants"
+        @updateBracket="loadRounds" />
     </div>
   </div>
 
@@ -290,6 +291,8 @@ onMounted(async () => {
 /* conteneur principal du bracket (arbre du tournoi) */
 .bracket {
   display: flex;
+  min-width: fit-content;
+  white-space: nowrap;
   /* affiche les rounds en ligne */
 }
 
