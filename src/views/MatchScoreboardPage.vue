@@ -78,6 +78,7 @@ import { useRoute } from 'vue-router';
 import { getMatchById } from '@/replicache/stores/matchStore';
 import { getParticipantById } from '@/replicache/stores/participantStore';
 import { nationality } from '@/replicache/models/constants';
+import { replicacheInstance as rep } from '@/replicache/replicache';
 
 const route = useRoute();
 const matchId = ref(route.params.id);

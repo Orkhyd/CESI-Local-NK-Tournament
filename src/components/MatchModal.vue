@@ -177,6 +177,7 @@ import { getMatchById } from '@/replicache/stores/matchStore';
 import { matchService } from '@/replicache/services/matchService';
 import { nationality } from '@/replicache/models/constants';
 import { getParticipantById } from '@/replicache/stores/participantStore';
+import { replicacheInstance as rep } from '@/replicache/replicache';
 
 const props = defineProps({
   matchId: { type: String, required: true },
