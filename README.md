@@ -10,7 +10,7 @@ Cette **application de bureau** est spécialement conçue pour gérer intégrale
 Ce projet a été réalisé par une équipe de 4 personnes :
 
 - GUERRIN Florian
-- ROELLEY Marius
+- ROELLY Marius
 - SPREDER Pierre
 - BURST Christophe
 
