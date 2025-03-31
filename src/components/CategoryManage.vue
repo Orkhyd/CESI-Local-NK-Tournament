@@ -50,13 +50,14 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed } from "vue";
-import { getParticipantsByCategory, rep as participantRep } from "@/replicache/stores/participantStore";
+import { getParticipantsByCategory } from "@/replicache/stores/participantStore";
 
 // importation des composants conditionnels
 import BracketType from "@/components/Bracket/BracketType.vue";
 import PoolList from "@/components/Pool/PoolList.vue";
 import CategoryStatistics from "@/components/Statistics/CategoryStatistics.vue";
 import ParticipantsCategoryList from "./Bracket/ParticipantsCategoryList.vue";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -118,9 +119,8 @@ let unsubscribeParticipants; // variable pour stocker la fonction de désabonnem
 
 onMounted(async () => {
   await fetchParticipants();
-
   // s'abonner aux changements dans les participants de la catégorie actuelle
-  unsubscribeParticipants = participantRep.subscribe(
+  unsubscribeParticipants = rep.subscribe(
     async (tx) => {
       // scanner tous les participants
       const entries = await tx.scan({ prefix: "participant/" }).entries().toArray();

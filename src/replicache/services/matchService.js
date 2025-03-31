@@ -1,19 +1,19 @@
-import { rep } from "@/replicache/stores/matchStore";
 import { checkAndCompletePool } from "@/replicache/stores/Pool/poolStore";
 import { getMatchById } from "@/replicache/stores/matchStore";
 import { getMatchesByPool } from "@/replicache/stores/matchStore";
 import { getRoundsByBracket, getRoundById } from "@/replicache/stores/Bracket/roundStore";
 import { getBracketById } from "@/replicache/stores/Bracket/bracketStore";
-import { rep as categoryRep, getCategoryByBracketId } from "@/replicache/stores/categoryStore";
+import { getCategoryByBracketId } from "@/replicache/stores/categoryStore";
 import { ParticipantService } from "@/replicache/services/participantService";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const matchService = {
-  create: async (data) => {
-    await rep.mutate.create({ ...data });
+  createMatch: async (data) => {
+    await rep.mutate.createMatch({ ...data });
   },
 
-  update: async (idMatch, idMatchType, updates) => {
-    await rep.mutate.update({ idMatch, ...updates });
+  updateMatch: async (idMatch, idMatchType, updates) => {
+    await rep.mutate.updateMatch({ idMatch, ...updates });
 
     // en mode tableau et si ya un gagnant
     if (Number(idMatchType) === 1 && updates.idWinner) {
@@ -44,8 +44,8 @@ export const matchService = {
     }
   },
 
-  delete: async (idMatch) => {
-    await rep.mutate.delete({ idMatch });
+  deleteMatch: async (idMatch) => {
+    await rep.mutate.deleteMatch({ idMatch });
   },
 
   startTimer: async (idMatch) => {
@@ -113,7 +113,7 @@ export const matchService = {
 
     // denregistrement des matchs dans Replicache
     for (const match of matches) {
-      await rep.mutate.create(match);
+      await rep.mutate.createMatch(match);
     }
   }
 };
@@ -122,7 +122,7 @@ export const matchService = {
 async function propagateWinnerToNextBracketMatch(idMatch, idWinner) {
   const allMatches = await rep.query(async (tx) => {
     const matches = [];
-    for await (const value of tx.scan()) {
+    for await (const value of tx.scan({ prefix: "match/" })) {
       matches.push(value);
     }
     return matches;
@@ -144,7 +144,7 @@ async function propagateWinnerToNextBracketMatch(idMatch, idWinner) {
     }
 
     // maj des matchs suivants dans replicache
-    await rep.mutate.update({ idMatch: match.idMatch, ...updatedMatch });
+    await rep.mutate.updateMatch({ idMatch: match.idMatch, ...updatedMatch });
   }
 }
 
@@ -152,7 +152,7 @@ async function propagateWinnerToNextBracketMatch(idMatch, idWinner) {
 async function propagateLoserToPetiteFinale(idMatch, idLoser) {
   const allMatches = await rep.query(async (tx) => {
     const matches = [];
-    for await (const value of tx.scan()) {
+    for await (const value of tx.scan({ prefix: "match/" })) {
       matches.push(value);
     }
     return matches;
@@ -175,7 +175,7 @@ async function propagateLoserToPetiteFinale(idMatch, idLoser) {
     updatedMatch.idPlayer2 = idLoser;
   }
 
-  await rep.mutate.update({ idMatch: updatedMatch.idMatch, ...updatedMatch });
+  await rep.mutate.updateMatch({ idMatch: updatedMatch.idMatch, ...updatedMatch });
 }
 
 async function checkIfFinalMatchBracket(match) {
@@ -205,7 +205,7 @@ async function declareCategoryWinner(match, idWinner) {
   }
 
   // mettre à jour la catégorie avec le gagnant
-  await categoryRep.mutate.update({
+  await rep.mutate.updateCategory({
     id: category.id,
     idWinner, // enregistre le gagnant
   });

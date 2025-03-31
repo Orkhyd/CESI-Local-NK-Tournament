@@ -1,11 +1,10 @@
-import { rep } from '../stores/participantStore';
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const ParticipantService = {
   // créa d un participant pr un tournoi
-  create: async (tournamentId, data) => {
+  createParticipant: async (tournamentId, data) => {
     const id = crypto.randomUUID();
-
-    await rep.mutate.create({
+    await rep.mutate.createParticipant({
       id,
       tournamentId,
       firstName: data.firstName,
@@ -18,25 +17,25 @@ export const ParticipantService = {
       gradeId: data.gradeId,
     });
   },
-  
-  // modif des infos d un participant
-  update: async (id, data) => await rep.mutate.update({ id, ...data }),
-  
-  // supp d un participant
-  delete: async (id) => await rep.mutate.delete({ id }),
 
-  updateCategory: async (participantId, categoryId) => {   
+  // modif des infos d un participant
+  updateParticipant: async (id, data) => {
+    await rep.mutate.updateParticipant({ id, ...data });
+  },
+
+  // supp d un participant
+  deleteParticipant: async (id) => {
+    await rep.mutate.deleteParticipant({ id });
+  },
+
+  updateParticipantCategory: async (participantId, categoryId) => {
     if (!participantId) {
       throw new Error("❌ Erreur : l'ID du participant est introuvable !");
     }
-    
-    await rep.mutate.update({ id: participantId, categoryId });
+    await rep.mutate.updateParticipant({ id: participantId, categoryId });
   },
 
   eliminateParticipant: async (idParticipant) => {
-    
-    await rep.mutate.eliminate({ id: idParticipant });
+    await rep.mutate.eliminateParticipant({ id: idParticipant });
   }
-  
-  
 };

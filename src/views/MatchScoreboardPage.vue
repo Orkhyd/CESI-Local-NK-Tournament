@@ -75,9 +75,10 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { rep, getMatchById } from '@/replicache/stores/matchStore';
+import { getMatchById } from '@/replicache/stores/matchStore';
 import { getParticipantById } from '@/replicache/stores/participantStore';
 import { nationality } from '@/replicache/models/constants';
+import { replicacheInstance as rep } from '@/replicache/replicache';
 
 const route = useRoute();
 const matchId = ref(route.params.id);
@@ -118,7 +119,6 @@ onMounted(async () => {
   if (match.value.idPlayer2 && match.value.idPlayer2 !== -1) {
     player2.value = await getParticipantById(match.value.idPlayer2);
   }
-
   unsubscribe = rep.subscribe(
     async (tx) => await tx.get(`match/${matchId.value}`),
     (result) => {

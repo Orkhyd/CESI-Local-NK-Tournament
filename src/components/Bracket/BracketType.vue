@@ -5,13 +5,13 @@
 
     <!-- affichage du bracket une fois charge, avec une cle unique pour forcer le rafraichissement -->
     <div v-else>
-      <Bracket 
-        v-if="bracket" 
-        :bracket="bracket" 
+      <Bracket
+        v-if="bracket"
+        :bracket="bracket"
         :participants="participants"
         :key="bracket.id"
         @update="updateData"
-        :searchParticipant="props.searchParticipant" 
+        :searchParticipant="props.searchParticipant"
       />
     </div>
   </div>
@@ -20,7 +20,7 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import { bracketService } from "@/replicache/services/Bracket/bracketService";
-import { getBracketByCategory } from "@/replicache/stores/Bracket/bracketStore"; 
+import { getBracketByCategory } from "@/replicache/stores/Bracket/bracketStore";
 import Bracket from "./Bracket.vue";
 
 const props = defineProps({
@@ -75,7 +75,7 @@ const loadOrCreateBracket = async () => {
     }
 
     // crée un nouveau bracket
-    const bracketId = await bracketService.create(props.category.id, props.participants);
+    const bracketId = await bracketService.createBracket(props.category.id, props.participants);
 
     // recup le bracket mis à jour
     bracket.value = await getBracketByCategory(props.category.id);

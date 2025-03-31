@@ -1,10 +1,10 @@
-import { rep } from "@/replicache/stores/Bracket/roundStore";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const roundService = {
-  create: async (idBracket, label, order) => {
+  createRound: async (idBracket, label, order) => {
     const idRound = crypto.randomUUID();
 
-    await rep.mutate.create({
+    await rep.mutate.createRound({
       id: idRound,
       idBracket,
       label,
@@ -13,11 +13,11 @@ export const roundService = {
     return idRound;
   },
 
-  update: async (id, updates) => {
-    await rep.mutate.update({ id, ...updates });
+  updateRound: async (id, updates) => {
+    await rep.mutate.updateRound({ id, ...updates });
   },
 
-  delete: async (id) => {
-    await rep.mutate.delete({ id });
+  deleteRound: async (id) => {
+    await rep.mutate.deleteRound({ id });
   },
 };

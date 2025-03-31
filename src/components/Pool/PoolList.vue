@@ -81,7 +81,7 @@ const loadOrCreatePoolManager = async () => {
     if (existingPoolManager) {
       poolManagerId.value = existingPoolManager.id;
     } else {
-      poolManagerId.value = await poolManagerService.create(props.category.id, props.participants);
+      poolManagerId.value = await poolManagerService.createPoolManager(props.category.id, props.participants);
     }
 
     const poules = await getPoulesByPoolManagerId(poolManagerId.value);

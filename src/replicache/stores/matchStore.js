@@ -1,113 +1,81 @@
-import { Replicache } from "replicache";
-import { Match } from "@/replicache/models/Match";
-import { ParticipantService } from "@/replicache/services/participantService";
-
-export const rep = new Replicache({
-  name: "match",
-  licenseKey: "l70ce33fc0dee46abb6f056086da4d872",
-  mutators: {
-    async create(tx, { idMatch, idMatchType, idRound, idPool, idPlayer1, idPlayer2, idPreviousMatch1, idPreviousMatch2, ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2, idWinner }) {
-      await tx.put(`match/${idMatch}`, new Match(
-        idMatch,
-        idMatchType,
-        idRound,
-        idPool,
-        idPlayer1,
-        idPlayer2,
-        idPreviousMatch1,
-        idPreviousMatch2,
-        ipponsPlayer1 || 0,
-        ipponsPlayer2 || 0,
-        keikokusPlayer1 || 0,
-        keikokusPlayer2 || 0,
-        idWinner || null,
-      ));
-    },
-
-    async update(tx, { idMatch, ...updates }) {
-      const match = await tx.get(`match/${idMatch}`);
-      if (!match) return;
-
-      const updatedMatch = {
-        ...match,
-        ...updates,
-        idWinner: updates.idWinner ?? match.idWinner,
-      };
-
-      await tx.put(`match/${idMatch}`, updatedMatch);
-    },
-
-    async delete(tx, { idMatch }) {
-      await tx.del(`match/${idMatch}`);
-    },
-
-    async updateTimer(tx, { idMatch, isRunning, currentTime, additionalTime }) {
-      const match = await tx.get(`match/${idMatch}`);
-      if (!match) return;
-
-      const updatedMatch = {
-        ...match,
-        timer: {
-          ...match.timer,
-          isRunning: isRunning ?? match.timer.isRunning,
-          currentTime: currentTime ?? match.timer.currentTime,
-          additionalTime: additionalTime ?? match.timer.additionalTime,
-        },
-      };
-
-      await tx.put(`match/${idMatch}`, updatedMatch);
-    },
-  },
-});
-
 // recup tous les matchs d'un bracket
+import { replicacheInstance as rep } from "@/replicache/replicache";
+
 // recupere tous les matchs d'un round specifique
 export async function getMatchesByRound(idRound) {
+  const matchPrefix = "match/";
+
   return await rep.query(async (tx) => {
     const matches = [];
-    const scanResults = await tx.scan().entries().toArray(); // convertir en tableau
+    try {
+      const scanOperation = tx.scan({ prefix: matchPrefix });
+      const entriesOperation = await scanOperation.entries();
+      const scanResultsArray = await entriesOperation.toArray();
 
-    if (!Array.isArray(scanResults)) {
-      return [];
-    }
+      for (const entry of scanResultsArray) {
+        if (!Array.isArray(entry) || entry.length < 2) {
+          console.warn("Skipping malformed entry:", entry);
+          continue;
+        }
 
-    for (const entry of scanResults) {
-      // chaque entry semble etre un tableau sous la forme cle, valeur, timestamp
-      if (!Array.isArray(entry) || entry.length < 2) continue; // ignorer si mal forme
+        const matchData = entry[1]; // Value is the second element
 
-      const matchData = entry[1]; // recuperer l'objet match (2eme element)
-
-      if (matchData?.idRound === idRound) {
-        matches.push(matchData);
+        if (
+          typeof matchData === "object" &&
+          matchData !== null &&
+          matchData.idRound === idRound
+        ) {
+          matches.push(matchData);
+        }
       }
+    } catch (error) {
+      console.error(
+        `Error during scan/toArray with prefix "${matchPrefix}" for pool ${idRound}:`,
+        error,
+      );
+      return [];
     }
     return matches;
   });
 }
 
 export async function getMatchesByPool(idPool) {
+  const matchPrefix = "match/";
+
   return await rep.query(async (tx) => {
     const matches = [];
-    const scanResults = await tx.scan().entries().toArray();
+    try {
+      const scanOperation = await tx.scan({ prefix: matchPrefix });
+      const entriesOperation = await scanOperation.entries();
+      const scanResultsArray = await entriesOperation.toArray();
 
-    if (!Array.isArray(scanResults)) {
+      for (const entry of scanResultsArray) {
+        if (!Array.isArray(entry) || entry.length < 2) {
+          console.warn("Skipping malformed entry:", entry);
+          continue;
+        }
+
+        const matchData = entry[1]; // Value is the second element
+
+        if (
+          typeof matchData === "object" &&
+          matchData !== null &&
+          matchData.idPool === idPool
+        ) {
+          matches.push(matchData);
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error during scan/toArray with prefix "${matchPrefix}" for pool ${idPool}:`,
+        error,
+      );
       return [];
     }
-
-    for (const entry of scanResults) {
-      if (!Array.isArray(entry) || entry.length < 2) continue; 
-
-      const matchData = entry[1]; // recup l'objet match
-
-      // on verif que l'objet match possède bien la propriété idPool et qu'elle correspond
-      if (matchData && matchData.idPool === idPool) {
-        matches.push(matchData);
-      }
-    }
-
     return matches;
   });
 }
+
 
 export async function getMatchById(idMatch) {
   return await rep.query(async (tx) => {
@@ -116,25 +84,38 @@ export async function getMatchById(idMatch) {
 }
 
 export async function getMatchesByParticipant(participantId) {
+  const matchPrefix = "match/";
+
   return await rep.query(async (tx) => {
     const matches = [];
-    const scanResults = await tx.scan().entries().toArray(); 
 
-    if (!Array.isArray(scanResults)) {
+    try {
+      const scanOperation = tx.scan({ prefix: matchPrefix });
+      const entriesOperation = await scanOperation.entries();
+      const scanResultsArray = await entriesOperation.toArray();
+
+      for (const entry of scanResultsArray) {
+        if (!Array.isArray(entry) || entry.length < 2) {
+          console.warn("Skipping malformed entry:", entry);
+          continue;
+        }
+
+        const matchData = entry[1]; // Value is the second element
+
+        // verif si le participant a joué dans ce match
+        if (typeof matchData === "object" &&
+          matchData !== null && (matchData.idPlayer1 === participantId || matchData.idPlayer2 === participantId)) {
+          matches.push(matchData);
+        }
+      }
+
+    } catch (error) {
+      console.error(
+        `Error during scan/toArray with prefix "${matchPrefix}" for pool ${idPool}:`,
+        error,
+      );
       return [];
     }
-
-    for (const entry of scanResults) {
-      if (!Array.isArray(entry) || entry.length < 2) continue; // Ignorer si mal formée
-
-      const matchData = entry[1]; // Récupérer l'objet match
-
-      // verif si le participant a joué dans ce match
-      if (matchData && (matchData.idPlayer1 === participantId || matchData.idPlayer2 === participantId)) {
-        matches.push(matchData);
-      }
-    }
-
     return matches;
   });
 }

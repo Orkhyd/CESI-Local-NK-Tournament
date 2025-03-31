@@ -1,10 +1,10 @@
-import { rep } from "@/replicache/stores/Pool/poolManagerStore";
 import { generatePools } from "@/functions/generatePools";
 import { poolService } from "@/replicache/services/Pool/poolService";
 import { matchService } from "@/replicache/services/matchService";
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const poolManagerService = {
-  create: async (categoryId, participants) => {
+  createPoolManager: async (categoryId, participants) => {
     const idPoolManager = crypto.randomUUID();
 
     // genere des poules avec la fonction centrale
@@ -16,19 +16,17 @@ export const poolManagerService = {
       categoryId,
     });
 
-    // crea des poules et des matchs
-    for (const pool of generatedPools.structure) {
+    await Promise.all(generatedPools.structure.map(async (pool) => {
       // creee une poule via PoolService
-      const idPool = await poolService.create({
+      const idPool = await poolService.createPool({
         poolManagerId: idPoolManager,
         label: pool.label,
         qualifyingPositions: pool.qualifyingPositions,
         participants: pool.participants
       });
 
-      // cree les matchs de la poule via MatchService
-      for (const match of pool.matches) {
-        await matchService.create({
+      await Promise.all(pool.matches.map(match =>
+        matchService.createMatch({
           idMatch: match.idMatch,
           idRound: null,
           idPool,
@@ -36,18 +34,18 @@ export const poolManagerService = {
           idPlayer1: match.player1 ? match.player1.id : -2,
           idPlayer2: match.player2 ? match.player2.id : -2,
           winner: match.winner,
-        });
-      }
-    }
+        })
+      ));
+    }));
 
     return idPoolManager;
   },
 
   // supp une instance de PoolManager et ses poules
-  delete: async (poolManagerId) => {
+  deletePoolManager: async (poolManagerId) => {
     const poules = await poolService.getPoulesByPoolManagerId(poolManagerId);
     for (const poule of poules) {
-      await poolService.delete(poule.id);
+      await poolService.deletePool(poule.id);
     }
     await rep.mutate.deletePoolManager({ id: poolManagerId });
   },

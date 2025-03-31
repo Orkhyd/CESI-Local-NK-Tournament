@@ -1,14 +1,19 @@
-import { rep } from '../stores/tournamentStore';
+import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const TournamentService = {
-  create: (id, name, startDate) => rep.mutate.create({ id, name, startDate }),
+  createTournament: (id, name, startDate) => {
 
-  delete: async (id) => {
+    rep.mutate.createTournament({ id, name, startDate });
+  },
+
+  deleteTournament: async (id) => {
     await deleteAllIndexedDB();
     location.reload(); // recharge la page pour tout réinitialiser
   },
 
-  start: (id) => rep.mutate.toggleState({ id, started: true })
+  startTournament: (id) => {
+    rep.mutate.toggleState({ id, started: true });
+  }
 };
 
 

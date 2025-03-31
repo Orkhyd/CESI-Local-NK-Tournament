@@ -173,10 +173,11 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { getMatchById, rep } from '@/replicache/stores/matchStore';
+import { getMatchById } from '@/replicache/stores/matchStore';
 import { matchService } from '@/replicache/services/matchService';
 import { nationality } from '@/replicache/models/constants';
 import { getParticipantById } from '@/replicache/stores/participantStore';
+import { replicacheInstance as rep } from '@/replicache/replicache';
 
 const props = defineProps({
   matchId: { type: String, required: true },
@@ -237,7 +238,7 @@ const confirmWinner = async () => {
 
   // si le match est de type "poule" et que l'egallite est choisie, mettre idWinner à -1
   if (match.value?.idMatchType === 2 && finalWinner === -1) {
-    await matchService.update(match.value.idMatch, match.value.idMatchType, {
+    await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
       ipponsPlayer1: ipponsPlayer1.value,
       ipponsPlayer2: ipponsPlayer2.value,
       keikokusPlayer1: keikokusPlayer1.value,
@@ -246,7 +247,7 @@ const confirmWinner = async () => {
     });
   } else {
     // sinon, mettre à jour le gagnant normalement
-    await matchService.update(match.value.idMatch, match.value.idMatchType, {
+    await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
       ipponsPlayer1: ipponsPlayer1.value,
       ipponsPlayer2: ipponsPlayer2.value,
       keikokusPlayer1: keikokusPlayer1.value,
@@ -460,7 +461,7 @@ onUnmounted(() => {
 
 // met a jour en direct les scores du match
 watch([ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2], async () => {
-  await matchService.update(match.value.idMatch, match.value.idMatchType, {
+  await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
     ipponsPlayer1: ipponsPlayer1.value,
     ipponsPlayer2: ipponsPlayer2.value,
     keikokusPlayer1: keikokusPlayer1.value,
@@ -577,9 +578,9 @@ watch([ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2], async ()
 .draw-option {
   display: flex;
   justify-content: center;
-  align-items: center; 
-  gap: 8px; 
-  margin-top: 10px; 
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 

@@ -297,7 +297,7 @@ const handleCloseParticipantModal = () => {
 // suppr participant
 const handleDeleteParticipant = async (participant) => {
   try {
-    await ParticipantService.delete(participant.source.id);
+    await ParticipantService.deleteParticipant(participant.source.id);
     await refreshParticipants();
     toast.init({ message: "Le participant a bien été supprimé!", color: "success", position: 'bottom-center' });
   } catch (error) {
@@ -320,9 +320,9 @@ const handleSaveParticipant = async (participantData, silent = false) => {
     };
 
     if (participantData.id) {
-      await ParticipantService.update(participantData.id, formattedData);
+      await ParticipantService.updateParticipant(participantData.id, formattedData);
     } else {
-      await ParticipantService.create(tournamentId.value, formattedData);
+      await ParticipantService.createParticipant(tournamentId.value, formattedData);
     }
 
     // PAS DE refreshParticipants ici en cas d'import car sinon trop de refresh == pas optimisé et prend trop de temps !!
@@ -365,7 +365,7 @@ const handleDeleteCategory = async (category) => {
       const participantIds = linkedParticipants.map((p) => p.id);
       await CategoryService.linkParticipants(-1, participantIds);
     }
-    await CategoryService.delete(category.source?.id);
+    await CategoryService.deleteCategory(category.source?.id);
     await refreshCategories();
     await refreshParticipants();
     toast.init({ message: "La catégorie a bien été supprimée!", color: "success", position: 'bottom-center' });
@@ -389,11 +389,11 @@ const handleSaveCategory = async ({ category, participants }) => {
   try {
     let categoryId;
     if (cleanData.id) {
-      await CategoryService.update(cleanData.id, cleanData);
+      await CategoryService.updateCategory(cleanData.id, cleanData);
       categoryId = cleanData.id;
       toast.init({ message: "La catégorie a bien été mise à jour!", color: "success", position: 'bottom-center' });
     } else {
-      const createdCategory = await CategoryService.create(tournamentId.value, cleanData);
+      const createdCategory = await CategoryService.createCategory(tournamentId.value, cleanData);
       categoryId = createdCategory.id;
       toast.init({ message: "La catégorie a bien été créée!", color: "success", position: 'bottom-center' });
     }
@@ -482,7 +482,7 @@ const confirmTournamentValidation = async () => {
   if (!tournamentId.value) return;
 
   try {
-    await TournamentService.start(tournamentId.value); // majl'état du tournoi en "démarré"
+    await TournamentService.startTournament(tournamentId.value); // majl'état du tournoi en "démarré"
 
     showValidationModal.value = false; // ferme la modale
 
