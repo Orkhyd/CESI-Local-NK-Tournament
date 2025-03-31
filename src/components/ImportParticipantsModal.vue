@@ -76,7 +76,7 @@ const props = defineProps({
   getCountry: { type: Function, required: true },
   getFlagUrl: { type: Function, required: true },
   getGradeName: { type: Function, required: true },
-  registeredParticipants: { type: Array, default: () => [] }     // liste des participants déjà enregistrés
+  registeredParticipants: { type: Array, default: () => [] }
 });
 
 const emit = defineEmits(["update:modelValue", "cancelImport", "confirmImport"]);

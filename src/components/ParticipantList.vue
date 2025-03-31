@@ -111,7 +111,7 @@ const filterText = ref("");
 const filteredParticipants = computed(() => {
   if (!filterText.value) return props.participants.map(p => ({
     ...p,
-    status: p.categoryId === -1 ? "Non attribué" : "Attribué", // Ajoutez la propriété `status`
+    status: p.categoryId === -1 ? "Non attribué" : "Attribué",
   }));
 
   const searchLower = filterText.value.toLowerCase();
@@ -119,7 +119,7 @@ const filteredParticipants = computed(() => {
   return props.participants
     .map((p) => ({
       ...p,
-      status: p.categoryId === -1 ? "Non attribué" : "Attribué", // Ajoutez la propriété `status`
+      status: p.categoryId === -1 ? "Non attribué" : "Attribué",
     }))
     .filter((p) =>
       Object.values(p).some((val) =>

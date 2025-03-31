@@ -73,12 +73,9 @@ const props = defineProps({
   },
 });
 
-// fonction pour generer le pd
-
-
 const showParticipants = ref(false);
 
-const searchParticipant = ref(null); // participant selectionné pour le redirigé vers l ancre dans le tab
+const searchParticipant = ref(null);
 
 const activeTab = ref("category"); // onglet actif par défaut
 const participants = ref([]); // liste des participants
@@ -112,7 +109,7 @@ const fetchParticipants = async () => {
 
 watch(activeTab, (newTab) => {
   if (newTab === "statistics") {
-    showParticipants.value = false; // ferme la liste des participants
+    showParticipants.value = false;
   }
 });
 

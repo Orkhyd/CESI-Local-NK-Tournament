@@ -1,4 +1,3 @@
-// class pr stocker les infos d un participant
 export class Participant {
   // init d un participant avec ses infos
   constructor(id, tournamentId, firstName, lastName, birthDate, clubName, weight, nationalityId, genderId, gradeId) {

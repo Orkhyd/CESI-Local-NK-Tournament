@@ -1,4 +1,3 @@
-// poolService.js
 import { rep } from "@/replicache/stores/Pool/poolStore";
 
 export const poolService = {

@@ -32,9 +32,9 @@ export const bracketService = {
         for (const match of round.matches) {
           await matchService.create({
             idMatch: match.idMatch,
-            idRound, // on assigne bien l'uuid
+            idRound,
             idPool: null,
-            idMatchType: 1, // type tableau
+            idMatchType: 1,
             idPlayer1: match.player1 ? match.player1.id : -2,
             idPlayer2: match.player2 ? match.player2.id : -2,
             idPreviousMatch1: match.previousMatch1,
