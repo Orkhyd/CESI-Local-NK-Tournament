@@ -14,6 +14,7 @@ const categoryMutators = {
         data.ageCategoryIds,
         data.minGradeId,
         data.maxGradeId,
+        data.weightRange
       ),
     );
   },
