@@ -41,7 +41,8 @@
 
       <!-- onglet "stats" -->
       <div v-else-if="activeTab === 'statistics'">
-        <CategoryStatistics v-if="isParticipantsLoaded" :category="props.category" :participants="participants" />
+        <CategoryStatistics v-if="isParticipantsLoaded" :tournamentId="props.tournamentId" :category="props.category"
+          :participants="participants" />
       </div>
     </div>
   </div>
