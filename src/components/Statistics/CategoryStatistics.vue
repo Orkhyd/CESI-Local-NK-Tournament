@@ -53,7 +53,7 @@
     <div v-if="showQRModal" class="modal" @click.self="showQRModal = false">
       <div class="modal-content">
         <h4 style="padding-bottom: 10px;">Partager les statistiques</h4>
-        <qrcode-vue :value="qrData" :size="200" level="H" />
+        <qrcode-vue :value="qrData" :size="350" level="H" />
         <button @click="showQRModal = false" class="close-button">Fermer</button>
       </div>
     </div>
