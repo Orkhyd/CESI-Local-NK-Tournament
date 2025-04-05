@@ -67,33 +67,68 @@ ipcMain.on("open-match-window", (event, matchData) => {
 });
 
 ipcMain.on("open-fictive-match-window", () => {
-  const fictiveMatchId = "fictive-mode"; // id unique fictif
+  const fictiveMatchId = "fictive-mode";
 
-  // verif si une fenêtre fictive est déjà ouverte
-  if (openWindows[fictiveMatchId] && !openWindows[fictiveMatchId].isDestroyed()) {
-    openWindows[fictiveMatchId].focus(); // ramene la fenêtre fictive au premier plan
-    return;
+  // ferme les fenêtres existantes si elles sont ouvertes
+  if (openWindows[fictiveMatchId]) {
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (!win.isDestroyed()) win.close();
+    });
+    openWindows = {};
   }
 
-  const fictiveMatchWindow = new BrowserWindow({
+  // recup les dimensions de l'écran
+  const { width, height } = require('electron').screen.getPrimaryDisplay().workAreaSize;
+
+  // creer la fenêtre de contrôle
+  const controlWindow = new BrowserWindow({
     width: 800,
-    height: 600,
+    height: 700,
+    x: 0,
+    y: Math.floor((height - 600) / 2),
     webPreferences: {
       preload: path.join(__dirname, "../src/preload.js"),
-      contextIsolation: true,
-      enableRemoteModule: false,
-      nodeIntegration: false,
-    },
+      contextIsolation: true
+    }
   });
 
-  fictiveMatchWindow.loadURL(`http://localhost:5173/match/fictive`);
+  // creer la fenêtre d'affichage
+  const displayWindow = new BrowserWindow({
+    width: 800,
+    height: 550,
+    x: width - 800,
+    y: Math.floor((height - 550) / 2),
+    webPreferences: {
+      preload: path.join(__dirname, "../src/preload.js"),
+      contextIsolation: true
+    }
+  });
 
-  // stocke la fenêtre fictive
-  openWindows[fictiveMatchId] = fictiveMatchWindow;
+  // charge les URLs
+  controlWindow.loadURL('http://localhost:5173/fictive-control');
+  displayWindow.loadURL('http://localhost:5173/fictive-display');
 
-  // supp l'entrée quand la fenêtre est fermée
-  fictiveMatchWindow.on("closed", () => {
+  // stocke les références
+  openWindows[fictiveMatchId] = { controlWindow, displayWindow };
+
+  // gestion de fermeture
+  const closeAll = () => {
+    if (controlWindow && !controlWindow.isDestroyed()) controlWindow.close();
+    if (displayWindow && !displayWindow.isDestroyed()) displayWindow.close();
     delete openWindows[fictiveMatchId];
-  });
+  };
+
+  controlWindow.on('closed', closeAll);
+  displayWindow.on('closed', closeAll);
+});
+
+ipcMain.on("close-fictive-windows", () => {
+  const fictiveMatchId = "fictive-mode";
+  if (openWindows[fictiveMatchId]) {
+    const { controlWindow, displayWindow } = openWindows[fictiveMatchId];
+    if (controlWindow && !controlWindow.isDestroyed()) controlWindow.close();
+    if (displayWindow && !displayWindow.isDestroyed()) displayWindow.close();
+    delete openWindows[fictiveMatchId];
+  }
 });
 
