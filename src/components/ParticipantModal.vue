@@ -186,7 +186,7 @@ const nationalityOptions = computed(() => {
   // mapper pour creer les options en utilisant "text" pour le nom
   return sortedCountries.map(country => ({
     text: country.name, // nom en anglais
-    flag: getFlag(country), // chaine base64 du drapeau
+    flag: getFlag(country),
     value: country.id,
   }));
 });
