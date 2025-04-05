@@ -19,10 +19,8 @@ export default defineConfig({
       workbox: {
         disableDevLogs: true,
         maximumFileSizeToCacheInBytes: 4097152,
-        // Remove individual files from includeAssets and use globPatterns instead
         globPatterns: [
           '**/*.{js,css,html,png,jpg,jpeg,svg,ico}',
-          // Don't specify individual files here
         ],
         navigateFallback: "/",
         navigateFallbackDenylist: [
@@ -44,7 +42,6 @@ export default defineConfig({
           }
         ]
       },
-      // Remove includeAssets completely
       manifest: {
         name: 'My Awesome App',
         short_name: 'MyApp',
@@ -53,12 +50,12 @@ export default defineConfig({
         display: "fullscreen",
         icons: [
           {
-            src: '/pwa-192x192.png', // Make sure paths are correct
+            src: '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/pwa-512x512.png', // Make sure paths are correct
+            src: '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
           }
