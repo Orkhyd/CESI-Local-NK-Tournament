@@ -7,6 +7,7 @@ import matchMutators from './mutators/matchMutators';
 import poolManagerMutators from './mutators/poolManagerMutators';
 import poolMutators from './mutators/poolMutators';
 import roundMutators from './mutators/roundMutators';
+import fictifMatchMutators from './mutators/fictifMatchMutators';
 
 const mutators = {};
 
@@ -25,6 +26,7 @@ export function setupMutators() {
   registerMutators(poolMutators);
   registerMutators(roundMutators);
   registerMutators(tournamentMutators);
+  registerMutators(fictifMatchMutators);
 }
 
 export default {
