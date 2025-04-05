@@ -4,7 +4,7 @@
     <div class="scoreboard-row row-red">
       <div class="row-content">
         <div class="flag">
-          <img :src="getFlagUrl(player1Nationality?.flag)" alt="Drapeau Joueur 1" />
+          <img :src="getFlag(player1Nationality)" alt="Drapeau Joueur 1" />
         </div>
         <div class="player-info">
           <div class="player-name">
@@ -29,7 +29,7 @@
     <div class="scoreboard-row row-white">
       <div class="row-content">
         <div class="flag">
-          <img :src="getFlagUrl(player2Nationality?.flag)" alt="Drapeau Joueur 2" />
+          <img :src="getFlag(player2Nationality)" alt="Drapeau Joueur 2" />
         </div>
         <div class="player-info">
           <div class="player-name">
@@ -79,6 +79,7 @@ import { getMatchById } from '@/replicache/stores/matchStore';
 import { getParticipantById } from '@/replicache/stores/participantStore';
 import { nationality } from '@/replicache/models/constants';
 import { replicacheInstance as rep } from '@/replicache/replicache';
+import { useCountryFlags } from '@/utils/countryFlags';
 
 const route = useRoute();
 const matchId = ref(route.params.id);
@@ -161,9 +162,8 @@ function getCountry(natId) {
   return nationality.find(country => country.id === Number(natId));
 }
 
-function getFlagUrl(flagBase64) {
-  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-}
+const { getFlag } = useCountryFlags();
+
 
 const displayedTime = computed(() => {
   if (!match.value || !match.value.timer) return "00:00";

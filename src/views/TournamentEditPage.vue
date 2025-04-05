@@ -55,7 +55,7 @@
     <!-- Modale d'import des participants -->
     <ImportParticipantsModal v-model="showImportModal" v-if="showImportModal"
       :importedParticipants="importedParticipants" :registeredParticipants="participants" :importColumns="importColumns"
-      :getCountry="getCountry" :getFlagUrl="getFlagUrl" :getGradeName="getGradeName" @cancelImport="cancelImport"
+      :getCountry="getCountry" :getFlag="getFlag" :getGradeName="getGradeName" @cancelImport="cancelImport"
       @confirmImport="confirmImport" />
 
     <!-- Modale de confirmation de tournoi -->
@@ -106,6 +106,7 @@ import { CategoryService } from "../replicache/services/categoryService";
 import { TournamentService } from "../replicache/services/tournamentService";
 import { genders, grades, categoriesAge, categoriesTypes, nationality } from "../replicache/models/constants";
 import { useToast } from "vuestic-ui";
+import { useCountryFlags } from "@/utils/countryFlags";
 
 // init vuestic toast
 const toast = useToast();
@@ -143,10 +144,7 @@ const getCountry = (natId) => {
   return nationality.find(country => country.id === Number(natId));
 };
 
-// recuperer l image en base 64
-const getFlagUrl = (flagBase64) => {
-  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-};
+const { getFlag } = useCountryFlags(); // fonction pour recuperer le drapeau du pays
 
 const activeTab = ref("participants"); // affiche les participants par defaut
 

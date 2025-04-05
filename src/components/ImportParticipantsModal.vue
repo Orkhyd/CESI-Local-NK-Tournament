@@ -32,7 +32,7 @@
             <template #cell(nationalityId)="{ row }">
               <div class="nationality-cell">
                 <img v-if="getCountry(row.source?.nationalityId)"
-                  :src="getFlagUrl(getCountry(row.source?.nationalityId).flag)" alt="flag" class="nationality-flag" />
+                  :src="getFlag(getCountry(row.source?.nationalityId))" alt="flag" class="nationality-flag" />
                 <span>
                   {{ getCountry(row.source?.nationalityId)?.name || row.source?.nationalityId }}
                 </span>
@@ -65,8 +65,11 @@
 </template>
 
 <script setup>
+import { useCountryFlags } from '@/utils/countryFlags';
 import { computed, ref, watch, onMounted } from 'vue';
 import { VaModal, VaDataTable, VaIcon, VaButton, VaAlert, VaInput } from 'vuestic-ui';
+
+const { getFlag } = useCountryFlags();
 
 // props attendues
 const props = defineProps({
@@ -74,7 +77,6 @@ const props = defineProps({
   importedParticipants: { type: Array, default: () => [] },
   importColumns: { type: Array, default: () => [] },
   getCountry: { type: Function, required: true },
-  getFlagUrl: { type: Function, required: true },
   getGradeName: { type: Function, required: true },
   registeredParticipants: { type: Array, default: () => [] }
 });
@@ -125,14 +127,14 @@ const toggleImportSelection = ({ item }) => {
   const itemKey = `${item.firstName}-${item.lastName}-${item.birthDate}`;
 
   // verif si l'élément est déjà sélectionné
-  const index = selectedImportItems.value.findIndex(p => 
+  const index = selectedImportItems.value.findIndex(p =>
     `${p.firstName}-${p.lastName}-${p.birthDate}` === itemKey
   );
 
   if (index === -1) {
-    selectedImportItems.value.push(item); 
+    selectedImportItems.value.push(item);
   } else {
-    selectedImportItems.value.splice(index, 1); 
+    selectedImportItems.value.splice(index, 1);
   }
 };
 

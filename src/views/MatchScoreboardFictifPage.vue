@@ -3,7 +3,7 @@
         <div class="scoreboard-row row-red">
             <div class="row-content">
                 <div class="flag">
-                    <img :src="getFlagUrl(player1Nationality?.flag)" alt="Drapeau Joueur 1" />
+                    <img :src="getFlag(player1Nationality)" alt="Drapeau Joueur 1" />
                 </div>
                 <div class="player-info">
                     <div class="player-name">
@@ -27,7 +27,7 @@
         <div class="scoreboard-row row-white">
             <div class="row-content">
                 <div class="flag">
-                    <img :src="getFlagUrl(player2Nationality?.flag)" alt="Drapeau Joueur 2" />
+                    <img :src="getFlag(player2Nationality)" alt="Drapeau Joueur 2" />
                 </div>
                 <div class="player-info">
                     <div class="player-name">
@@ -73,10 +73,12 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { nationality } from '@/replicache/models/constants';
 import { fictifMatchStore } from '@/replicache/stores/fictifMatchStore';
+import { useCountryFlags } from '@/utils/countryFlags';
 
 const FICTIF_MATCH_ID = 'current-fictif-match';
 const fictifMatch = ref(null);
 let unsubscribe = null;
+const {getFlag} = useCountryFlags();
 
 onMounted(async () => {
     // recup initiale
@@ -111,9 +113,6 @@ const progressPercent = computed(() => {
     return ((fictifMatch.value?.timer?.currentTime ?? 0) / 180) * 100;
 });
 
-function getFlagUrl(flagBase64) {
-    return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-}
 </script>
 
 

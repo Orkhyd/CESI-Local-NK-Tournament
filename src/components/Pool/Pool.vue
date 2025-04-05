@@ -69,8 +69,8 @@
                     @selected="(option) => openModal(standing.participant)">
                     <template #anchor>
                       <div class="participant-info">
-                        <img v-if="getCountry(standing.participant.nationalityId)?.flag"
-                          :src="getFlagUrl(getCountry(standing.participant.nationalityId).flag)" alt="Drapeau"
+                        <img v-if="getCountry(standing.participant.nationalityId)"
+                          :src="getFlag(getCountry(standing.participant.nationalityId))" alt="Drapeau"
                           class="flag" />
                         {{ standing.participant.lastName }} {{ standing.participant.firstName }}
                       </div>
@@ -189,6 +189,7 @@ import { getMatchesByPool } from '@/replicache/stores/matchStore';
 import { nationality } from '@/replicache/models/constants';
 import { determinePoolRanking } from "@/functions/determinePoolRanking"
 import ParticipantDetails from "../ParticipantDetails.vue"
+import { useCountryFlags } from '@/utils/countryFlags';
 
 // def props
 const props = defineProps({
@@ -328,7 +329,7 @@ function openModal(participant) {
 
 // gestion des drapeaux et nationalités
 const getCountry = (natId) => nationality.find(country => country.id === Number(natId));
-const getFlagUrl = (flagBase64) => flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
+const { getFlag } = useCountryFlags();
 
 // computed : calcule et trie le classement (standings)
 const sortedStandings = computed(() => {
@@ -355,8 +356,8 @@ const getMatchHistory = (participantId) => {
   return poolMatches.value
     .filter(match => match.idPlayer1 === participantId || match.idPlayer2 === participantId)
     .map(match => ({
-      won: match.idWinner === participantId,  
-      played: match.idWinner !== null, 
+      won: match.idWinner === participantId,
+      played: match.idWinner !== null,
       draw: match.idWinner === -1,
       tieBreak: match.idMatch.includes('%ADDITIONNAL-MATCH') // verif si c'est un match de départage
     }));
@@ -752,15 +753,15 @@ function getCompletedMatchCount() {
 /* style pour les bulles d'historique des matchs */
 .history-bubble {
   display: inline-flex;
-  width: 12px; 
-  height: 12px; 
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   margin: 1px;
   align-items: center;
-  justify-content: center; 
-  font-size: 8px; 
+  justify-content: center;
+  font-size: 8px;
   font-weight: bold;
-  color: white; 
+  color: white;
 }
 
 
