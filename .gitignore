@@ -29,3 +29,5 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+dev-dist
+dev-dist/*
