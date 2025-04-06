@@ -45,7 +45,8 @@
                     <div class="select-option option-container"
                       :class="{ 'va-select-option--selected': Number(form.nationalityId) === Number(option.value) }"
                       @click="selectOption(option)">
-                      <img class="flag" :src="getFlagUrl(option.flag)" alt="flag" />
+                      <img class="flag" :src="option.flag" alt="flag" />
+
                       <span class="country-name">{{ option.text }}</span>
                     </div>
                   </template>
@@ -126,6 +127,9 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { genders, grades, nationality } from "../replicache/models/constants";
+import { useCountryFlags } from "@/utils/countryFlags";
+
+const {getFlag} = useCountryFlags();
 
 // props pr gerer ouverture modale et les donnees du participant
 const props = defineProps({
@@ -182,16 +186,10 @@ const nationalityOptions = computed(() => {
   // mapper pour creer les options en utilisant "text" pour le nom
   return sortedCountries.map(country => ({
     text: country.name, // nom en anglais
-    flag: country.flag, // chaine base64 du drapeau
+    flag: getFlag(country),
     value: country.id,
   }));
 });
-
-// fonction pour preparer l'url du drapeau
-const getFlagUrl = (flagBase64) => {
-  if (!flagBase64) return '';
-  return `data:image/png;base64,${flagBase64}`;
-};
 
 // init form pr stocker infos participant
 const form = ref({

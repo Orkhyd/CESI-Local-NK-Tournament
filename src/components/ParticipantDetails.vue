@@ -14,7 +14,7 @@
             <li>
               <strong>Nationalité :</strong>
               {{ nationalityData ? nationalityData.name : 'Inconnue' }}
-              <img v-if="nationalityData" :src="'data:image/png;base64,' + nationalityData.flag" alt="Drapeau"
+              <img v-if="nationalityData" :src='getFlag(nationalityData)' alt="Drapeau"
                 class="flag" />
             </li>
             <li>
@@ -140,6 +140,9 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { getMatchesByParticipant } from '@/replicache/stores/matchStore';
 import { grades, nationality } from '@/replicache/models/constants';
+import { useCountryFlags } from '@/utils/countryFlags';
+
+const { getFlag } = useCountryFlags();
 
 const props = defineProps({
   participant: { type: Object, required: true },

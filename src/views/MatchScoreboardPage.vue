@@ -4,7 +4,10 @@
     <div class="scoreboard-row row-red">
       <div class="row-content">
         <div class="flag">
-          <img :src="getFlagUrl(player1Nationality?.flag)" alt="Drapeau Joueur 1" />
+          <div class="flag-placeholder">
+            <div v-if="!isFlag1Loaded" class="spinner"></div>
+          </div>
+          <img v-show="isFlag1Loaded" @load="flag1Loaded()" :src="getFlag(player1Nationality)" alt="Drapeau Joueur 1" />
         </div>
         <div class="player-info">
           <div class="player-name">
@@ -29,7 +32,10 @@
     <div class="scoreboard-row row-white">
       <div class="row-content">
         <div class="flag">
-          <img :src="getFlagUrl(player2Nationality?.flag)" alt="Drapeau Joueur 2" />
+          <div class="flag-placeholder">
+            <div v-if="!isFlag2Loaded" class="spinner"></div>
+          </div>
+          <img v-show="isFlag2Loaded" @load="flag2Loaded()" :src="getFlag(player2Nationality)" alt="Drapeau Joueur 2" />
         </div>
         <div class="player-info">
           <div class="player-name">
@@ -79,13 +85,23 @@ import { getMatchById } from '@/replicache/stores/matchStore';
 import { getParticipantById } from '@/replicache/stores/participantStore';
 import { nationality } from '@/replicache/models/constants';
 import { replicacheInstance as rep } from '@/replicache/replicache';
+import { useCountryFlags } from '@/utils/countryFlags';
 
 const route = useRoute();
 const matchId = ref(route.params.id);
 const match = ref(null);
 const player1 = ref(null);
 const player2 = ref(null);
+const isFlag1Loaded = ref(false);
+const isFlag2Loaded = ref(false);
 
+const flag1Loaded = () => {
+  isFlag1Loaded.value = true;
+}
+
+const flag2Loaded = () => {
+  isFlag2Loaded.value = true;
+}
 
 const player1Nationality = computed(() => getCountry(player1.value?.nationalityId));
 const player2Nationality = computed(() => getCountry(player2.value?.nationalityId));
@@ -161,9 +177,8 @@ function getCountry(natId) {
   return nationality.find(country => country.id === Number(natId));
 }
 
-function getFlagUrl(flagBase64) {
-  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-}
+const { getFlag } = useCountryFlags();
+
 
 const displayedTime = computed(() => {
   if (!match.value || !match.value.timer) return "00:00";
@@ -278,7 +293,24 @@ const displayedTime = computed(() => {
   gap: 10px;
   flex: 5;
 }
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(66, 133, 244, 0.1);
+  border-radius: 50%;
+  border-top-color: #4285f4;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
 
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 .flag img {
   width: 20vw;
   max-width: 200px;
@@ -287,6 +319,18 @@ const displayedTime = computed(() => {
   margin-right: 30px;
   margin-left: 20px;
   border: 1.5px solid black;
+}
+
+.flag-placeholder {
+  width: 20vw;
+  max-width: 200px;
+  height: auto;
+  border-radius: 20px;
+  margin-right: 30px;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-info {

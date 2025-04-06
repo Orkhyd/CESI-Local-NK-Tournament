@@ -157,7 +157,7 @@
                                 <template #cell(nationalityId)="{ row }">
                                     <div class="nationality-cell">
                                         <img v-if="getCountry(row.source?.nationalityId)"
-                                            :src="getFlagUrl(getCountry(row.source?.nationalityId).flag)" alt="flag"
+                                            :src="getFlag(getCountry(row.source?.nationalityId))" alt="flag"
                                             class="nationality-flag" />
                                         <span>
                                             {{ getCountry(row.source?.nationalityId)?.name || row.source?.nationalityId
@@ -217,6 +217,9 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { VaModal, VaForm, VaInput, VaSelect, VaButton, VaDataTable, VaChip, VaAlert } from "vuestic-ui";
 import { genders, grades, categoriesAge, categoriesTypes, nationality } from "../replicache/models/constants";
+import { useCountryFlags } from "@/utils/countryFlags";
+
+const { getFlag } = useCountryFlags();
 
 // props et emits
 const props = defineProps({
@@ -231,11 +234,6 @@ const emit = defineEmits(["update:modelValue", "save"]);
 // reocuperer le nom du pays avec l'id
 const getCountry = (natId) => {
     return nationality.find(country => country.id === Number(natId));
-};
-
-// recuperer l image en base 64
-const getFlagUrl = (flagBase64) => {
-    return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
 };
 
 // recuperer le echelle d'age entre le age min et max des categories d'age

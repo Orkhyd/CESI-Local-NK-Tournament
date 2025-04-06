@@ -3,7 +3,10 @@
         <div class="scoreboard-row row-red">
             <div class="row-content">
                 <div class="flag">
-                    <img :src="getFlagUrl(player1Nationality?.flag)" alt="Drapeau Joueur 1" />
+                    <div class="flag-placeholder">
+                      <div v-if="!isFlag1Loaded" class="spinner"></div>
+                    </div>
+                    <img v-show="isFlag1Loaded" @load="flag1Loaded()" :src="getFlag(player1Nationality)" alt="Drapeau Joueur 1" />
                 </div>
                 <div class="player-info">
                     <div class="player-name">
@@ -27,7 +30,10 @@
         <div class="scoreboard-row row-white">
             <div class="row-content">
                 <div class="flag">
-                    <img :src="getFlagUrl(player2Nationality?.flag)" alt="Drapeau Joueur 2" />
+                  <div class="flag-placeholder">
+                    <div v-if="!isFlag2Loaded" class="spinner"></div>
+                  </div>
+                  <img v-show="isFlag2Loaded" @load="flag2Loaded()" :src="getFlag(player2Nationality)" alt="Drapeau Joueur 2" />
                 </div>
                 <div class="player-info">
                     <div class="player-name">
@@ -73,10 +79,23 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { nationality } from '@/replicache/models/constants';
 import { fictifMatchStore } from '@/replicache/stores/fictifMatchStore';
+import { useCountryFlags } from '@/utils/countryFlags';
+
+const isFlag1Loaded = ref(false);
+const isFlag2Loaded = ref(false);
+
+const flag1Loaded = () => {
+  isFlag1Loaded.value = true;
+}
+
+const flag2Loaded = () => {
+  isFlag2Loaded.value = true;
+}
 
 const FICTIF_MATCH_ID = 'current-fictif-match';
 const fictifMatch = ref(null);
 let unsubscribe = null;
+const {getFlag} = useCountryFlags();
 
 onMounted(async () => {
     // recup initiale
@@ -111,9 +130,6 @@ const progressPercent = computed(() => {
     return ((fictifMatch.value?.timer?.currentTime ?? 0) / 180) * 100;
 });
 
-function getFlagUrl(flagBase64) {
-    return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-}
 </script>
 
 
@@ -212,6 +228,36 @@ function getFlagUrl(flagBase64) {
     align-items: center;
     gap: 10px;
     flex: 5;
+}
+.flag-placeholder {
+  width: 20vw;
+  max-width: 200px;
+  height: auto;
+  border-radius: 20px;
+  margin-right: 30px;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(66, 133, 244, 0.1);
+  border-radius: 50%;
+  border-top-color: #4285f4;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .flag img {

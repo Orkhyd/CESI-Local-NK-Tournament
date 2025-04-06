@@ -21,7 +21,7 @@
             </VaAvatar>
             <div class="name-flag">
               <span class="name">{{ player1Name }}</span>
-              <img v-if="player1Nationality && player1Nationality.flag" :src="getFlagUrl(player1Nationality.flag)"
+              <img v-if="player1Nationality" :src="getFlag(player1Nationality)"
                 alt="Drapeau" class="flag" />
             </div>
           </div>
@@ -47,7 +47,7 @@
             </VaAvatar>
             <div class="name-flag">
               <span class="name">{{ player2Name }}</span>
-              <img v-if="player2Nationality && player2Nationality.flag" :src="getFlagUrl(player2Nationality.flag)"
+              <img v-if="player2Nationality" :src="getFlag(player2Nationality)"
                 alt="Drapeau" class="flag" />
             </div>
           </div>
@@ -178,6 +178,9 @@ import { matchService } from '@/replicache/services/matchService';
 import { nationality } from '@/replicache/models/constants';
 import { getParticipantById } from '@/replicache/stores/participantStore';
 import { replicacheInstance as rep } from '@/replicache/replicache';
+import { useCountryFlags } from '@/utils/countryFlags';
+
+const { getFlag } = useCountryFlags();
 
 const props = defineProps({
   matchId: { type: String, required: true },
@@ -298,7 +301,6 @@ const player2Name = computed(() => (player2.value?.firstName + ' ' + player2.val
 
 // gestion des drapeaux et nationalités
 const getCountry = (natId) => nationality.find(country => country.id === Number(natId));
-const getFlagUrl = (flagBase64) => flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
 
 const player1Nationality = computed(() => getCountry(player1.value?.nationalityId));
 const player2Nationality = computed(() => getCountry(player2.value?.nationalityId));

@@ -39,7 +39,7 @@
         <template #cell(nationalityId)="{ row }">
           <div class="nationality-cell">
             <img v-if="getCountry(row.source.nationalityId)"
-              :src="getFlagUrl(getCountry(row.source.nationalityId).flag)" alt="flag" class="nationality-flag" />
+              :src="getFlag(getCountry(row.source.nationalityId))" alt="flag" class="nationality-flag" />
             <span>
               {{ getCountry(row.source.nationalityId) ? getCountry(row.source.nationalityId).name :
                 row.source.nationalityId }}
@@ -82,6 +82,7 @@
 import { ref, computed } from "vue";
 import { useToast } from "vuestic-ui";
 import { nationality } from "@/replicache/models/constants";
+import { useCountryFlags } from "@/utils/countryFlags";
 
 // init vuestic toast
 const toast = useToast();
@@ -100,10 +101,7 @@ const getCountry = (natId) => {
   return nationality.find(country => country.id === Number(natId));
 };
 
-const getFlagUrl = (flagBase64) => {
-  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-};
-
+const { getFlag } = useCountryFlags();
 // texte filtrage
 const filterText = ref("");
 

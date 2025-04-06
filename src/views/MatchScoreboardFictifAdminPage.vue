@@ -7,7 +7,7 @@
                 <div class="player-row player-red">
                     <div class="player-info">
                         <div class="flag-container">
-                            <img :src="getFlagUrl(match.player1.nationalityId)" class="flag" />
+                            <img :src="getFlag(getCountry(match.player1.nationalityId))" class="flag" />
                         </div>
                         <div class="player-details">
                             <va-input :model-value="match.player1.fullName"
@@ -17,7 +17,7 @@
                                 :options="nationalityOptions" label="Nationalité" text-by="name" value-by="id"
                                 searchable>
                                 <template #content="{ value }">
-                                    <img :src="getFlagUrl(value.id)" class="flag-option" />
+                                    <img :src="getFlag(getCountry(value.id))" class="flag-option" />
                                     {{ value.name }}
                                 </template>
                             </va-select>
@@ -47,7 +47,7 @@
                 <div class="player-row player-white">
                     <div class="player-info">
                         <div class="flag-container">
-                            <img :src="getFlagUrl(match.player2.nationalityId)" class="flag" />
+                            <img :src="getFlag(getCountry(match.player1.nationalityId))" class="flag" />
                         </div>
                         <div class="player-details">
                             <va-input :model-value="match.player2.fullName"
@@ -57,7 +57,7 @@
                                 :options="nationalityOptions" label="Nationalité" text-by="name" value-by="id"
                                 searchable>
                                 <template #content="{ value }">
-                                    <img :src="getFlagUrl(value.id)" class="flag-option" />
+                                    <img :src="getFlag(getCountry(value.id))" class="flag-option" />
                                     {{ value.name }}
                                 </template>
                             </va-select>
@@ -112,11 +112,15 @@ import { ref, computed, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import { nationality } from '@/replicache/models/constants';
 import { fictifMatchService } from '@/replicache/services/fictifMatchService';
 import { fictifMatchStore } from '@/replicache/stores/fictifMatchStore';
+import { useCountryFlags } from '@/utils/countryFlags';
 
 const MATCH_ID = 'current-fictif-match';
 const match = ref(null);
 let unsubscribe = null;
 let timerInterval = null;
+const getCountry = (natId) => nationality.find(country => country.id === Number(natId));
+const { getFlag } = useCountryFlags();
+
 
 // config de la nationalité
 const nationalityOptions = nationality.map(n => ({
@@ -223,10 +227,6 @@ const resetTimer = async () => {
     clearInterval(timerInterval);
 };
 
-const getFlagUrl = (nationalityId) => {
-    const country = nationality.find(n => n.id === nationalityId);
-    return country ? `data:image/png;base64,${country.flag}` : '';
-};
 </script>
 
 <style scoped>
@@ -285,6 +285,13 @@ const getFlagUrl = (nationalityId) => {
     border-radius: 6px;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
     border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.flag-option {
+    width: 30px;
+    height: 20px;
+    margin-right: 10px;
+    vertical-align: middle;
 }
 
 .player-details {
