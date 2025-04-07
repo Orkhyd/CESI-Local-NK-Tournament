@@ -7,7 +7,7 @@
         <!-- joueur 1 -->
         <VaMenu preset="context" :options="['Détails']" @selected="(option) => openPlayerModal(option, match.player1)">
           <template #anchor>
-            <div class="player" :class="[ getPlayerClass(match.player1), { finished: isFinished } ]">
+            <div class="player" :class="[getPlayerClass(match.player1), { finished: isFinished }]">
               <div class="player-info">
                 <img v-if="match.player1.nationalityId" :src="getFlag(getCountry(match.player1.nationalityId))"
                   alt="drapeau" class="player-flag" />
@@ -32,7 +32,7 @@
         <!-- joueur 2 -->
         <VaMenu preset="context" :options="['Détails']" @selected="(option) => openPlayerModal(option, match.player2)">
           <template #anchor>
-            <div class="player" :class="[ getPlayerClass(match.player2), { finished: isFinished } ]">
+            <div class="player" :class="[getPlayerClass(match.player2), { finished: isFinished }]">
               <div class="player-info">
                 <img v-if="match.player2.nationalityId" :src="getFlag(getCountry(match.player2.nationalityId))"
                   alt="drapeau" class="player-flag" />
@@ -318,7 +318,7 @@ const { getFlag } = useCountryFlags();
 }
 
 .finished {
-  background-color: rgba(0,0,0,0);
+  background-color: rgba(0, 0, 0, 0);
 }
 
 /* style des joueurs */
