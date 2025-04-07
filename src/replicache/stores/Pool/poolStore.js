@@ -49,7 +49,7 @@ export async function checkAndCompletePool(poolId) {
         await matchService.createMatch({
           idMatch: matchId,
           idPool: poolId,
-          idMatchType: 2, // id poule
+          idMatchType: 1, // id poule
           idPlayer1: topPlayers[i].participant.id,
           idPlayer2: topPlayers[j].participant.id,
           idPreviousMatch1: null,
