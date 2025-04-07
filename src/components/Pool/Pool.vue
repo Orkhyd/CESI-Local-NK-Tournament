@@ -270,7 +270,7 @@ async function orderMatchesAccordingToTemplate(matches, numberOfPlayers) {
 
   const orderedMatches = [];
   const usedMatches = new Set();
-  const matchesToSwitch = new Map();
+  const matchesToSwitchInDb = [];
 
   template.forEach(templateMatch => {
     const [templatePos1, templatePos2] = templateMatch.split('-').map(Number);
@@ -280,22 +280,27 @@ async function orderMatchesAccordingToTemplate(matches, numberOfPlayers) {
     if (!actualPlayer1 || !actualPlayer2) {
       return;
     }
-
-    const match = matches.find(m =>
+    const originalMatch = matches.find(m =>
       (m.idPlayer1 === actualPlayer1 && m.idPlayer2 === actualPlayer2) ||
       (m.idPlayer1 === actualPlayer2 && m.idPlayer2 === actualPlayer1)
     );
 
-    if (match && !usedMatches.has(match)) {
-      const needsSwitch = match.idPlayer1 !== actualPlayer1 || match.idPlayer2 !== actualPlayer2;
-
-      orderedMatches.push(match);
+    if (originalMatch && !usedMatches.has(originalMatch)) {
+      const needsSwitch = originalMatch.idPlayer1 !== actualPlayer1 || originalMatch.idPlayer2 !== actualPlayer2;
 
       if (needsSwitch) {
-        matchesToSwitch.set(match.idMatch, true);
+        const displayMatch = {
+          ...originalMatch,
+          idPlayer1: actualPlayer1,
+          idPlayer2: actualPlayer2
+        };
+        orderedMatches.push(displayMatch);
+        matchesToSwitchInDb.push(originalMatch.idMatch); // Mark for DB switch
+      } else {
+        orderedMatches.push(originalMatch);
       }
 
-      usedMatches.add(match);
+      usedMatches.add(originalMatch);
     }
   });
 
@@ -305,19 +310,12 @@ async function orderMatchesAccordingToTemplate(matches, numberOfPlayers) {
     }
   });
 
-  const switchPromises = [];
-  matchesToSwitch.forEach((_, idMatch) => {
-    switchPromises.push(matchService.switchPlayers(idMatch));
-  });
-
-  if (switchPromises.length > 0) {
-    try {
-      await Promise.all(switchPromises);
-    } catch (err) {
-      console.error("Error switching players:", err);
-    }
+  if (matchesToSwitchInDb.length > 0) {
+    Promise.all(matchesToSwitchInDb.map(idMatch => matchService.switchPlayers(idMatch)))
+      .catch(err => {
+        console.error("Error switching players in database:", err);
+      });
   }
-
   return orderedMatches;
 }
 
