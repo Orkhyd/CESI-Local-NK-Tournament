@@ -1,26 +1,29 @@
 <template>
-  <!-- Conteneur des rounds -->
+  <!--rounds -->
   <div id="bracketContainer" class="tournament-brackets" ref="bracketContainer">
     <div class="bracket">
-      <template v-for="(round, roundIndex) in rounds" :key="round.id">
+      <template v-for="(round) in rounds" :key="round.id">
         <div class="round-container">
           <div class="round-label">
             {{ round.label }}
           </div>
           <div class="round">
-            <!-- Matchs du round -->
-            <template v-for="(match, matchIndex) in round.matches" :key="match.idMatch" class="match-match">
+            <!-- matchs du round -->
+            <template v-for="(match) in round.matches" :key="match.idMatch">
               <MatchCard :match="match" :disabled="match.idWinner !== null" :participants="participants"
-                @updateBracket="loadRounds" :id="'match-' + match.idMatch" ref="matchRefs"
-                :ref="round.label === 'Finale' ? 'finaleMatchCard' : null"
-                :class="{ 'highlight-match': highlightedMatchId === match.idMatch }" />
+                @updateBracket="loadRounds" :id="'match-' + match.idMatch"
+                :ref="round.label === 'Finale' ? 'finaleMatchCard matchRefs' : 'matchRefs'" :class="[
+                  { 'disabled-match': isDisabled },
+                  isPetiteFinale ? 'petite-finale-match' : '',
+                  (round.label === 'Finale & Petite-Finale' && !match.idMatch.startsWith('PF-')) ? 'match-finale' : ''
+                ]" />
             </template>
           </div>
         </div>
       </template>
     </div>
 
-    <!-- Petite finale affichée en position absolue sous la finale -->
+    <!-- petite finale affichée en position absolue sous la finale -->
     <div v-if="petiteFinale" class="petite-finale-absolute">
       <MatchCard :match="petiteFinale" :disabled="petiteFinale.idWinner !== null" :participants="participants"
         @updateBracket="loadRounds" />
@@ -378,6 +381,7 @@ onMounted(async () => {
 .petite-finale-absolute .match::after {
   display: none !important;
 }
+
 
 .petite-finale-absolute {
   position: absolute;

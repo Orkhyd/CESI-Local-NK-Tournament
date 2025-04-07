@@ -87,7 +87,7 @@ const props = defineProps({
 
 const showQRModal = ref(false);
 const qrData = computed(() => {
-  // Fonction de formatage des podiums en s'assurant de ne pas renvoyer undefined
+  // fonction de formatage des podiums en s'assurant de ne pas renvoyer undefined
   const formatPodium = (podium) => {
     return podium.map(player => ({
       rank: player.rank ?? null,
@@ -96,7 +96,7 @@ const qrData = computed(() => {
     }));
   };
 
-  // Création des infos détaillées de la catégorie
+  // crea des infos détaillées de la catégorie
   const categoryDetails = {
     name: props.category.name ?? null,
     genre: (genders.find(g => g.id === String(props.category.genderId))?.nom) ?? props.category.genderId ?? null,
@@ -134,7 +134,6 @@ const qrData = computed(() => {
     keikokusPodium: formatPodium(topKeikokus.value) ?? null
   };
 
-  console.log(data);
   return JSON.stringify(data);
 });
 
