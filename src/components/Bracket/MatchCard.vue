@@ -7,9 +7,9 @@
         <!-- joueur 1 -->
         <VaMenu preset="context" :options="['Détails']" @selected="(option) => openPlayerModal(option, match.player1)">
           <template #anchor>
-            <div class="player" :class="[ getPlayerClass(match.player1), { finished: isFinished } ]">
+            <div class="player" :class="[getPlayerClass(match.player1), { finished: isFinished }]">
               <div class="player-info">
-                <img v-if="match.player1.nationalityId" :src="getFlagUrl(getCountry(match.player1.nationalityId)?.flag)"
+                <img v-if="match.player1.nationalityId" :src="getFlag(getCountry(match.player1.nationalityId))"
                   alt="drapeau" class="player-flag" />
                 <span class="name">
                   {{ match.player1?.firstName && match.player1?.lastName ? `${match.player1.firstName}
@@ -32,9 +32,9 @@
         <!-- joueur 2 -->
         <VaMenu preset="context" :options="['Détails']" @selected="(option) => openPlayerModal(option, match.player2)">
           <template #anchor>
-            <div class="player" :class="[ getPlayerClass(match.player2), { finished: isFinished } ]">
+            <div class="player" :class="[getPlayerClass(match.player2), { finished: isFinished }]">
               <div class="player-info">
-                <img v-if="match.player2.nationalityId" :src="getFlagUrl(getCountry(match.player2.nationalityId)?.flag)"
+                <img v-if="match.player2.nationalityId" :src="getFlag(getCountry(match.player2.nationalityId))"
                   alt="drapeau" class="player-flag" />
                 <span class="name">
                   {{ match.player2?.firstName && match.player2?.lastName ? `${match.player2.firstName}
@@ -71,6 +71,7 @@ import { ref, computed } from "vue";
 import MatchModal from "../MatchModal.vue";
 import { nationality } from "@/replicache/models/constants"
 import ParticipantDetails from "../ParticipantDetails.vue";
+import { useCountryFlags } from "@/utils/countryFlags";
 
 const props = defineProps({
   match: {
@@ -177,10 +178,7 @@ const getCountry = (natId) => {
   return nationality.find(country => country.id === Number(natId));
 };
 
-// recuperer l image en base 64
-const getFlagUrl = (flagBase64) => {
-  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-};
+const { getFlag } = useCountryFlags();
 
 </script>
 
@@ -319,8 +317,8 @@ const getFlagUrl = (flagBase64) => {
   transform: scale(1.02);
 }
 
-.finished { 
-  background-color: rgba(0,0,0,0);
+.finished {
+  background-color: rgba(0, 0, 0, 0);
 }
 
 /* style des joueurs */

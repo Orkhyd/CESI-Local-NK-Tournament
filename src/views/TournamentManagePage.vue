@@ -76,7 +76,7 @@
 
       <!-- affichage de CategoryManage quand une catégorie est sélectionnée -->
       <section class="category-manage-container" v-if="activeCategory?.id">
-        <CategoryManage :category="activeCategory" :tournament-id="tournamentId" />
+        <CategoryManage :category="activeCategory" :tournament="tournament" />
       </section>
     </main>
   </div>
@@ -106,7 +106,7 @@ const showSidebar = ref(true);
 const fetchTournament = async () => {
   if (!tournamentId.value) return;
   try {
-      tournament.value = await rep.query(async (tx) => {
+    tournament.value = await rep.query(async (tx) => {
       return await tx.get(`tournament/${tournamentId.value}`);
     });
   } catch (error) {
@@ -390,8 +390,7 @@ onMounted(async () => {
 .category-item.active .category-name,
 .category-item.active .category-meta,
 .category-item.active .category-grade,
-.category-item.active .category-age
-.category-item.active .participant-count,
+.category-item.active .category-age .category-item.active .participant-count,
 .category-item.active .category-winner {
   color: white !important;
 }

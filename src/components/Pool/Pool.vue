@@ -51,10 +51,10 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(standing, index) in sortedStandings" :key="standing.participant.id" class="ligne-participant"
+              <tr v-for="(standing) in sortedStandings" :key="standing.participant.id" class="ligne-participant"
                 :class="[{ 'same-rank': sortedStandings.filter(s => s.rank === standing.rank).length > 1 }]">
                 <td>
-                  <span class="rank" :class="{'qualified-first': standing.position === 1}">
+                  <span class="rank" :class="{ 'qualified-first': standing.position === 1 }">
                     {{ standing.position }}
                     <!-- affiche l icône d'alerte si plusieurs joueurs partagent la première place -->
                     <VaIcon v-if="standing.position === 1 && sortedStandings.filter(s => s.position === 1).length > 1"
@@ -69,9 +69,8 @@
                     @selected="(option) => openModal(standing.participant)">
                     <template #anchor>
                       <div class="participant-info">
-                        <img v-if="getCountry(standing.participant.nationalityId)?.flag"
-                          :src="getFlagUrl(getCountry(standing.participant.nationalityId).flag)" alt="Drapeau"
-                          class="flag" />
+                        <img v-if="getCountry(standing.participant.nationalityId)"
+                          :src="getFlag(getCountry(standing.participant.nationalityId))" alt="Drapeau" class="flag" />
                         {{ standing.participant.lastName }} {{ standing.participant.firstName }}
                       </div>
                     </template>
@@ -190,6 +189,7 @@ import { nationality } from '@/replicache/models/constants';
 import { determinePoolRanking } from "@/functions/determinePoolRanking"
 import ParticipantDetails from "../ParticipantDetails.vue"
 import { matchService } from '@/replicache/services/matchService';
+import { useCountryFlags } from '@/utils/countryFlags';
 
 // def props
 const props = defineProps({
@@ -378,7 +378,7 @@ function openModal(participant) {
 
 // gestion des drapeaux et nationalités
 const getCountry = (natId) => nationality.find(country => country.id === Number(natId));
-const getFlagUrl = (flagBase64) => flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
+const { getFlag } = useCountryFlags();
 
 // computed : calcule et trie le classement (standings)
 const sortedStandings = computed(() => {
@@ -555,7 +555,7 @@ function getCompletedMatchCount() {
 /* grille des matchs */
 .matches-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 16px;
   margin: 16px 0;
 }
@@ -768,7 +768,8 @@ function getCompletedMatchCount() {
 }
 
 .additional-match {
-  border: 2px dashed orange; /* une bordure en pointillé pour signaler l'extra */
+  border: 2px dashed orange;
+  /* une bordure en pointillé pour signaler l'extra */
   position: relative;
 }
 
@@ -834,7 +835,8 @@ function getCompletedMatchCount() {
 .history-bubble.tie-break {
   outline: 1.5px dashed orange;
   margin-left: 2px;
-  outline-offset: 1.5px; /* Distance entre la bulle et la bordure */
+  outline-offset: 1.5px;
+  /* Distance entre la bulle et la bordure */
 }
 
 

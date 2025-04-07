@@ -24,7 +24,7 @@
           <VaListItemSection avatar>
             <VaAvatar :class="participant.isEliminated ? 'eliminated' : 'in-game'">
               <img v-if="getCountry(participant.nationalityId)"
-                :src="getFlagUrl(getCountry(participant.nationalityId).flag)" alt="flag" class="nationality-flag" />
+                :src="getFlag(getCountry(participant.nationalityId))" alt="flag" class="nationality-flag" />
             </VaAvatar>
           </VaListItemSection>
 
@@ -61,6 +61,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { grades, genders, nationality } from '@/replicache/models/constants';
+import { useCountryFlags } from '@/utils/countryFlags';
 
 const props = defineProps({
     participants: {
@@ -91,9 +92,8 @@ const getCountry = (natId) => {
     return nationality.find(country => Number(country.id) === Number(natId));
 };
 
-const getFlagUrl = (flagBase64) => {
-    return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-};
+const { getFlag } = useCountryFlags();
+
 
 const getGradeName = (gradeId) => {
     const grade = grades.find((g) => Number(g.id) === Number(gradeId));
@@ -160,7 +160,7 @@ const emitParticipantId = (id) => {
 .legend-item {
   display: flex;
   align-items: center;
-  padding-bottom: 5px; 
+  padding-bottom: 5px;
   gap: 5px;
   font-size: 12px;
 }
@@ -173,7 +173,7 @@ const emitParticipantId = (id) => {
 }
 
 .in-game {
-  background-color: #2ecc71 !important; 
+  background-color: #2ecc71 !important;
 }
 
 .eliminated {
@@ -203,7 +203,7 @@ const emitParticipantId = (id) => {
 }
 
 .close-icon:hover {
-  color: #e74c3c; 
+  color: #e74c3c;
 }
 
 .participant-item {

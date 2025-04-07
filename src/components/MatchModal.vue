@@ -21,8 +21,7 @@
             </VaAvatar>
             <div class="name-flag">
               <span class="name">{{ player1Name }}</span>
-              <img v-if="player1Nationality && player1Nationality.flag" :src="getFlagUrl(player1Nationality.flag)"
-                alt="Drapeau" class="flag" />
+              <img v-if="player1Nationality" :src="getFlag(player1Nationality)" alt="Drapeau" class="flag" />
             </div>
           </div>
           <div class="counters">
@@ -47,8 +46,7 @@
             </VaAvatar>
             <div class="name-flag">
               <span class="name">{{ player2Name }}</span>
-              <img v-if="player2Nationality && player2Nationality.flag" :src="getFlagUrl(player2Nationality.flag)"
-                alt="Drapeau" class="flag" />
+              <img v-if="player2Nationality" :src="getFlag(player2Nationality)" alt="Drapeau" class="flag" />
             </div>
           </div>
           <div class="counters">
@@ -130,8 +128,8 @@
           </p>
           <p v-else class="modal-text">
             ⚠️ Le score est égal.
-          <p v-if="match?.idMatchType === 1">Vous devez désigner un vainqueur.</p>
-          <p v-else="match?.idMatchType === 1">Vous devez désigner un vainqueur ou choisir le match nul.</p>
+          <p v-if="match?.idMatchType === 1">Vous devez désigner un vainqueur ou choisir le match nul.</p>
+          <p v-else>Vous devez désigner un vainqueur.</p>
           </p>
           <p v-if="!idWinner" class="warning-text">
             Cette décision peut être basée sur une décision arbitrale ou un abandon.
@@ -150,7 +148,7 @@
             </VaCheckbox>
 
             <!-- option pour déclarer un match nul (uniquement en mode poule) -->
-            <div v-if="match?.idMatchType === 2" class="draw-option">
+            <div v-if="match?.idMatchType === 1" class="draw-option">
               <VaCheckbox v-model="selectedWinner" :true-value="-1" :false-value="null"
                 @update:model-value="clearOtherCheckbox(null)" label="Match nul (égalité)">
               </VaCheckbox>
@@ -178,6 +176,12 @@ import { matchService } from '@/replicache/services/matchService';
 import { nationality } from '@/replicache/models/constants';
 import { getParticipantById } from '@/replicache/stores/participantStore';
 import { replicacheInstance as rep } from '@/replicache/replicache';
+import { useCountryFlags } from '@/utils/countryFlags';
+import { useToast } from "vuestic-ui";
+
+const { getFlag } = useCountryFlags();
+
+const toast = useToast();
 
 const props = defineProps({
   matchId: { type: String, required: true },
@@ -234,34 +238,63 @@ const disableCounters = (player) => {
 
 // fction pour confirmer définitivement le vainqueur
 const confirmWinner = async () => {
-  const finalWinner = selectedWinner.value || idWinner.value; // prend le gagnant sélectionné ou normal
+  try {
+    const finalWinner = selectedWinner.value || idWinner.value;
+    const player1Name = `${player1.value?.firstName} ${player1.value?.lastName}`;
+    const player2Name = `${player2.value?.firstName} ${player2.value?.lastName}`;
 
-  // si le match est de type "poule" et que l'egallite est choisie, mettre idWinner à -1
-  if (match.value?.idMatchType === 2 && finalWinner === -1) {
-    await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
-      ipponsPlayer1: ipponsPlayer1.value,
-      ipponsPlayer2: ipponsPlayer2.value,
-      keikokusPlayer1: keikokusPlayer1.value,
-      keikokusPlayer2: keikokusPlayer2.value,
-      idWinner: -1, // match nul
-    });
-  } else {
-    // sinon, mettre à jour le gagnant normalement
-    await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
-      ipponsPlayer1: ipponsPlayer1.value,
-      ipponsPlayer2: ipponsPlayer2.value,
-      keikokusPlayer1: keikokusPlayer1.value,
-      keikokusPlayer2: keikokusPlayer2.value,
-      idWinner: finalWinner,
+    if (match.value?.idMatchType === 1 && finalWinner === -1) {
+      // cas du match nul en poule
+      await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
+        ipponsPlayer1: ipponsPlayer1.value,
+        ipponsPlayer2: ipponsPlayer2.value,
+        keikokusPlayer1: keikokusPlayer1.value,
+        keikokusPlayer2: keikokusPlayer2.value,
+        idWinner: -1,
+      });
+
+      toast.init({
+        message: `🏳️ Match nul entre ${player1Name} et ${player2Name}`,
+        color: "warning",
+        position: "bottom-center",
+        icon: "sports_score",
+      });
+    } else {
+      // cas normal avec vainqueur
+      const winnerName = finalWinner === match.value?.idPlayer1 ? player1Name : player2Name;
+      const loserName = finalWinner === match.value?.idPlayer1 ? player2Name : player1Name;
+
+      await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
+        ipponsPlayer1: ipponsPlayer1.value,
+        ipponsPlayer2: ipponsPlayer2.value,
+        keikokusPlayer1: keikokusPlayer1.value,
+        keikokusPlayer2: keikokusPlayer2.value,
+        idWinner: finalWinner,
+      });
+
+      toast.init({
+        message: `🏆 ${winnerName} a battu ${loserName} (${ipponsPlayer1.value}-${ipponsPlayer2.value})`,
+        color: "success",
+        position: "bottom-center",
+        icon: "military_tech",
+      });
+    }
+
+    emit('update');
+    showWinnerConfirmation.value = false;
+    selectedWinner.value = null;
+    stopTimer();
+    closeModal();
+
+  } catch (error) {
+    console.error("Erreur lors de la déclaration du vainqueur :", error);
+    toast.init({
+      message: "❌ Échec de la déclaration du résultat",
+      color: "danger",
+      position: "bottom-center",
+      icon: "error_outline",
     });
   }
-
-  emit('update');
-  showWinnerConfirmation.value = false;
-  selectedWinner.value = null; // reinit après validation
-
-  stopTimer();
-  closeModal();
 };
 
 const isAddTimeDisabled = computed(() => {
@@ -298,7 +331,6 @@ const player2Name = computed(() => (player2.value?.firstName + ' ' + player2.val
 
 // gestion des drapeaux et nationalités
 const getCountry = (natId) => nationality.find(country => country.id === Number(natId));
-const getFlagUrl = (flagBase64) => flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
 
 const player1Nationality = computed(() => getCountry(player1.value?.nationalityId));
 const player2Nationality = computed(() => getCountry(player2.value?.nationalityId));

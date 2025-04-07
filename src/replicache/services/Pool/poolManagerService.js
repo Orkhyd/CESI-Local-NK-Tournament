@@ -30,7 +30,7 @@ export const poolManagerService = {
           idMatch: match.idMatch,
           idRound: null,
           idPool,
-          idMatchType: 2, // type poule
+          idMatchType: 1, // type poule
           idPlayer1: match.player1 ? match.player1.id : -2,
           idPlayer2: match.player2 ? match.player2.id : -2,
           winner: match.winner,

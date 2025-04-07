@@ -1,6 +1,6 @@
 <template>
   <div class="tournament-layout">
-    <!-- Titre et bouton d'accueil -->
+    <!-- titre et bouton d'accueil -->
     <div class="header-container">
       <VaButton @click="goToHomePage" class="home-button" color="primary">
         ⬅ Accueil
@@ -8,7 +8,7 @@
       <div class="page-title">Paramétrage du Tournoi</div>
     </div>
 
-    <!-- Tabs pour basculer entre Participants et Catégories -->
+    <!-- tabs pour basculer entre Participants et Catégories -->
     <VaTabs v-model="activeTab" grow>
       <template #tabs class="tabs">
         <VaTab name="participants">Participants</VaTab>
@@ -16,16 +16,16 @@
       </template>
     </VaTabs>
 
-    <!-- Contenu des tabs -->
+    <!-- contenu des tabs -->
     <div class="content-container">
-      <!-- Participants -->
+      <!-- participants -->
       <div v-if="activeTab === 'participants'" class="participant-section">
         <ParticipantList :participants="formattedParticipants" @edit="handleEditParticipant"
           @create="handleOpenParticipantModal" @delete="handleDeleteParticipant"
           @import-participant="handleImportedParticipants" />
       </div>
 
-      <!-- Catégories -->
+      <!-- caté -->
       <div v-if="activeTab === 'categories'" class="category-section">
         <VaButton @click="handleOpenCategoryModal" class="create-category-button" color="primary">
           Créer une catégorie
@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    <!-- Bouton de validation en bas à droite -->
+    <!-- btn de validation en bas à droite -->
     <div class="validation-button-container">
       <VaButton @click="validateCategories" :disabled="!canValidateCategories" :title="validationMessage"
         color="success" class="validate-categories-button">
@@ -43,7 +43,7 @@
       </VaButton>
     </div>
 
-    <!-- Modales -->
+    <!-- modales -->
     <ParticipantModal v-if="selectedParticipant !== null" :modelValue="selectedParticipant !== null"
       :participant="selectedParticipant" @save="handleSaveParticipant"
       @update:modelValue="handleCloseParticipantModal" />
@@ -52,13 +52,13 @@
       :categories="categories" :participants="formattedParticipants" @save="handleSaveCategory"
       @update:modelValue="handleCloseCategoryModal" />
 
-    <!-- Modale d'import des participants -->
+    <!-- modale d'import des participants -->
     <ImportParticipantsModal v-model="showImportModal" v-if="showImportModal"
       :importedParticipants="importedParticipants" :registeredParticipants="participants" :importColumns="importColumns"
-      :getCountry="getCountry" :getFlagUrl="getFlagUrl" :getGradeName="getGradeName" @cancelImport="cancelImport"
+      :getCountry="getCountry" :getFlag="getFlag" :getGradeName="getGradeName" @cancelImport="cancelImport"
       @confirmImport="confirmImport" />
 
-    <!-- Modale de confirmation de tournoi -->
+    <!-- modale de confirmation de tournoi -->
     <VaModal v-model="showValidationModal" hide-default-actions class="validation-modal">
       <div class="modal-card">
         <div class="modal-title">
@@ -78,8 +78,9 @@
       </div>
     </VaModal>
 
-    <!-- Modale de chargement d'importation de participant -->
-    <VaModal v-model="isImporting" hide-default-actions class="loading-modal">
+    <!-- modale de chargement d'importation de participant -->
+    <VaModal v-model="isImporting" hide-default-actions class="loading-modal" no-esc-dismiss="true"
+      no-outside-dismiss="true">
       <VaInnerLoading :loading="true">
         <div class="loading-content">
           <p class="loading-text">Importation des participants en cours...</p>
@@ -106,6 +107,7 @@ import { CategoryService } from "../replicache/services/categoryService";
 import { TournamentService } from "../replicache/services/tournamentService";
 import { genders, grades, categoriesAge, categoriesTypes, nationality } from "../replicache/models/constants";
 import { useToast } from "vuestic-ui";
+import { useCountryFlags } from "@/utils/countryFlags";
 
 // init vuestic toast
 const toast = useToast();
@@ -143,10 +145,7 @@ const getCountry = (natId) => {
   return nationality.find(country => country.id === Number(natId));
 };
 
-// recuperer l image en base 64
-const getFlagUrl = (flagBase64) => {
-  return flagBase64 ? `data:image/png;base64,${flagBase64}` : '';
-};
+const { getFlag } = useCountryFlags(); // fonction pour recuperer le drapeau du pays
 
 const activeTab = ref("participants"); // affiche les participants par defaut
 

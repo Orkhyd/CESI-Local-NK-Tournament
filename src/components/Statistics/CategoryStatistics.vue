@@ -1,41 +1,60 @@
 <template>
   <div class="category-stats">
-    <h3>Statistiques de la Catégorie</h3>
+    <div>
+      <h3>Statistiques de la Catégorie</h3>
+      <button @click="showQRModal = true" class="qr-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <div>QR CODE</div>
+      </button>
 
-    <p v-if="loading">⏳ Chargement des données...</p>
-    <p v-else-if="matches.length === 0">⚠️ Aucun match trouvé.</p>
+      <p v-if="loading">⏳ Chargement des données...</p>
+      <p v-else-if="matches.length === 0">⚠️ Aucun match trouvé.</p>
 
-    <div class="stats-container" v-if="!loading && matches.length > 0">
-      <!-- podium Ippons -->
-      <Podium title="Top Ippons" :ranking="topIppons" />
+      <div class="stats-container" v-if="!loading && matches.length > 0">
+        <!-- podium Ippons -->
+        <Podium title="Top Ippons" :ranking="topIppons" />
 
-      <!-- donut Chart nombre amtch jouée et pas terminé -->
-      <div class="donut-container">
-        <apexchart type="donut" width="250" :options="chartOptions" :series="chartSeries" />
-        <div class="donut-title">Matchs Joués</div>
+        <!-- donut Chart nombre amtch jouée et pas terminé -->
+        <div class="donut-container">
+          <apexchart type="donut" width="250" :options="chartOptions" :series="chartSeries" />
+          <div class="donut-title">Matchs Joués</div>
+        </div>
+
+        <!-- podium Keikokus -->
+        <Podium title="Top Keikokus" :ranking="topKeikokus" />
       </div>
 
-      <!-- podium Keikokus -->
-      <Podium title="Top Keikokus" :ranking="topKeikokus" />
+      <!-- temps des matchs -->
+      <div class="match-time-stats" v-if="!loading && matches.length > 0">
+        <div class="match-stat fastest">
+          <p>⚡ Match le plus rapide</p>
+          <strong>{{ fastestMatch.time }}</strong>
+          <span>{{ fastestMatch.players }}</span>
+        </div>
+
+        <div class="match-stat average">
+          <p>⏳ Temps moyen d'un match</p>
+          <strong>{{ averageMatchTime }}</strong>
+        </div>
+
+        <div class="match-stat longest">
+          <p>🐢 Match le plus long</p>
+          <strong>{{ longestMatch.time }}</strong>
+          <span>{{ longestMatch.players }}</span>
+        </div>
+      </div>
     </div>
-
-    <!-- temps des matchs -->
-    <div class="match-time-stats" v-if="!loading && matches.length > 0">
-      <div class="match-stat fastest">
-        <p>⚡ Match le plus rapide</p>
-        <strong>{{ fastestMatch.time }}</strong>
-        <span>{{ fastestMatch.players }}</span>
-      </div>
-
-      <div class="match-stat average">
-        <p>⏳ Temps moyen d'un match</p>
-        <strong>{{ averageMatchTime }}</strong>
-      </div>
-
-      <div class="match-stat longest">
-        <p>🐢 Match le plus long</p>
-        <strong>{{ longestMatch.time }}</strong>
-        <span>{{ longestMatch.players }}</span>
+    <div v-if="showQRModal" class="modal" @click.self="showQRModal = false">
+      <div class="modal-content">
+        <h4 style="padding-bottom: 10px;">Partager les statistiques</h4>
+        <qrcode-vue :value="qrData" :size="350" level="H" />
+        <button @click="showQRModal = false" class="close-button">Fermer</button>
       </div>
     </div>
   </div>
@@ -43,7 +62,7 @@
 
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, computed } from "vue";
 import VueApexCharts from "vue3-apexcharts";
 import { getBracketByCategory } from '@/replicache/stores/Bracket/bracketStore';
 import { getRoundsByBracket } from '@/replicache/stores/Bracket/roundStore';
@@ -51,13 +70,73 @@ import { getPoolManagerByCategory } from '@/replicache/stores/Pool/poolManagerSt
 import { getPoulesByPoolManagerId } from '@/replicache/stores/Pool/poolStore';
 import { getMatchesByRound, getMatchesByPool } from '@/replicache/stores/matchStore';
 import Podium from "./Podium.vue";
+import QrcodeVue from 'qrcode.vue';
+import { genders, categoriesTypes, categoriesAge, grades } from '@/replicache/models/constants.js';
+
 
 defineOptions({ components: { apexchart: VueApexCharts, Podium } });
 
 const props = defineProps({
   category: { type: Object, required: true },
   participants: { type: Array, required: true },
+  tournamentId: {
+    type: String,
+    required: true,
+  },
 });
+
+const showQRModal = ref(false);
+const qrData = computed(() => {
+  // fonction de formatage des podiums en s'assurant de ne pas renvoyer undefined
+  const formatPodium = (podium) => {
+    return podium.map(player => ({
+      rank: player.rank ?? null,
+      name: `${player.firstName ?? ''} ${player.lastName ?? ''}`.trim() || null,
+      score: player.score ?? null
+    }));
+  };
+
+  // crea des infos détaillées de la catégorie
+  const categoryDetails = {
+    name: props.category.name ?? null,
+    genre: (genders.find(g => g.id === String(props.category.genderId))?.nom) ?? props.category.genderId ?? null,
+    type: (categoriesTypes.find(t => t.id === String(props.category.typeId))?.nom) ?? props.category.typeId ?? null,
+    ageCategories: props.category.ageCategoryIds.map(id => {
+      const cat = categoriesAge.find(a => a.id === String(id));
+      return cat ? cat.nom : (id ?? null);
+    }),
+    minGrade: (grades.find(g => g.id === String(props.category.minGradeId))?.nom) ?? props.category.minGradeId ?? null,
+    maxGrade: (grades.find(g => g.id === String(props.category.maxGradeId))?.nom) ?? props.category.maxGradeId ?? null,
+    weightRange: props.category.weightRange ?? null
+  };
+
+  const data = {
+    date: new Date().toLocaleDateString('fr-FR'),
+    category: props.category.name ?? null,
+    categoryDetails: categoryDetails,
+    matches: {
+      played: chartSeries.value[0] ?? null,
+      total: matches.value?.length ?? null,
+      pending: chartSeries.value[1] ?? null
+    },
+    timeStats: {
+      average: averageMatchTime.value ?? null,
+      fastest: {
+        time: fastestMatch.value.time ?? null,
+        players: fastestMatch.value.players ?? null
+      },
+      longest: {
+        time: longestMatch.value.time ?? null,
+        players: longestMatch.value.players ?? null
+      }
+    },
+    ipponsPodium: formatPodium(topIppons.value) ?? null,
+    keikokusPodium: formatPodium(topKeikokus.value) ?? null
+  };
+
+  return JSON.stringify(data);
+});
+
 
 const averageMatchTime = ref("00:00");
 const fastestMatch = ref({ time: "00:00", players: "" });
@@ -218,7 +297,7 @@ function calculateTopPlayers() {
     const sortedPlayers = Object.values(scores).sort((a, b) => b.score - a.score);
     const rankedPlayers = [];
     const rankMap = new Map();
-    
+
     let rank = 1;
     for (let i = 0; i < sortedPlayers.length; i++) {
       const player = sortedPlayers[i];
@@ -324,5 +403,52 @@ watch(() => props.category.id, fetchMatches);
   color: #555;
   display: block;
   margin-top: 5px;
+}
+
+.qr-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.qr-button:hover {
+  background: #f0f0f0;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.close-button {
+  margin-top: 20px;
+  padding: 8px 16px;
+  background: #1e3a5f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 </style>

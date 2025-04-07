@@ -16,7 +16,7 @@ export const matchService = {
     await rep.mutate.updateMatch({ idMatch, ...updates });
 
     // en mode tableau et si ya un gagnant
-    if (Number(idMatchType) === 1 && updates.idWinner) {
+    if (Number(idMatchType) === 2 && updates.idWinner) {
 
       const match = await getMatchById(idMatch);
       if (!match) return;
@@ -36,7 +36,7 @@ export const matchService = {
       }
     }
 
-    if (Number(idMatchType) === 2) {  // en mode poule on verifie si c'est lde dernier match et si oui on cloture la poule et envois le participant dans la poule finalek
+    if (Number(idMatchType) === 1) {  // en mode poule on verifie si c'est lde dernier match et si oui on cloture la poule et envois le participant dans la poule finalek
       const match = await getMatchById(idMatch);
       if (match && match.idPool) {
         await checkAndCompletePool(match.idPool);
@@ -89,7 +89,7 @@ export const matchService = {
         const idMatch = crypto.randomUUID(); // génère un ID unique
         const match = {
           idMatch,
-          idMatchType: 2,
+          idMatchType: 1,
           idPool: finalPoolId,
           idRound: finalRoundId,
           idPlayer1: finalPoolParticipants[i].id,
