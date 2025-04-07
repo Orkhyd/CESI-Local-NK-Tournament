@@ -189,6 +189,7 @@ import { getMatchesByPool } from '@/replicache/stores/matchStore';
 import { nationality } from '@/replicache/models/constants';
 import { determinePoolRanking } from "@/functions/determinePoolRanking"
 import ParticipantDetails from "../ParticipantDetails.vue"
+import { matchService } from '@/replicache/services/matchService';
 
 // def props
 const props = defineProps({
@@ -233,7 +234,8 @@ async function fetchPoolMatches() {
     .sort((a, b) => a.createdAt - b.createdAt); // trie les non terminés par ordre de création
 
   // applique l'algorithme d'équilibrage uniquement aux matchs normaux
-  const sortedNormalMatches = balanceMatchOrder(normalMatches);
+  // const sortedNormalMatches = balanceMatchOrder(normalMatches);
+  const sortedNormalMatches = await orderMatchesAccordingToTemplate( normalMatches, props.pool.participants.length );
 
   // fusionne dans le bon ordre
   poolMatches.value = [
@@ -243,30 +245,80 @@ async function fetchPoolMatches() {
   ];
 }
 
+// ordre en fonction du nombre de participants, d'après les stipulations pour les poules
+async function orderMatchesAccordingToTemplate(matches, numberOfPlayers) {
+  const orderTemplates = {
+    3: ["1-2", "2-3", "1-3"],
+    4: ["1-2", "3-4", "1-3", "2-4", "1-4", "2-3"],
+    5: ["1-2", "4-3", "1-5", "2-3", "4-5", "1-3", "2-5", "1-4", "3-5", "2-4"],
+    6: [
+      "1-2", "3-4", "2-6", "1-5", "4-6", "2-3", "1-6", "4-5",
+      "1-3", "2-5", "3-6", "1-4", "3-5", "2-4", "5-6"
+    ]
+  };
 
-
-function balanceMatchOrder(matches) {
-  const scheduledMatches = [];
-  const playersLastMatch = new Map(); // stocke le dernier match joué par chaque joueur
-
-  while (matches.length > 0) {
-    // trie les matchs pour maximiser le repos des joueurs
-    matches.sort((a, b) => {
-      const lastMatchA = Math.max(playersLastMatch.get(a.idPlayer1) || 0, playersLastMatch.get(a.idPlayer2) || 0);
-      const lastMatchB = Math.max(playersLastMatch.get(b.idPlayer1) || 0, playersLastMatch.get(b.idPlayer2) || 0);
-      return lastMatchA - lastMatchB;
-    });
-
-    // prend le match qui offre le plus de repos aux joueurs
-    const nextMatch = matches.shift();
-    scheduledMatches.push(nextMatch);
-
-    // maj la dernière fois que chaque joueur a joué
-    playersLastMatch.set(nextMatch.idPlayer1, scheduledMatches.length);
-    playersLastMatch.set(nextMatch.idPlayer2, scheduledMatches.length);
+  const template = orderTemplates[numberOfPlayers];
+  if (!template) {
+    return matches;
   }
 
-  return scheduledMatches;
+  const participants = props.pool.participants;
+  const positionToId = {};
+  participants.forEach((participant, index) => {
+    positionToId[index + 1] = participant.id;
+  });
+
+  const orderedMatches = [];
+  const usedMatches = new Set();
+  const matchesToSwitch = new Map();
+
+  template.forEach(templateMatch => {
+    const [templatePos1, templatePos2] = templateMatch.split('-').map(Number);
+    const actualPlayer1 = positionToId[templatePos1];
+    const actualPlayer2 = positionToId[templatePos2];
+
+    if (!actualPlayer1 || !actualPlayer2) {
+      return;
+    }
+
+    const match = matches.find(m =>
+      (m.idPlayer1 === actualPlayer1 && m.idPlayer2 === actualPlayer2) ||
+      (m.idPlayer1 === actualPlayer2 && m.idPlayer2 === actualPlayer1)
+    );
+
+    if (match && !usedMatches.has(match)) {
+      const needsSwitch = match.idPlayer1 !== actualPlayer1 || match.idPlayer2 !== actualPlayer2;
+
+      orderedMatches.push(match);
+
+      if (needsSwitch) {
+        matchesToSwitch.set(match.idMatch, true);
+      }
+
+      usedMatches.add(match);
+    }
+  });
+
+  matches.forEach(match => {
+    if (!usedMatches.has(match)) {
+      orderedMatches.push(match);
+    }
+  });
+
+  const switchPromises = [];
+  matchesToSwitch.forEach((_, idMatch) => {
+    switchPromises.push(matchService.switchPlayers(idMatch));
+  });
+
+  if (switchPromises.length > 0) {
+    try {
+      await Promise.all(switchPromises);
+    } catch (err) {
+      console.error("Error switching players:", err);
+    }
+  }
+
+  return orderedMatches;
 }
 
 
@@ -355,8 +407,8 @@ const getMatchHistory = (participantId) => {
   return poolMatches.value
     .filter(match => match.idPlayer1 === participantId || match.idPlayer2 === participantId)
     .map(match => ({
-      won: match.idWinner === participantId,  
-      played: match.idWinner !== null, 
+      won: match.idWinner === participantId,
+      played: match.idWinner !== null,
       draw: match.idWinner === -1,
       tieBreak: match.idMatch.includes('%ADDITIONNAL-MATCH') // verif si c'est un match de départage
     }));
@@ -752,15 +804,15 @@ function getCompletedMatchCount() {
 /* style pour les bulles d'historique des matchs */
 .history-bubble {
   display: inline-flex;
-  width: 12px; 
-  height: 12px; 
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   margin: 1px;
   align-items: center;
-  justify-content: center; 
-  font-size: 8px; 
+  justify-content: center;
+  font-size: 8px;
   font-weight: bold;
-  color: white; 
+  color: white;
 }
 
 

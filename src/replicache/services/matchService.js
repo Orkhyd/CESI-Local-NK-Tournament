@@ -115,7 +115,11 @@ export const matchService = {
     for (const match of matches) {
       await rep.mutate.createMatch(match);
     }
-  }
+  },
+
+  switchPlayers: async (idMatch) => {
+    await rep.mutate.switchPlayers({ idMatch });
+  },
 };
 
 /* met a jouur les matchs suivants en assignant le gagnant dans idPlayer1 ou idPlayer2  */

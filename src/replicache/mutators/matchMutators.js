@@ -32,6 +32,19 @@ const matchMutators = {
     await tx.set(`match/${idMatch}`, updatedMatch);
   },
 
+  switchPlayers: async (tx, { idMatch }) => {
+    const match = await tx.get(`match/${idMatch}`);
+    if (!match) return;
+
+    const updatedMatch = {
+      ...match,
+      idPlayer1: match.idPlayer2,
+      idPlayer2: match.idPlayer1,
+    };
+
+    await tx.set(`match/${idMatch}`, updatedMatch);
+  },
+
   deleteMatch: async (tx, { idMatch }) => {
     await tx.del(`match/${idMatch}`);
   },
