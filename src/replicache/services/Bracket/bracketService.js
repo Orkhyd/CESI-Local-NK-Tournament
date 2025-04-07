@@ -36,7 +36,7 @@ export const bracketService = {
             idMatch: match.idMatch,
             idRound,
             idPool: null,
-            idMatchType: 1,
+            idMatchType: 2,
             idPlayer1: match.player1 ? match.player1.id : -2,
             idPlayer2: match.player2 ? match.player2.id : -2,
             idPreviousMatch1: match.previousMatch1,

@@ -87,57 +87,57 @@ const props = defineProps({
 
 const showQRModal = ref(false);
 const qrData = computed(() => {
-  // fonction de formatage des podiums
+  // Fonction de formatage des podiums en s'assurant de ne pas renvoyer undefined
   const formatPodium = (podium) => {
     return podium.map(player => ({
-      rank: player.rank,
-      name: `${player.firstName} ${player.lastName}`,
-      score: player.score
+      rank: player.rank ?? null,
+      name: `${player.firstName ?? ''} ${player.lastName ?? ''}`.trim() || null,
+      score: player.score ?? null
     }));
   };
 
-  // CREA des infos détaillées de la catégorie
+  // Création des infos détaillées de la catégorie
   const categoryDetails = {
-
-    name: props.category.name,
-    // chaîne pour la comparaison dans les constantes
-    genre: genders.find(g => g.id === String(props.category.genderId))?.nom || props.category.genderId,
-    type: categoriesTypes.find(t => t.id === String(props.category.typeId))?.nom || props.category.typeId,
+    name: props.category.name ?? null,
+    genre: (genders.find(g => g.id === String(props.category.genderId))?.nom) ?? props.category.genderId ?? null,
+    type: (categoriesTypes.find(t => t.id === String(props.category.typeId))?.nom) ?? props.category.typeId ?? null,
     ageCategories: props.category.ageCategoryIds.map(id => {
       const cat = categoriesAge.find(a => a.id === String(id));
-      return cat ? cat.nom : id;
+      return cat ? cat.nom : (id ?? null);
     }),
-    minGrade: grades.find(g => g.id === String(props.category.minGradeId))?.nom || props.category.minGradeId,
-    maxGrade: grades.find(g => g.id === String(props.category.maxGradeId))?.nom || props.category.maxGradeId,
-    weightRange: props.category.weightRange
+    minGrade: (grades.find(g => g.id === String(props.category.minGradeId))?.nom) ?? props.category.minGradeId ?? null,
+    maxGrade: (grades.find(g => g.id === String(props.category.maxGradeId))?.nom) ?? props.category.maxGradeId ?? null,
+    weightRange: props.category.weightRange ?? null
   };
 
   const data = {
     date: new Date().toLocaleDateString('fr-FR'),
-    category: props.category.name,
+    category: props.category.name ?? null,
     categoryDetails: categoryDetails,
     matches: {
-      played: chartSeries.value[0],
-      total: matches.value.length,
-      pending: chartSeries.value[1]
+      played: chartSeries.value[0] ?? null,
+      total: matches.value?.length ?? null,
+      pending: chartSeries.value[1] ?? null
     },
     timeStats: {
-      average: averageMatchTime.value,
+      average: averageMatchTime.value ?? null,
       fastest: {
-        time: fastestMatch.value.time,
-        players: fastestMatch.value.players
+        time: fastestMatch.value.time ?? null,
+        players: fastestMatch.value.players ?? null
       },
       longest: {
-        time: longestMatch.value.time,
-        players: longestMatch.value.players
+        time: longestMatch.value.time ?? null,
+        players: longestMatch.value.players ?? null
       }
     },
-    ipponsPodium: formatPodium(topIppons.value),
-    keikokusPodium: formatPodium(topKeikokus.value)
+    ipponsPodium: formatPodium(topIppons.value) ?? null,
+    keikokusPodium: formatPodium(topKeikokus.value) ?? null
   };
 
+  console.log(data);
   return JSON.stringify(data);
 });
+
 
 const averageMatchTime = ref("00:00");
 const fastestMatch = ref({ time: "00:00", players: "" });
