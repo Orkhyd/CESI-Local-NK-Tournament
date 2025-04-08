@@ -69,13 +69,13 @@ const handleLogin = () => {
   // verif si le mot de passe saisi correspond a celui stocke
   if (password.value === correctPassword) {
     // affichage d un message de succes
-    toast.init({ message: "Connexion réussie", color: "success", position: 'bottom-center' });
+    toast.init({ message: "Connexion réussie", color: "success", position: 'top-center' });
 
     // redirection vers la page home
       router.push("/home-page");
   } else {
     // affichage d une notification d erreur si le mot de passe est incorrect
-    toast.init({ message: "Erreur mot de passe incorrect", color: "danger", position: 'bottom-center' });
+    toast.init({ message: "Erreur mot de passe incorrect", color: "danger", position: 'top-center' });
   }
 };
 </script>

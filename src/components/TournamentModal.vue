@@ -70,10 +70,10 @@ const createTournoi = () => {
     };
 
     emit("create", newTournoi); // emet l  événement create avec le nouveau tournoi
-    toast.init({ message: "Tournoi créé avec succès", color: "success" , position: 'bottom-center'}); // affiche une notification de succès
+    toast.init({ message: "Tournoi créé avec succès", color: "success" , position: 'top-center'}); // affiche une notification de succès
     closeModal(); // Ferme la modale
   } else {
-    toast.init({ message: "Veuillez remplir tous les champs", color: "danger", position: 'bottom-center' }); // Aaffiche une notification d'erreur
+    toast.init({ message: "Veuillez remplir tous les champs", color: "danger", position: 'top-center' }); // Aaffiche une notification d'erreur
   }
 };
 
