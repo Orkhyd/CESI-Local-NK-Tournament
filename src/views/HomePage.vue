@@ -91,6 +91,7 @@ const handleCreateTournoi = async (newTournoi) => {
     const tournaments = await getTournaments();
     tournament.value = tournaments.length > 0 ? tournaments[0] : null;
     tournamentModalOpen.value = false;
+    loadTournoi();
   } catch (error) {
     console.error("Erreur lors de la création du tournament :", error);
   }
