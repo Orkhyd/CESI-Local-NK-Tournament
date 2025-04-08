@@ -294,8 +294,19 @@ const exportToPDF = async () => {
       format: [canvas.width, canvas.height]
     })
 
+    // On récupère le type du tournoi
+    const categoryType = props.category.typeId === 2 ? 'bracket' : 'pool';
+
+    // On récupère les champs de date
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Mois de 0 à 11
+    const year = now.getFullYear();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+
     pdf.addImage(canvas, 'PNG', 0, 0, canvas.width, canvas.height)
-    pdf.save(`${props.category.name}_export.pdf`)
+    pdf.save(`${categoryType}-${props.category.name}-${day}-${month}-${year}-${hours}-${minutes}_export.pdf`)
 
     document.body.removeChild(wrapper)
 
