@@ -23,7 +23,7 @@ export function deleteAllIndexedDB() {
 
     databases.then((dbs) => {
       const deletePromises = dbs.map(db => new Promise((res, rej) => {
-        if (db.name) {
+        if (db.name && db.name !== "workbox-expiration") {
           const request = indexedDB.deleteDatabase(db.name);
           request.onsuccess = () => res();
           request.onerror = () => rej(`Erreur en supprimant la DB : ${db.name}`);
