@@ -1,8 +1,8 @@
 import { Tournament } from '../models';
 
 const tournamentMutators = {
-  createTournament: async (tx, { id, name, startDate }) => {
-    await tx.set(`tournament/${id}`, new Tournament(id, name, startDate));
+  createTournament: async (tx, { id, name, address, startDate }) => {
+    await tx.set(`tournament/${id}`, new Tournament(id, name, address, startDate));
   },
   deleteTournament: async (tx, { id }) => {
     await tx.del(`tournament/${id}`);

@@ -1,9 +1,9 @@
 import { replicacheInstance as rep } from "@/replicache/replicache";
 
 export const TournamentService = {
-  createTournament: (id, name, startDate) => {
+  createTournament: (id, name, address, startDate) => {
 
-    rep.mutate.createTournament({ id, name, startDate });
+    rep.mutate.createTournament({ id, name, address, startDate });
   },
 
   deleteTournament: async (id) => {

@@ -1,48 +1,39 @@
 <template>
-  <!-- carte du tournoi -->
+  <!-- carte du tournament -->
   <VaCard class="tournament-card" :gradient="true">
     <!-- entete avec icoone, nom et statut -->
     <div class="card-header">
       <!-- icone principale -->
-      <VaIcon
-        name="sports_martial_arts"
-        class="icon-tournament"
-        :gradient="true"
-        :size="60"
-        color="#0c2432"
-      />
+      <VaIcon name="sports_martial_arts" class="icon-tournament" :gradient="true" :size="60" color="#0c2432" />
 
-      <!-- nom du tournoi -->
-      <VaCardTitle class="tournament-title">{{ tournoi.name }}</VaCardTitle>
+      <!-- nom du tournament -->
+      <VaCardTitle class="tournament-title">{{ tournament.name }}</VaCardTitle>
     </div>
 
-    <!-- details du tournoi -->
+    <!-- details du tournament -->
     <VaCardContent class="card-content">
       <!-- date de début -->
       <div class="info">
-        <VaIcon name="event" class="icon" :size="20" color="#0c2432"/>
-        <span class="info-text">Début : {{ formatDate(tournoi.startDate) }}</span>
+        <VaIcon name="event" class="icon" :size="20" color="#0c2432" />
+        <span class="info-text">Début : {{ formatDate(tournament.startDate) }}</span>
       </div>
 
-      <!-- etat du tournoi -->
+      <!-- adresse du tournoi -->
+      <div class="info">
+        <VaIcon name="home" class="icon" :size="20" color="#0c2432" />
+        <span class="info-text">Adresse : {{ tournament.address }}</span>
+      </div>
+
+      <!-- etat du tournament -->
       <div class="status-container">
-        <VaChip :color="tournoi.started ? '#0c2432' : 'warning'" class="status-badge">
-          <VaIcon
-            :name="tournoi.started ? 'check_circle' : 'hourglass_empty'"
-            class="status-icon"
-          />
-          {{ tournoi.started ? 'Tournoi en cours' : 'Non commencé' }}
+        <VaChip :color="tournament.started ? '#0c2432' : 'warning'" class="status-badge">
+          <VaIcon :name="tournament.started ? 'check_circle' : 'hourglass_empty'" class="status-icon" />
+          {{ tournament.started ? 'Tournoi en cours' : 'Non commencé' }}
         </VaChip>
 
-        <!-- progress Circle si le tournoi est commencé -->
-        <VaProgressCircle
-          v-if="tournoi.started"
-          indeterminate
-          :size="40"
-          :thickness="0.2"
-          color="#0c2432"
-          class="progress-circle"
-        />
+        <!-- progress Circle si le tournament est commencé -->
+        <VaProgressCircle v-if="tournament.started" indeterminate :size="40" :thickness="0.2" color="#0c2432"
+          class="progress-circle" />
       </div>
     </VaCardContent>
   </VaCard>
@@ -50,8 +41,8 @@
 
 <script setup>
 
-// props pour recevoir les données du tournoi
-defineProps({ tournoi: Object });
+// props pour recevoir les données du tournament
+defineProps({ tournament: Object });
 
 // fction pour formater la date
 const formatDate = (date) => {
@@ -96,21 +87,24 @@ const formatDate = (date) => {
 /* icone principale */
 .icon-tournament {
   font-size: 80px;
-  color: #0c2432; 
+  color: #0c2432;
   animation: float 3s ease-in-out infinite;
 }
 
 /* animation de flottement pour l'icone */
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
 }
 
-/* nom du tournoi */
+/* nom du tournament */
 .tournament-title {
   font-size: 24px;
   font-weight: 700;

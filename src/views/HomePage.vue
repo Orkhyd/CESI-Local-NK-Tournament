@@ -11,11 +11,11 @@
       <div class="left-section">
         <img src="@/assets/img/combat-nippon.jpg" alt="Nippon Kempo" class="background-image" />
         <div class="content">
-          <div v-if="tournoi" class="tournament-content">
-            <TournamentCard :tournoi="tournoi" />
+          <div v-if="tournament" class="tournament-content">
+            <TournamentCard :tournament="tournament" />
             <div class="button-group">
-              <VaButton color="danger" @click="openDeleteModal" class="btn"> Supprimer le tournoi </VaButton>
-              <VaButton color="#0c2432" @click="loadTournoi" class="btn"> Accéder au tournoi </VaButton>
+              <VaButton color="danger" @click="openDeleteModal" class="btn"> Supprimer le tournament </VaButton>
+              <VaButton color="#0c2432" @click="loadTournoi" class="btn"> Accéder au tournament </VaButton>
             </div>
           </div>
           <div v-else class="no-tournament">
@@ -43,7 +43,7 @@
           Confirmation
         </div>
         <div class="modal-body">
-          <p class="modal-text">Êtes-vous sûr de vouloir supprimer ce tournoi ?</p>
+          <p class="modal-text">Êtes-vous sûr de vouloir supprimer ce tournament ?</p>
           <p class="modal-warning">Toutes les données seront perdues.</p>
         </div>
         <div class="modal-actions">
@@ -64,14 +64,14 @@ import TournamentCard from "@/components/TournamentCard.vue";
 import TournamentModal from "@/components/TournamentModal.vue";
 
 const router = useRouter();
-const tournoi = ref(null);
+const tournament = ref(null);
 const tournamentModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const isDeleting = ref(false);
 
 onMounted(async () => {
   const tournaments = await getTournaments();
-  tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
+  tournament.value = tournaments.length > 0 ? tournaments[0] : null;
 });
 
 const openModal = () => {
@@ -87,20 +87,20 @@ const openFictiveScoreboard = () => {
 const handleCreateTournoi = async (newTournoi) => {
   const id = crypto.randomUUID();
   try {
-    await TournamentService.createTournament(id, newTournoi.name, newTournoi.startingDate);
+    await TournamentService.createTournament(id, newTournoi.name, newTournoi.address, newTournoi.startingDate);
     const tournaments = await getTournaments();
-    tournoi.value = tournaments.length > 0 ? tournaments[0] : null;
+    tournament.value = tournaments.length > 0 ? tournaments[0] : null;
     tournamentModalOpen.value = false;
   } catch (error) {
-    console.error("Erreur lors de la création du tournoi :", error);
+    console.error("Erreur lors de la création du tournament :", error);
   }
 };
 
 const loadTournoi = () => {
-  if (tournoi.value) {
-    const routePath = tournoi.value.started
-      ? `/tournament/started/${tournoi.value.id}`
-      : `/tournament/non-started/${tournoi.value.id}`;
+  if (tournament.value) {
+    const routePath = tournament.value.started
+      ? `/tournament/started/${tournament.value.id}`
+      : `/tournament/non-started/${tournament.value.id}`;
     router.push({ path: routePath });
   }
 };
@@ -115,8 +115,8 @@ const closeDeleteModal = () => {
 
 const resetTournoi = async () => {
   isDeleting.value = true;
-  await TournamentService.deleteTournament(tournoi.value.id);
-  tournoi.value = null;
+  await TournamentService.deleteTournament(tournament.value.id);
+  tournament.value = null;
   isDeleteModalOpen.value = false;
   isDeleting.value = false;
 };
