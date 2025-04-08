@@ -159,7 +159,7 @@ const importFromCSV = (event) => {
     const fileHeaders = rows.shift().map(h => h.replace(/"/g, "").trim());
 
     if (JSON.stringify(fileHeaders) !== JSON.stringify(headers)) {
-      toast.init({ message: "Format incorrect : Assurez vous d avoir les bonnes colonnes.", color: "danger", position: 'bottom-center' });
+      toast.init({ message: "Format incorrect : Assurez vous d avoir les bonnes colonnes.", color: "danger", position: 'top-center' });
       csvInput.value.value = "";
       return;
     }
@@ -180,7 +180,7 @@ const importFromCSV = (event) => {
     }).filter(p => p);
 
     if (!participants.length) {
-      toast.init({ message: "Format incorrect : Assurez vous d'avoir les bonnes colonnes.", color: "danger", position: 'bottom-center' });
+      toast.init({ message: "Format incorrect : Assurez vous d'avoir les bonnes colonnes.", color: "danger", position: 'top-center' });
       csvInput.value.value = "";
       return;
     }
@@ -195,7 +195,7 @@ const importFromCSV = (event) => {
 // export csv
 const exportToCSV = () => {
   if (!props.participants.length) {
-    toast.init({ message: "Aucun participant a exporter !", color: "danger", position: 'bottom-center' });
+    toast.init({ message: "Aucun participant a exporter !", color: "danger", position: 'top-center' });
     console.warn("aucun participant a exporter.");
     return;
   }
