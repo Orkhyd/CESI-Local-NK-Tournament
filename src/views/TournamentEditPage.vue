@@ -178,7 +178,7 @@ const importColumns = [
 const cancelImport = () => {
   importedParticipants.value = [];
   showImportModal.value = false;
-  toast.init({ message: "Import annulé", color: "danger", position: 'bottom-center' });
+  toast.init({ message: "Import annulé", color: "danger", position: 'top-center' });
 };
 
 // confirmer l'importation de participants
@@ -196,7 +196,7 @@ const confirmImport = async (selectedItems) => {
       importedParticipants.value = [];
 
       if (successCount > 0) {
-        toast.init({ message: `${successCount} participant(s) importé(s) avec succès!`, color: "success", position: "bottom-center" });
+        toast.init({ message: `${successCount} participant(s) importé(s) avec succès!`, color: "success", position: "top-center" });
       }
       return;
     }
@@ -219,7 +219,7 @@ const confirmImport = async (selectedItems) => {
       await handleSaveParticipant(formattedParticipant, true);
       successCount++;
     } catch (error) {
-      toast.init({ message: `${p.firstName} ${p.lastName} impossible à importer`, color: "danger", position: "bottom-center" });
+      toast.init({ message: `${p.firstName} ${p.lastName} impossible à importer`, color: "danger", position: "top-center" });
     }
 
     setTimeout(() => importParticipant(index + 1), 0); // pour pas bloquer le thread principal
@@ -298,7 +298,7 @@ const handleDeleteParticipant = async (participant) => {
   try {
     await ParticipantService.deleteParticipant(participant.source.id);
     await refreshParticipants();
-    toast.init({ message: "Le participant a bien été supprimé!", color: "success", position: 'bottom-center' });
+    toast.init({ message: "Le participant a bien été supprimé!", color: "success", position: 'top-center' });
   } catch (error) {
     console.error("erreur suppr participant:", error);
   }
@@ -327,7 +327,7 @@ const handleSaveParticipant = async (participantData, silent = false) => {
     // PAS DE refreshParticipants ici en cas d'import car sinon trop de refresh == pas optimisé et prend trop de temps !!
     if (!silent) {
       await refreshParticipants();
-      toast.init({ message: participantData.id ? "Le participant a bien été mis à jour!" : "Le participant a bien été créé!", color: "success", position: 'bottom-center' });
+      toast.init({ message: participantData.id ? "Le participant a bien été mis à jour!" : "Le participant a bien été créé!", color: "success", position: 'top-center' });
     }
 
     if (!silent) {
@@ -367,7 +367,7 @@ const handleDeleteCategory = async (category) => {
     await CategoryService.deleteCategory(category.source?.id);
     await refreshCategories();
     await refreshParticipants();
-    toast.init({ message: "La catégorie a bien été supprimée!", color: "success", position: 'bottom-center' });
+    toast.init({ message: "La catégorie a bien été supprimée!", color: "success", position: 'top-center' });
   } catch (error) {
     console.error("erreur suppr categorie:", error);
   }
@@ -390,11 +390,11 @@ const handleSaveCategory = async ({ category, participants }) => {
     if (cleanData.id) {
       await CategoryService.updateCategory(cleanData.id, cleanData);
       categoryId = cleanData.id;
-      toast.init({ message: "La catégorie a bien été mise à jour!", color: "success", position: 'bottom-center' });
+      toast.init({ message: "La catégorie a bien été mise à jour!", color: "success", position: 'top-center' });
     } else {
       const createdCategory = await CategoryService.createCategory(tournamentId.value, cleanData);
       categoryId = createdCategory.id;
-      toast.init({ message: "La catégorie a bien été créée!", color: "success", position: 'bottom-center' });
+      toast.init({ message: "La catégorie a bien été créée!", color: "success", position: 'top-center' });
     }
     if (participants.length > 0) {
       const toLink = participants.filter(p => p.action === "attachToCategory").map(p => p.id);
@@ -487,7 +487,7 @@ const confirmTournamentValidation = async () => {
 
     toast.init({
       message: "Le tournoi est maintenant validé et ne peut plus être modifié !",
-      color: "success", position: 'bottom-center'
+      color: "success", position: 'top-center'
     });
 
     router.push(`/tournament/started/${tournamentId.value}`);
@@ -496,7 +496,7 @@ const confirmTournamentValidation = async () => {
     console.error("Erreur lors de la validation du tournoi :", error);
     toast.init({
       message: "Une erreur est survenue lors de la validation du tournoi.",
-      color: "danger", position: 'bottom-center'
+      color: "danger", position: 'top-center'
     });
   }
 };

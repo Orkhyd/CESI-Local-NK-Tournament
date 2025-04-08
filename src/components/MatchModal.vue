@@ -256,7 +256,7 @@ const confirmWinner = async () => {
       toast.init({
         message: `🏳️ Match nul entre ${player1Name} et ${player2Name}`,
         color: "warning",
-        position: "bottom-center",
+        position: "top-center",
         icon: "sports_score",
       });
     } else {
@@ -275,7 +275,7 @@ const confirmWinner = async () => {
       toast.init({
         message: `🏆 ${winnerName} a battu ${loserName} (${ipponsPlayer1.value}-${ipponsPlayer2.value})`,
         color: "success",
-        position: "bottom-center",
+        position: "top-center",
         icon: "military_tech",
       });
     }
@@ -291,7 +291,7 @@ const confirmWinner = async () => {
     toast.init({
       message: "❌ Échec de la déclaration du résultat",
       color: "danger",
-      position: "bottom-center",
+      position: "top-center",
       icon: "error_outline",
     });
   }
