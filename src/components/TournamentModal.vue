@@ -1,40 +1,41 @@
 <template>
   <VaModal v-model="isModalOpen" hide-default-actions class="tournament-modal" size="small">
-      <VaCardTitle class="modal-title">
-        <VaIcon name="emoji_events" class="modal-icon" />
-        Créer un tournoi
-      </VaCardTitle>
+    <VaCardTitle class="modal-title">
+      <VaIcon name="emoji_events" class="modal-icon" />
+      Créer un tournoi
+    </VaCardTitle>
 
-      <VaCardContent class="contenu-card">
-        <VaInput v-model="tournamentName" label="Nom du tournoi" placeholder="Entrez le nom du tournoi" class="input-field"
-          counter :max-length="50" :rules="[
-            v => !!v || 'Le nom du tournoi est requis',
-            v => (v.length <= 50) || 'Maximum 50 caractères'
-          ]" @input="tournamentName = tournamentName.slice(0, 50)">
-          <template #prependInner>
-            <VaIcon name="sports_martial_arts" class="input-icon" />
-          </template>
-        </VaInput>
+    <VaCardContent class="contenu-card">
+      <VaInput v-model="tournamentName" label="Nom du tournoi" placeholder="Entrez le nom du tournoi"
+        class="input-field" counter :max-length="50" :rules="[
+          v => !!v || 'Le nom du tournoi est requis',
+          v => (v.length <= 50) || 'Maximum 50 caractères'
+        ]" @input="tournamentName = tournamentName.slice(0, 50)">
+        <template #prependInner>
+          <VaIcon name="sports_martial_arts" class="input-icon" />
+        </template>
+      </VaInput>
 
-        <!-- date de début -->
-        <div class="date-picker-title">DATE DE DEBUT :</div>
-        <VaDatePicker
-          v-model="startingDate"
-          mode="single"
-          :month-names="monthNamesFull"
-          first-weekday="Monday"
-          show-other-months
-          :allowed-days="(date) => date.getTime() >= new Date().setHours(0, 0, 0, 0)"
-          class="date-picker"
-        />
-      </VaCardContent>
+      <VaInput v-model="tournamentAddress" label="Adresse du déroulement du tournoi"
+        placeholder="Entrez l'adresse du tournoi" class="input-field">
+        <template #prependInner>
+          <VaIcon name="home" class="input-icon" />
+        </template>
+      </VaInput>
 
-      <VaCardActions align="right" class="modal-actions">
-        <VaButton color="danger" outline @click="closeModal">Annuler</VaButton>
-        <VaButton color="primary" :disabled="!isFormValid" @click="createTournoi">
-          Créer
-        </VaButton>
-      </VaCardActions>
+      <!-- date de début -->
+      <div class="date-picker-title">DATE DE DEBUT :</div>
+      <VaDatePicker v-model="startingDate" mode="single" :month-names="monthNamesFull" first-weekday="Monday"
+        show-other-months :allowed-days="(date) => date.getTime() >= new Date().setHours(0, 0, 0, 0)"
+        class="date-picker" />
+    </VaCardContent>
+
+    <VaCardActions align="right" class="modal-actions">
+      <VaButton color="danger" outline @click="closeModal">Annuler</VaButton>
+      <VaButton color="primary" :disabled="!isFormValid" @click="createTournoi">
+        Créer
+      </VaButton>
+    </VaCardActions>
   </VaModal>
 </template>
 
@@ -44,6 +45,7 @@ import { useToast } from "vuestic-ui";
 
 const toast = useToast();
 const tournamentName = ref(""); // stocke le nom du tournoi
+const tournamentAddress = ref(""); // stocke l'adresse de deroulement du tournoi
 const startingDate = ref(new Date()); // date
 const isModalOpen = true;
 
@@ -52,7 +54,7 @@ const emit = defineEmits(["create", "close"]);
 
 // validation du formulaire
 const isFormValid = computed(() => {
-  return tournamentName.value.trim() !== "" && startingDate.value instanceof Date;
+  return tournamentName.value.trim() !== "" && tournamentAddress.value.trim() !== "" && startingDate.value instanceof Date;
 });
 
 // ferme la modale
@@ -66,18 +68,19 @@ const createTournoi = () => {
     // cree un nouvel objet tournoi
     const newTournoi = {
       name: tournamentName.value.trim(), // nnom du tournoi
+      address: tournamentAddress.value.trim(), // adresse du tournoi
       startingDate: startingDate.value, // date de début
     };
 
     emit("create", newTournoi); // emet l  événement create avec le nouveau tournoi
-    toast.init({ message: "Tournoi créé avec succès", color: "success" , position: 'bottom-center'}); // affiche une notification de succès
+    toast.init({ message: "Tournoi créé avec succès", color: "success", position: 'bottom-center' }); // affiche une notification de succès
     closeModal(); // Ferme la modale
   } else {
     toast.init({ message: "Veuillez remplir tous les champs", color: "danger", position: 'bottom-center' }); // Aaffiche une notification d'erreur
   }
 };
 
-const monthNamesFull = [ "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre" ];
+const monthNamesFull = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 // expose la fonction open pour qu'elle soit utilisable depuis le parent
 defineExpose({ open });
@@ -105,7 +108,7 @@ defineExpose({ open });
   font-size: 11px;
   font-weight: bold;
   margin-bottom: 10px;
-  color: #0c2432;
+  color: #154ec1;
 }
 
 /* centrer le Date Picker */
