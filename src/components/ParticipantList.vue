@@ -38,8 +38,8 @@
 
         <template #cell(nationalityId)="{ row }">
           <div class="nationality-cell">
-            <img v-if="getCountry(row.source.nationalityId)"
-              :src="getFlag(getCountry(row.source.nationalityId))" alt="flag" class="nationality-flag" />
+            <img v-if="getCountry(row.source.nationalityId)" :src="getFlag(getCountry(row.source.nationalityId))"
+              alt="flag" class="nationality-flag" />
             <span>
               {{ getCountry(row.source.nationalityId) ? getCountry(row.source.nationalityId).name :
                 row.source.nationalityId }}
@@ -436,7 +436,7 @@ const columns = [
 .participants-table {
   width: 100%;
   overflow: auto;
-  height: 65vh;
+  height: 60vh;
   display: flex;
   flex-direction: column;
 }

@@ -196,7 +196,7 @@ const deleteCategory = () => {
 /* conteneur tableau */
 .category-list-container {
   width: 100%;
-  height: 65vh;
+  height: 60vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

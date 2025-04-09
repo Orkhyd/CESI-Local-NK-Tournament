@@ -14,8 +14,8 @@
           <div v-if="tournament" class="tournament-content">
             <TournamentCard :tournament="tournament" />
             <div class="button-group">
-              <VaButton color="danger" @click="openDeleteModal" class="btn"> Supprimer le tournament </VaButton>
-              <VaButton color="#0c2432" @click="loadTournoi" class="btn"> Accéder au tournament </VaButton>
+              <VaButton color="danger" @click="openDeleteModal" class="btn"> Supprimer le tournoi </VaButton>
+              <VaButton color="#0c2432" @click="loadTournoi" class="btn"> Accéder au tournoi </VaButton>
             </div>
           </div>
           <div v-else class="no-tournament">
