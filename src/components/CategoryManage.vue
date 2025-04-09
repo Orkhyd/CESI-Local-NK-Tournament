@@ -207,24 +207,28 @@ const exportToPDF = async () => {
 
     // =============== entete ===============
     const headerContent = `
-      <div style="text-align: center; margin-bottom: 15px;">
-        <h1 style="margin: 0; font-size: 2rem; color: #333;">${tournamentName} - ${tournamentStartDate}</h1>
-      </div>
-      <div style="border-top: 1px solid #ddd; padding-top: 10px; border-bottom: 3px solid #0056b3;">
-        <h2 style="margin: 0 0 10px 0; font-size: 1.2rem; color: #0056b3;">categorie ${categoryName}</h2>
-        <p style="margin: 5px 0; font-size: 1rem; color: #555;">
-          <strong>status:</strong> ${status} ${winnerName ? "- gagnant: " + winnerName : ""}
-        </p>
-        <ul style="list-style: none; padding: 0; margin: 5px 0; font-size: 0.9rem; color: #555;">
-          <li><strong>type:</strong> ${typeName}</li>
-          <li><strong>genre:</strong> ${genderName}</li>
-          <li><strong>age:</strong> ${ageCategories}</li>
-          <li><strong>grade:</strong> ${gradeRange}</li>
-          <li><strong>participants:</strong> ${participantCount}</li>
-          <li><strong>poids:</strong> ${props.category.weightRange || "non defini"}</li>
-        </ul>
-      </div>
-    `
+        <div style="text-align: center; margin-bottom: 15px;">
+          <h1 style="margin: 0; font-size: 2rem; color: #333;">${tournamentName} - ${tournamentStartDate}</h1>
+        </div>
+        <div style="border-top: 1px solid #ddd; padding-top: 10px; border-bottom: 3px solid #0056b3;">
+          <h2 style="margin: 0 0 10px 0; font-size: 1.2rem; color: #0056b3;">Catégorie ${categoryName}</h2>
+          <p style="margin: 5px 0; font-size: 1rem; color: #555;">
+            <strong>Status:</strong> ${status} ${winnerName ? "- GAGNANT: " + winnerName : ""}
+          </p>
+          <ul style="list-style: none; padding: 0; margin: 5px 0; font-size: 0.9rem; color: #555;">
+            <li><strong>Type de catégorie:</strong> ${typeName}</li>
+            <li><strong>Genre:</strong> ${genderName}</li>
+            <li><strong>Age:</strong> ${ageCategories}</li>
+            <li><strong>Grade:</strong> ${gradeRange}</li>
+            <li><strong>Participants:</strong> ${participantCount}</li>
+            <li><strong>Poids:</strong> ${props.category.weightRange && props.category.weightRange.length === 2
+        ? `${props.category.weightRange[0]} - ${props.category.weightRange[1]} kg`
+        : "Non défini"
+      }</li>
+          </ul>
+        </div>
+      `
+
     wrapper.innerHTML = headerContent
 
     // =============== contenu specifique ===============
@@ -280,6 +284,9 @@ const exportToPDF = async () => {
 
     document.body.appendChild(wrapper)
 
+    // on recup le type du tournoi
+    const categoryType = props.category.typeId === 2 ? 'bracket' : 'pool';
+
     // =============== generation pdf ===============
     const canvas = await html2canvas(wrapper, {
       scale: 1.5,
@@ -288,24 +295,30 @@ const exportToPDF = async () => {
       logging: true
     })
 
+    // conversion px → mm
+    const pxToMm = px => px * 0.264583
+    const widthMm = pxToMm(canvas.width)
+    const heightMm = pxToMm(canvas.height)
+
+    const orientation = widthMm > heightMm ? "landscape" : "portrait"
+
     const pdf = new jsPDF({
-      orientation: canvas.width > canvas.height ? "landscape" : "portrait",
-      unit: "px",
-      format: [canvas.width, canvas.height]
+      orientation,
+      unit: "mm",
+      format: [widthMm, heightMm]
     })
 
-    // On récupère le type du tournoi
-    const categoryType = props.category.typeId === 2 ? 'bracket' : 'pool';
+    const imgData = canvas.toDataURL("image/jpeg", 1)
 
-    // On récupère les champs de date
+    // on recup les champs de date
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // Mois de 0 à 11
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // mois de 0 à 11
     const year = now.getFullYear();
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
-    pdf.addImage(canvas, 'PNG', 0, 0, canvas.width, canvas.height)
+    pdf.addImage(imgData, "JPEG", 0, 0, widthMm, heightMm)
     pdf.save(`${categoryType}-${props.category.name}-${day}-${month}-${year}-${hours}-${minutes}_export.pdf`)
 
     document.body.removeChild(wrapper)
@@ -316,7 +329,6 @@ const exportToPDF = async () => {
     isImporting.value = false
   }
 }
-
 
 watch(() => props.category.id, fetchParticipants);
 </script>

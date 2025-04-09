@@ -118,9 +118,9 @@
                             </div>
                             <VaDataTable :items="filteredParticipants" :columns="participantColumns" :filter="filter"
                                 :filter-method="customFilteringFn" v-model:sort-by="sortBy" :allow-select-all="false"
-                                v-model:sorting-order="sortingOrder" selectable select-mode="multiple"
-                                :stickyHeader=true v-model="selectedParticipants" items-track-by="id"
-                                :row-bind="getRowBind" :selectable="isRowSelectable" @row:click="toggleSelection"
+                                v-model:sorting-order="sortingOrder" select-mode="multiple" :stickyHeader=true
+                                v-model="selectedParticipants" items-track-by="id" :row-bind="getRowBind"
+                                :selectable="isRowSelectable" @row:click="toggleSelection"
                                 no-data-html="Aucun participant trouvé" virtual-scroller>
 
                                 <template #cell(status)="{ row }">
@@ -909,7 +909,7 @@ const participantColumns = [
 .participants-list {
     flex-grow: 1;
     min-height: 300px;
-    height: 500px !important;
+    height: 400px !important;
 }
 
 .select-section {
