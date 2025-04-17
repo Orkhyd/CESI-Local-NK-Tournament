@@ -12,15 +12,22 @@ export const categoriesAge = [
 
 export const grades = [
   { id: "1", nom: "Ceinture Blanche" },
-  { id: "2", nom: "Ceinture Jaune" },
-  { id: "3", nom: "Ceinture Orange" },
-  { id: "4", nom: "Ceinture Verte" },
-  { id: "5", nom: "Ceinture Bleue" },
-  { id: "6", nom: "Ceinture Marron" },
-  { id: "7", nom: "Ceinture Noire 1ere Dan" },
-  { id: "8", nom: "Ceinture Noire 2eme Dan" },
-  { id: "9", nom: "Ceinture Noire 3eme Dan" },
-  { id: "10", nom: "Ceinture Noire 4eme Dan" },
+  { id: "2", nom: "Ceinture Blanche-Jaune" },
+  { id: "3", nom: "Ceinture Jaune" },
+  { id: "4", nom: "Ceinture Jaune-Orange" },
+  { id: "5", nom: "Ceinture Orange" },
+  { id: "6", nom: "Ceinture Orange-Verte" },
+  { id: "7", nom: "Ceinture Verte" },
+  { id: "8", nom: "Ceinture Verte-Bleue" },
+  { id: "9", nom: "Ceinture Bleue" },
+  { id: "10", nom: "Ceinture Bleue-Marron" },
+  { id: "11", nom: "Ceinture Marron" },
+  { id: "12", nom: "Ceinture Noire 1ere Dan" },
+  { id: "13", nom: "Ceinture Noire 2eme Dan" },
+  { id: "14", nom: "Ceinture Noire 3eme Dan" },
+  { id: "15", nom: "Ceinture Noire 4eme Dan" },
+  { id: "16", nom: "Ceinture Noire 5eme Dan" },
+  { id: "17", nom: "Ceinture Noire 6eme Dan" }
 ];
 
 export const genders = [
