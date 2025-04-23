@@ -99,7 +99,7 @@ const handleLogin = () => {
 
 /* logo centre en haut */
 .logo {
-  width: 250px;
+  width: 400px;
   height: 250px;
   margin-bottom: 20px;
 }
