@@ -22,7 +22,7 @@ export const grades = [
   { id: "9", nom: "Ceinture Bleue" },
   { id: "10", nom: "Ceinture Bleue-Marron" },
   { id: "11", nom: "Ceinture Marron" },
-  { id: "12", nom: "Ceinture Noire 1ere Dan" },
+  { id: "12", nom: "Ceinture Noire 1er Dan" },
   { id: "13", nom: "Ceinture Noire 2eme Dan" },
   { id: "14", nom: "Ceinture Noire 3eme Dan" },
   { id: "15", nom: "Ceinture Noire 4eme Dan" },
