@@ -128,6 +128,26 @@ const progressPercent = computed(() => {
     return ((fictifMatch.value?.timer?.currentTime ?? 0) / 180) * 100;
 });
 
+const gongSound = new Audio('finalSound.ogg');
+
+watch(
+  () => ({
+    currentTime: fictifMatch.value?.timer?.currentTime,
+    additionalTime: fictifMatch.value?.timer?.additionalTime,
+  }),
+  (newVal, oldVal) => {
+    if (
+      oldVal.currentTime > 0 &&
+      newVal.currentTime === 0 &&
+      (newVal.additionalTime === undefined || newVal.additionalTime === -1)
+    ) {
+      gongSound.play().catch((err) => {
+        console.error('Erreur lors de la lecture du son :', err);
+      });
+    }
+  }
+);
+
 </script>
 
 
