@@ -195,7 +195,7 @@ const displayedTime = computed(() => {
   return `${minutes.toString().padStart(1, '0')}:${seconds.toString().padStart(2, '0')}`;
 });
 
-const gongSound = new Audio('finalSound.ogg');
+const gongSound = new Audio('/finalSound.ogg');
 
 watch(
   () => ({
