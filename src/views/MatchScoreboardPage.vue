@@ -195,9 +195,47 @@ const displayedTime = computed(() => {
   return `${minutes.toString().padStart(1, '0')}:${seconds.toString().padStart(2, '0')}`;
 });
 
+const gongSound = new Audio('finalSound.ogg');
+
+watch(
+  () => ({
+    currentTime: match.value?.timer?.currentTime,
+    additionalTime: match.value?.timer?.additionalTime,
+  }),
+  (newVal, oldVal) => {
+    if (
+      oldVal.currentTime > 0 &&
+      newVal.currentTime === 0 &&
+      (newVal.additionalTime === undefined || newVal.additionalTime === -1)
+    ) {
+      gongSound.play().catch((err) => {
+        console.error('Erreur lors de la lecture du son :', err);
+      });
+    }
+  }
+);
+
 </script>
 
 <style scoped>
+
+@font-face {
+    font-family: 'Bebas Neue';
+    src: url('/fonts/BebasNeue-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+  font-family: 'DS-Digital';
+  src: url('/fonts/DS-Digital.woff2') format('woff2'),
+       url('/fonts/DS-Digital.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* scoreboard prend toute la hauteur de l'écran */
 .scoreboard {
   display: flex;
@@ -282,6 +320,10 @@ const displayedTime = computed(() => {
   padding-right: 20px;
 }
 
+.time-text {
+    font-family: 'DS-Digital', monospace !important;
+}
+
 .timer-progress-circle {
   width: clamp(1rem, 10vw, 15rem) !important;
   height: clamp(1rem, 10vw, 20rem) !important;
@@ -343,12 +385,12 @@ const displayedTime = computed(() => {
 .player-name {
   font-size: clamp(1.5rem, 5vw, 7rem);
   font-weight: bold;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+  font-family: 'Bebas Neue', sans-serif;
 }
 
 .club-name {
   font-size: clamp(1rem, 3vw, 5rem);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+  font-family: 'Bebas Neue', sans-serif;
 }
 
 .score-info {
