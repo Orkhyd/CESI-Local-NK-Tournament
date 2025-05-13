@@ -15,12 +15,18 @@ Ce projet a été réalisé par une équipe de 4 personnes :
 - BURST Christophe
 
 
-## 🚀 Installation et lancement
+## 🚀 Installation et lancement - Application de Bureau
 
 Si tu récupères le projet depuis **Git**, voici comment le lancer correctement :
 
+### Aller dans le bon dossier
+On commence par aller dans le dossier `/node`:
+```sh
+cd node
+```
+
 ### Installer les dépendances
-On installe tout ce qu'il faut avec **npm** :
+On installe tout ce qu'il faut avec **npm**:
 ```sh
 npm install
 ```
