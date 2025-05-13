@@ -47,7 +47,7 @@
                 <div class="player-row player-white">
                     <div class="player-info">
                         <div class="flag-container">
-                            <img :src="getFlag(getCountry(match.player1.nationalityId))" class="flag" />
+                            <img :src="getFlag(getCountry(match.player2.nationalityId))" class="flag" />
                         </div>
                         <div class="player-details">
                             <va-input :model-value="match.player2.fullName"
