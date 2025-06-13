@@ -1,12 +1,10 @@
 const config = {
   packagerConfig: {
     asar: true,
+    // Fix the extraResource configuration
     extraResource: [
       './dist',
-      {
-        from: './src/preload.js',
-        to: 'preload.js'
-      }
+      './src/preload.js'
     ]
   },
   makers: [
@@ -32,7 +30,6 @@ const config = {
       name: '@electron-forge/plugin-auto-unpack-natives',
       config: {},
     },
-    // Remove the fuses plugin for now to get it working
   ],
 };
 
