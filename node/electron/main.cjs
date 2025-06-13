@@ -1,23 +1,51 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const path = require("path");
 
 console.log("✅ electron Main Process démarré !");
 
+// Determine if we're in development or production
+const isDev = !app.isPackaged;
+
 let openWindows = {}; // stocke les fenêtres ouvertes
+
+// Get correct preload path based on environment
+const getPreloadPath = () => {
+  if (isDev) {
+    // In dev, preload should be in node/src/preload/
+    return path.join(__dirname, "../src/preload.js");
+  } else {
+    // In production, preload will be in the same directory as main
+    return path.join(__dirname, "preload.js");
+  }
+};
+
+const getDistPath = () => {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'dist', 'index.html');
+  } else {
+    // In dev with node structure, dist will be in node/dist/
+    return path.join(__dirname, '../dist/index.html');
+  }
+};
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, "../src/preload.js"),
+      preload: getPreloadPath(),
       contextIsolation: true,
       enableRemoteModule: false,
       nodeIntegration: false,
     },
   });
 
-  win.loadURL("http://localhost:5173");
+  if (isDev) {
+    win.loadURL("http://localhost:5173");
+    win.webContents.openDevTools();
+  } else {
+    win.loadFile(getDistPath());
+  }
 }
 
 app.whenReady().then(createWindow);
@@ -38,9 +66,8 @@ app.on("activate", () => {
 ipcMain.on("open-match-window", (event, matchData) => {
   const matchId = matchData.idMatch;
 
-  // verif si la fenêtre est déjà ouverte
   if (openWindows[matchId] && !openWindows[matchId].isDestroyed()) {
-    openWindows[matchId].focus(); // 🔥 Ramène la fenêtre au premier plan
+    openWindows[matchId].focus();
     return;
   }
 
@@ -48,19 +75,21 @@ ipcMain.on("open-match-window", (event, matchData) => {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, "../src/preload.js"),
+      preload: getPreloadPath(),
       contextIsolation: true,
       enableRemoteModule: false,
       nodeIntegration: false,
     },
   });
 
-  matchWindow.loadURL(`http://localhost:5173/match/${matchId}`);
+  if (isDev) {
+    matchWindow.loadURL(`http://localhost:5173/match/${matchId}`);
+  } else {
+    matchWindow.loadFile(getDistPath(), { hash: `/match/${matchId}` });
+  }
 
-  // stocke la feneetre ouverte
   openWindows[matchId] = matchWindow;
 
-  // supp l'entrée quand la fenêtre est fermée
   matchWindow.on("closed", () => {
     delete openWindows[matchId];
   });
@@ -69,7 +98,6 @@ ipcMain.on("open-match-window", (event, matchData) => {
 ipcMain.on("open-fictive-match-window", () => {
   const fictiveMatchId = "fictive-mode";
 
-  // ferme les fenêtres existantes si elles sont ouvertes
   if (openWindows[fictiveMatchId]) {
     BrowserWindow.getAllWindows().forEach(win => {
       if (!win.isDestroyed()) win.close();
@@ -77,41 +105,47 @@ ipcMain.on("open-fictive-match-window", () => {
     openWindows = {};
   }
 
-  // recup les dimensions de l'écran
-  const { width, height } = require('electron').screen.getPrimaryDisplay().workAreaSize;
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
-  // creer la fenêtre de contrôle
   const controlWindow = new BrowserWindow({
     width: 800,
     height: 700,
     x: 0,
     y: Math.floor((height - 600) / 2),
     webPreferences: {
-      preload: path.join(__dirname, "../src/preload.js"),
+      preload: getPreloadPath(),
       contextIsolation: true
     }
   });
 
-  // creer la fenêtre d'affichage
   const displayWindow = new BrowserWindow({
     width: 800,
     height: 550,
     x: width - 800,
     y: Math.floor((height - 550) / 2),
     webPreferences: {
-      preload: path.join(__dirname, "../src/preload.js"),
+      preload: getPreloadPath(),
       contextIsolation: true
     }
   });
 
-  // charge les URLs
-  controlWindow.loadURL('http://localhost:5173/fictive-control');
-  displayWindow.loadURL('http://localhost:5173/fictive-display');
+  if (isDev) {
+    controlWindow.loadURL('http://localhost:5173/fictive-control');
+    displayWindow.loadURL('http://localhost:5173/fictive-display');
+  } else {
+    const distPath = getDistPath();
 
-  // stocke les références
+    controlWindow.loadFile(distPath).then(() => {
+      controlWindow.webContents.executeJavaScript(`window.location.hash = '/fictive-control'`);
+    });
+
+    displayWindow.loadFile(distPath).then(() => {
+      displayWindow.webContents.executeJavaScript(`window.location.hash = '/fictive-display'`);
+    });
+  }
+
   openWindows[fictiveMatchId] = { controlWindow, displayWindow };
 
-  // gestion de fermeture
   const closeAll = () => {
     if (controlWindow && !controlWindow.isDestroyed()) controlWindow.close();
     if (displayWindow && !displayWindow.isDestroyed()) displayWindow.close();
@@ -131,4 +165,3 @@ ipcMain.on("close-fictive-windows", () => {
     delete openWindows[fictiveMatchId];
   }
 });
-

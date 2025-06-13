@@ -2,70 +2,49 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vueDevTools from 'vite-plugin-vue-devtools';
-import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
-  server: { allowedHosts: true },
-  plugins: [
-    vue(),
-    vueDevTools(),
-    VitePWA({
-      registerType: "autoUpdate",
-      devOptions: {
-        enabled: true,
-        suppressWarnings: true,
-        type: "module"
-      },
-      workbox: {
-        disableDevLogs: true,
-        maximumFileSizeToCacheInBytes: 4097152,
-        globPatterns: [
-          '**/*.{js,css,html,png,jpg,jpeg,svg,ico}',
-        ],
-        navigateFallback: "/",
-        navigateFallbackDenylist: [
-          /^\/src\/components\/.*\.vue/,
-          /^\/src\/replicache\/services\/Pool\/.*\.js/,
-          /^\/src\/functions\/.*\.js/
-        ],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/src/'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'dynamic-components',
-              expiration: {
-                maxEntries: 60,
-                maxAgeSeconds: 60 * 60 * 24
-              }
-            }
-          }
-        ]
-      },
-      manifest: {
-        name: 'My Awesome App',
-        short_name: 'MyApp',
-        description: 'My Awesome App description',
-        theme_color: '#ffffff',
-        display: "fullscreen",
-        icons: [
-          {
-            src: '/pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    }),
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+export default defineConfig(({ command, mode }) => {
+  const isElectron = process.env.ELECTRON === 'true' || command === 'build';
+
+  return {
+    // Set base to relative paths for Electron
+    base: isElectron ? './' : '/',
+
+    server: {
+      allowedHosts: true,
+      port: 5173
     },
-  },
+
+    plugins: [
+      vue(),
+      // Only enable dev tools in development and not in Electron build
+      !isElectron && vueDevTools(),
+      // Remove PWA plugin for Electron - it conflicts with Electron
+    ].filter(Boolean),
+
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
+      },
+    },
+
+    build: {
+      // Important for Electron: ensure assets are bundled correctly
+      outDir: 'dist',
+      emptyOutDir: true,
+      // Don't inline assets for Electron
+      assetsInlineLimit: 0,
+      rollupOptions: {
+        output: {
+          // Ensure consistent asset naming
+          assetFileNames: 'assets/[name].[hash].[ext]',
+          chunkFileNames: 'assets/[name].[hash].js',
+          entryFileNames: 'assets/[name].[hash].js'
+        }
+      }
+    },
+
+    // Prevent Vite from clearing the screen in Electron mode
+    clearScreen: !isElectron
+  };
 });

@@ -31,3 +31,6 @@ coverage
 *.tsbuildinfo
 dev-dist
 dev-dist/*
+
+out
+out/*

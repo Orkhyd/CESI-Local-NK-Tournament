@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router';
 import LoginPage from '../views/LoginPage.vue';
 import HomePage from '../views/HomePage.vue';
 import TournamentEditPage from '../views/TournamentEditPage.vue';
@@ -7,8 +7,16 @@ import MatchScoreboardPage from '../views/MatchScoreboardPage.vue';
 import MatchScoreboardFictifPage from '@/views/MatchScoreboardFictifPage.vue';
 import MatchScoreboardFictifAdminPage from '@/views/MatchScoreboardFictifAdminPage.vue';
 
+// Detect if we're in Electron environment
+const isElectron = process.env.ELECTRON === 'true' ||
+  window.location.protocol === 'file:' ||
+  navigator.userAgent.toLowerCase().indexOf(' electron/') > -1;
+
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  // Use hash history for Electron, web history for browser
+  history: isElectron
+    ? createWebHashHistory(import.meta.env.BASE_URL)
+    : createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: "/", component: LoginPage },
     { path: "/home-page", component: HomePage },
@@ -23,8 +31,7 @@ const router = createRouter({
       path: '/fictive-display',
       component: MatchScoreboardFictifPage
     }
-
   ],
-})
+});
 
-export default router
+export default router;
