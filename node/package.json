@@ -16,9 +16,10 @@
     "build:web": "vite build",
     "preview": "vite preview",
     "package": "npm run build && electron-forge package",
-    "make": "npm run build && electron-forge make"
-  }
-,
+    "make": "npm run build && electron-forge make",
+    "publish": "npm run build && electron-forge publish",
+    "release": "npm run build && electron-forge publish"
+  },
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "@mdi/js": "^7.4.47",
@@ -31,6 +32,7 @@
     "pagemap": "^1.4.1",
     "qrcode.vue": "^3.6.0",
     "replicache": "^15.0.1",
+    "update-electron-app": "^3.1.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
     "vue3-apexcharts": "^1.8.0",
@@ -48,6 +50,7 @@
     "@electron-forge/maker-zip": "^7.8.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
     "@electron-forge/plugin-fuses": "^7.8.1",
+    "@electron-forge/publisher-github": "^7.8.1",
     "@electron/fuses": "^1.8.0",
     "@eslint/js": "^9.18.0",
     "@vitejs/plugin-vue": "^5.2.1",

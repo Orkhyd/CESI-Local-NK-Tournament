@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const path = require("path");
+const { updateElectronApp } = require('update-electron-app');
 
 console.log("✅ electron Main Process démarré !");
 
@@ -40,15 +41,27 @@ function createWindow() {
     },
   });
 
+  // Load the correct URL based on environment
   if (isDev) {
     win.loadURL("http://localhost:5173");
-    win.webContents.openDevTools();
   } else {
     win.loadFile(getDistPath());
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  // Auto-updater setup - only in production and after app is ready
+  if (!isDev) {
+    updateElectronApp({
+      repo: 'Orkhyd/CESI-Local-NK-Tournament',
+      updateInterval: '1 hour',
+      logger: console,
+      notifyUser: true, // Show update notifications to users
+    });
+  }
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
