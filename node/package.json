@@ -1,0 +1,71 @@
+{
+  "name": "nippon-kempo-tournament",
+  "author": {
+    "name": "Christophe, Florian, Marius et Pierre"
+  },
+  "description": "Nippon Kempo Tournament Management Application",
+  "version": "1.0.0",
+  "main": "electron/main.cjs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run vite\" \"npm run electron\"",
+    "vite": "vite",
+    "electron": "wait-on http://localhost:5173 && cross-env ELECTRON=true electron electron/main.cjs",
+    "build": "cross-env ELECTRON=true vite build",
+    "build:web": "vite build",
+    "preview": "vite preview",
+    "package": "npm run build && electron-forge package",
+    "make": "npm run build && electron-forge make",
+    "publish": "npm run build && electron-forge publish",
+    "release": "npm run build && electron-forge publish"
+  },
+  "dependencies": {
+    "@mdi/font": "^7.4.47",
+    "@mdi/js": "^7.4.47",
+    "async-mutex": "^0.5.0",
+    "concurrently": "^9.1.2",
+    "electron-squirrel-startup": "^1.0.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
+    "material-design-icons-iconfont": "^6.7.0",
+    "pagemap": "^1.4.1",
+    "qrcode.vue": "^3.6.0",
+    "replicache": "^15.0.1",
+    "update-electron-app": "^3.1.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "vue3-apexcharts": "^1.8.0",
+    "vuestic-ui": "^1.10.3",
+    "wait-on": "^8.0.2"
+  },
+  "config": {
+    "forge": "./forge.config.cjs"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.8.1",
+    "@electron-forge/maker-deb": "^7.8.1",
+    "@electron-forge/maker-rpm": "^7.8.1",
+    "@electron-forge/maker-squirrel": "^7.8.1",
+    "@electron-forge/maker-zip": "^7.8.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
+    "@electron-forge/plugin-fuses": "^7.8.1",
+    "@electron-forge/publisher-github": "^7.8.1",
+    "@electron/fuses": "^1.8.0",
+    "@eslint/js": "^9.18.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/eslint-plugin": "1.1.25",
+    "@vue/eslint-config-prettier": "^10.1.0",
+    "@vue/test-utils": "^2.4.6",
+    "cross-env": "^7.0.3",
+    "electron": "^34.2.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "jsdom": "^26.0.0",
+    "prettier": "^3.4.2",
+    "vite": "^6.0.11",
+    "vite-plugin-pwa": "^1.0.0",
+    "vite-plugin-vue-devtools": "^7.7.1",
+    "vitest": "^3.1.1"
+  }
+}
