@@ -10,9 +10,9 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  build:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 20
     
     strategy:
       matrix:
@@ -32,24 +32,54 @@ jobs:
       - name: Install dependencies
         working-directory: ./node
         run: npm ci
-        timeout-minutes: 10
         
-      - name: Build Vite application
+      - name: Build application
         working-directory: ./node
-        run: npm run build
-        timeout-minutes: 15
-        env:
-          CI: true
-          NODE_ENV: production
-          ELECTRON: true
-          FORCE_COLOR: 0
+        run: npm run build:safe
+          
+      - name: Package application
+        working-directory: ./node
+        run: npx electron-forge package
         
-      - name: Package and Publish
+      - name: Make distributables
         working-directory: ./node
-        run: npx electron-forge publish
-        timeout-minutes: 20
+        run: npx electron-forge make
+        
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: node/out/make/
+          
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: node/package-lock.json
+          
+      - name: Install dependencies
+        working-directory: ./node
+        run: npm ci
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CI: true
-          NODE_ENV: production
-          ELECTRON: true
