@@ -5,6 +5,7 @@ import vueDevTools from 'vite-plugin-vue-devtools';
 
 export default defineConfig(({ command, mode }) => {
   const isElectron = process.env.ELECTRON === 'true' || command === 'build';
+  const isCI = process.env.CI === 'true';
 
   return {
     // Set base to relative paths for Electron
@@ -17,9 +18,8 @@ export default defineConfig(({ command, mode }) => {
 
     plugins: [
       vue(),
-      // Only enable dev tools in development and not in Electron build
-      !isElectron && vueDevTools(),
-      // Remove PWA plugin for Electron - it conflicts with Electron
+      // Only enable dev tools in development and not in Electron build or CI
+      !isElectron && !isCI && vueDevTools(),
     ].filter(Boolean),
 
     resolve: {
@@ -34,7 +34,11 @@ export default defineConfig(({ command, mode }) => {
       emptyOutDir: true,
       // Don't inline assets for Electron
       assetsInlineLimit: 0,
+      // Prevent interactive prompts in CI
+      minify: isCI ? 'esbuild' : 'esbuild',
       rollupOptions: {
+        // Suppress warnings that might cause prompts in CI
+        onwarn: isCI ? () => { } : undefined,
         output: {
           // Ensure consistent asset naming
           assetFileNames: 'assets/[name].[hash].[ext]',
@@ -44,7 +48,10 @@ export default defineConfig(({ command, mode }) => {
       }
     },
 
-    // Prevent Vite from clearing the screen in Electron mode
-    clearScreen: !isElectron
+    // Prevent Vite from clearing the screen in Electron mode or CI
+    clearScreen: !isElectron && !isCI,
+
+    // Set log level for CI to reduce output and prevent prompts
+    logLevel: isCI ? 'error' : 'info'
   };
 });
