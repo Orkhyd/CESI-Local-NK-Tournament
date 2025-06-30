@@ -12,7 +12,7 @@ permissions:
 jobs:
   release:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     
     strategy:
       matrix:
@@ -32,35 +32,24 @@ jobs:
       - name: Install dependencies
         working-directory: ./node
         run: npm ci
+        timeout-minutes: 10
         
-      - name: Build application (Windows)
-        if: runner.os == 'Windows'
-        working-directory: ./node
-        shell: cmd
-        run: |
-          set CI=false
-          set NODE_ENV=production
-          set ELECTRON=true
-          npm run build
-          
-      - name: Build application (Unix)
-        if: runner.os != 'Windows'
+      - name: Build Vite application
         working-directory: ./node
         run: npm run build
+        timeout-minutes: 15
         env:
-          CI: false
+          CI: true
           NODE_ENV: production
           ELECTRON: true
-          
-      - name: Verify build output
-        working-directory: ./node
-        run: |
-          echo "Build completed, checking output..."
-          ls dist/ || dir dist\
-          
-      - name: Publish to GitHub
+          FORCE_COLOR: 0
+        
+      - name: Package and Publish
         working-directory: ./node
         run: npx electron-forge publish
+        timeout-minutes: 20
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: true
           NODE_ENV: production
+          ELECTRON: true
