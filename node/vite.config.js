@@ -7,6 +7,14 @@ export default defineConfig(({ command, mode }) => {
   const isElectron = process.env.ELECTRON === 'true' || command === 'build';
   const isCI = process.env.CI === 'true';
 
+  console.log('🔧 Vite Config Debug:', {
+    command,
+    mode,
+    isElectron,
+    isCI,
+    nodeEnv: process.env.NODE_ENV
+  });
+
   return {
     // Set base to relative paths for Electron
     base: isElectron ? './' : '/',
@@ -35,10 +43,9 @@ export default defineConfig(({ command, mode }) => {
       // Don't inline assets for Electron
       assetsInlineLimit: 0,
       // Prevent interactive prompts in CI
-      minify: isCI ? 'esbuild' : 'esbuild',
+      minify: 'esbuild',
       rollupOptions: {
-        // Suppress warnings that might cause prompts in CI
-        onwarn: isCI ? () => { } : undefined,
+        // Don't suppress warnings in CI - let them show
         output: {
           // Ensure consistent asset naming
           assetFileNames: 'assets/[name].[hash].[ext]',
@@ -49,9 +56,9 @@ export default defineConfig(({ command, mode }) => {
     },
 
     // Prevent Vite from clearing the screen in Electron mode or CI
-    clearScreen: !isElectron && !isCI,
+    clearScreen: false,
 
-    // Set log level for CI to reduce output and prevent prompts
-    logLevel: isCI ? 'error' : 'info'
+    // IMPORTANT: Don't suppress logs in CI - we need to see what's happening
+    logLevel: 'info'
   };
 });
