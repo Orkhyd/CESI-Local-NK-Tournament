@@ -1,3 +1,7 @@
+if (require('electron-squirrel-startup')) {
+  app.quit();
+}
+
 const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const path = require("path");
 const { updateElectronApp } = require('update-electron-app');
@@ -13,7 +17,7 @@ let openWindows = {}; // stocke les fenêtres ouvertes
 const getPreloadPath = () => {
   if (isDev) {
     // In dev, preload should be in node/src/preload/
-    return path.join(__dirname, "../src/preload.js");
+    return path.join(__dirname, "preload.js");
   } else {
     // In production, preload will be in the same directory as main
     return path.join(__dirname, "preload.js");
@@ -96,7 +100,7 @@ ipcMain.on("open-match-window", (event, matchData) => {
   });
 
   if (isDev) {
-    matchWindow.loadURL(`http://localhost:5173/match/${matchId}`);
+    matchWindow.loadURL(`http://localhost:5173/#/match/${matchId}`);
   } else {
     matchWindow.loadFile(getDistPath(), { hash: `/match/${matchId}` });
   }
@@ -143,18 +147,14 @@ ipcMain.on("open-fictive-match-window", () => {
   });
 
   if (isDev) {
-    controlWindow.loadURL('http://localhost:5173/fictive-control');
-    displayWindow.loadURL('http://localhost:5173/fictive-display');
+    // ✅ THIS IS THE FIX: Add '/#' to the URL for hash-based routing
+    controlWindow.loadURL('http://localhost:5173/#/fictive-control');
+    displayWindow.loadURL('http://localhost:5173/#/fictive-display');
   } else {
+    // This part is correct for production
     const distPath = getDistPath();
-
-    controlWindow.loadFile(distPath).then(() => {
-      controlWindow.webContents.executeJavaScript(`window.location.hash = '/fictive-control'`);
-    });
-
-    displayWindow.loadFile(distPath).then(() => {
-      displayWindow.webContents.executeJavaScript(`window.location.hash = '/fictive-display'`);
-    });
+    controlWindow.loadFile(distPath, { hash: '/fictive-control' });
+    displayWindow.loadFile(distPath, { hash: '/fictive-display' });
   }
 
   openWindows[fictiveMatchId] = { controlWindow, displayWindow };

@@ -126,15 +126,22 @@ let unsubscribe;
 
 onMounted(async () => {
   // recup le match par son ID
-  match.value = await getMatchById(matchId.value);
+  const fetchedMatch = await getMatchById(matchId.value);
 
-  // recup les participants du match
-  if (match.value.idPlayer1 && match.value.idPlayer1 !== -1) {
-    player1.value = await getParticipantById(match.value.idPlayer1);
+  if (fetchedMatch) {
+    match.value = fetchedMatch;
+
+    // recup les participants du match
+    if (match.value.idPlayer1 && match.value.idPlayer1 !== -1) {
+      player1.value = await getParticipantById(match.value.idPlayer1);
+    }
+    if (match.value.idPlayer2 && match.value.idPlayer2 !== -1) {
+      player2.value = await getParticipantById(match.value.idPlayer2);
+    }
+  } else {
+    console.error(`Match with ID ${matchId.value} not found.`);
   }
-  if (match.value.idPlayer2 && match.value.idPlayer2 !== -1) {
-    player2.value = await getParticipantById(match.value.idPlayer2);
-  }
+
   unsubscribe = rep.subscribe(
     async (tx) => await tx.get(`match/${matchId.value}`),
     (result) => {
@@ -195,7 +202,7 @@ const displayedTime = computed(() => {
   return `${minutes.toString().padStart(1, '0')}:${seconds.toString().padStart(2, '0')}`;
 });
 
-const gongSound = new Audio('/finalSound.ogg');
+const gongSound = new Audio('finalSound.ogg');
 
 watch(
   () => ({

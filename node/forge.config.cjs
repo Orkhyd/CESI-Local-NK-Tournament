@@ -3,7 +3,6 @@ const config = {
     asar: true,
     extraResource: [
       './dist',
-      './src/preload.js'
     ],
     executableName: 'nippon-kempo-tournament',
     appBundleId: 'com.orkhyd.nippon-kempo-tournament',
@@ -14,7 +13,7 @@ const config = {
       name: '@electron-forge/maker-squirrel',
       config: {
         name: 'nippon-kempo-tournament',
-        setupExe: 'Nippon-Kempo-Tournament-Setup.exe',
+        setupExe: 'Nippon-Kempo-Tournament-Setup.installer.exe',
       },
     },
     {

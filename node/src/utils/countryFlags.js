@@ -4,7 +4,7 @@ export function useCountryFlags() {
       return '';
     }
     const isoCode = country.isoAlpha2.toLowerCase();
-    return `/flags/${isoCode}.svg`;
+    return `./flags/${isoCode}.svg`;
   };
 
   return { getFlag };

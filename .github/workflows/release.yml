@@ -12,10 +12,11 @@ permissions:
 jobs:
   release:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45 # Generous timeout for the whole job
     
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest]
     
     steps:
       - name: Checkout code
@@ -31,9 +32,30 @@ jobs:
       - name: Install dependencies
         working-directory: ./node
         run: npm ci
+        timeout-minutes: 10
         
-      - name: Build and publish
+      # Step 1: Build the Vite app using your safe script
+      - name: Build Vite Application (Safe)
         working-directory: ./node
-        run: npm run publish
+        env:
+          VITE_APP_MDP: ${{ secrets.VITE_APP_MDP }}
+          VITE_REPLICACHE_LICENSE_KEY : ${{ secrets.VITE_REPLICACHE_LICENSE_KEY }}
+        run: npm run build:safe
+        timeout-minutes: 10
+        
+      # Step 2: Verify the build output exists
+      - name: Verify Build Output
+        working-directory: ./node
+        run: |
+          echo "Build completed, verifying 'dist' directory..."
+          ls -R dist/ || dir /s dist\
+          echo "Verification successful."
+        timeout-minutes: 2
+
+      # Step 5: Publish the created artifacts to GitHub Releases
+      - name: Publish to GitHub
+        working-directory: ./node
+        run: npx electron-forge publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        timeout-minutes: 10
