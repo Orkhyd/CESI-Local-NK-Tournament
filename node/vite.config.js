@@ -35,7 +35,10 @@ export default defineConfig(({ command, mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url))
       },
     },
-
+    define: {
+      // This makes process.env.NODE_ENV available in your renderer code
+      'process.env.NODE_ENV': JSON.stringify(mode),
+    },
     build: {
       // Important for Electron: ensure assets are bundled correctly
       outDir: 'dist',
