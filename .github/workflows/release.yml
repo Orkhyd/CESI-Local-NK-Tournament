@@ -10,9 +10,9 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  release:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 45 # Generous timeout for the whole job
     
     strategy:
       matrix:
@@ -32,54 +32,39 @@ jobs:
       - name: Install dependencies
         working-directory: ./node
         run: npm ci
+        timeout-minutes: 10
         
-      - name: Build application
+      # Step 1: Build the Vite app using your safe script
+      - name: Build Vite Application (Safe)
         working-directory: ./node
         run: npm run build:safe
-          
-      - name: Package application
+        timeout-minutes: 10
+        
+      # Step 2: Verify the build output exists
+      - name: Verify Build Output
+        working-directory: ./node
+        run: |
+          echo "Build completed, verifying 'dist' directory..."
+          ls -R dist/ || dir /s dist\
+          echo "Verification successful."
+        timeout-minutes: 2
+
+      # Step 3: Package the app (creates the platform-specific folder in 'out')
+      - name: Package Application
         working-directory: ./node
         run: npx electron-forge package
-        
-      - name: Make distributables
+        timeout-minutes: 10
+
+      # Step 4: Make the distributables (creates installers/zips in 'out/make')
+      - name: Make Distributables
         working-directory: ./node
         run: npx electron-forge make
-        
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ matrix.os }}
-          path: node/out/make/
-          
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: node/package-lock.json
-          
-      - name: Install dependencies
+        timeout-minutes: 15
+
+      # Step 5: Publish the created artifacts to GitHub Releases
+      - name: Publish to GitHub
         working-directory: ./node
-        run: npm ci
-        
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
-          
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: artifacts/**/*
-          generate_release_notes: true
+        run: npx electron-forge publish --skip-package
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        timeout-minutes: 10
