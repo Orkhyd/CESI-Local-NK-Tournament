@@ -3,7 +3,6 @@ const config = {
     asar: true,
     extraResource: [
       './dist',
-      './src/preload.js'
     ],
     executableName: 'nippon-kempo-tournament',
     appBundleId: 'com.orkhyd.nippon-kempo-tournament',

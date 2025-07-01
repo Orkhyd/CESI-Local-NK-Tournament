@@ -13,7 +13,7 @@ let openWindows = {}; // stocke les fenêtres ouvertes
 const getPreloadPath = () => {
   if (isDev) {
     // In dev, preload should be in node/src/preload/
-    return path.join(__dirname, "../src/preload.js");
+    return path.join(__dirname, "preload.js");
   } else {
     // In production, preload will be in the same directory as main
     return path.join(__dirname, "preload.js");

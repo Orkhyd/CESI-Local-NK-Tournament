@@ -37,6 +37,9 @@ jobs:
       # Step 1: Build the Vite app using your safe script
       - name: Build Vite Application (Safe)
         working-directory: ./node
+        env:
+          VITE_APP_MDP: ${{ secrets.VITE_APP_MDP }}
+          VITE_REPLICACHE_LICENSE_KEY : ${{ secrets.VITE_REPLICACHE_LICENSE_KEY }}
         run: npm run build:safe
         timeout-minutes: 10
         
@@ -48,18 +51,6 @@ jobs:
           ls -R dist/ || dir /s dist\
           echo "Verification successful."
         timeout-minutes: 2
-
-      # Step 3: Package the app (creates the platform-specific folder in 'out')
-      - name: Package Application
-        working-directory: ./node
-        run: npx electron-forge package
-        timeout-minutes: 10
-
-      # Step 4: Make the distributables (creates installers/zips in 'out/make')
-      - name: Make Distributables
-        working-directory: ./node
-        run: npx electron-forge make
-        timeout-minutes: 15
 
       # Step 5: Publish the created artifacts to GitHub Releases
       - name: Publish to GitHub
