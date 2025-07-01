@@ -13,7 +13,7 @@
     "vite": "vite",
     "electron": "wait-on http://localhost:5173 && cross-env ELECTRON=true electron electron/main.cjs",
     "build": "cross-env ELECTRON=true vite build",
-    "build:safe": "node build.js",
+    "build:safe": "node build.cjs",
     "build:web": "vite build",
     "preview": "vite preview",
     "package": "npm run build && electron-forge package",
