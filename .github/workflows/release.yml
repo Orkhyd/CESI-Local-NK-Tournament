@@ -55,7 +55,7 @@ jobs:
       # Step 5: Publish the created artifacts to GitHub Releases
       - name: Publish to GitHub
         working-directory: ./node
-        run: npx electron-forge publish --skip-package
+        run: npx electron-forge publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         timeout-minutes: 10
