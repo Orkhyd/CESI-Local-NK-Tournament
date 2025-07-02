@@ -9,6 +9,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "lint": "eslint . --ext .vue,.js,.cjs",
+    "test:unit": "vitest run",
     "dev": "concurrently \"npm run vite\" \"npm run electron\"",
     "vite": "vite",
     "electron": "wait-on http://localhost:5173 && cross-env ELECTRON=true electron electron/main.cjs",
@@ -44,6 +46,7 @@
     "forge": "./forge.config.cjs"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.28.0",
     "@electron-forge/cli": "^7.8.1",
     "@electron-forge/maker-deb": "^7.8.1",
     "@electron-forge/maker-rpm": "^7.8.1",
@@ -62,11 +65,13 @@
     "electron": "^34.2.0",
     "eslint": "^9.18.0",
     "eslint-plugin-vue": "^9.32.0",
+    "globals": "^16.3.0",
     "jsdom": "^26.0.0",
     "prettier": "^3.4.2",
     "vite": "^6.0.11",
     "vite-plugin-pwa": "^1.0.0",
     "vite-plugin-vue-devtools": "^7.7.1",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.1",
+    "vue-eslint-parser": "^10.2.0"
   }
 }
