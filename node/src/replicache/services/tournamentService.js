@@ -6,7 +6,7 @@ export const TournamentService = {
     rep.mutate.createTournament({ id, name, address, startDate });
   },
 
-  deleteTournament: async (id) => {
+  deleteTournament: async () => {
     await deleteAllIndexedDB();
     location.reload(); // recharge la page pour tout réinitialiser
   },

@@ -218,7 +218,7 @@ const confirmImport = async (selectedItems) => {
     try {
       await handleSaveParticipant(formattedParticipant, true);
       successCount++;
-    } catch (error) {
+    } catch (_) {
       toast.init({ message: `${p.firstName} ${p.lastName} impossible à importer`, color: "danger", position: "top-center" });
     }
 

@@ -1,6 +1,4 @@
-// build.js
 const { spawn } = require('child_process');
-const path = require('path');
 
 console.log('🔧 Starting custom build process...');
 

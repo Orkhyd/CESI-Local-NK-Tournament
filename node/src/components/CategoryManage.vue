@@ -69,7 +69,7 @@ import CategoryStatistics from "@/components/Statistics/CategoryStatistics.vue";
 import ParticipantsCategoryList from "./Bracket/ParticipantsCategoryList.vue";
 import { replicacheInstance as rep } from "@/replicache/replicache";
 
-import { categoriesAge, grades, genders, categoriesTypes } from "@/replicache/models/constants";
+import { categoriesAge, genders, categoriesTypes } from "@/replicache/models/constants";
 
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
