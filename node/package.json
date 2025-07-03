@@ -22,7 +22,7 @@
     "make": "npm run build && electron-forge make",
     "publish": "npm run build:safe && electron-forge publish",
     "release": "npm run build:safe && electron-forge publish",
-    "version": "powershell mkdir .git -ea 0 && npm version"
+    "version": "powershell mkdir .git -ea 0 ; npm version"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
