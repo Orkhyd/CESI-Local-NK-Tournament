@@ -11,7 +11,7 @@ export const fictifMatchStore = {
   getAll: async () => {
     return await rep.query(async (tx) => {
       const matches = [];
-      for await (const [key, value] of tx.scan({ prefix: 'fictifMatch/' })) {
+      for await (const [_, value] of tx.scan({ prefix: 'fictifMatch/' })) {
         matches.push(structuredClone(value));
       }
       return matches;

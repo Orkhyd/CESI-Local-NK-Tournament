@@ -108,7 +108,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { nationality } from '@/replicache/models/constants';
 import { fictifMatchService } from '@/replicache/services/fictifMatchService';
 import { fictifMatchStore } from '@/replicache/stores/fictifMatchStore';

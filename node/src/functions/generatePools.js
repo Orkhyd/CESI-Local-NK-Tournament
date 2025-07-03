@@ -2,8 +2,6 @@
 // et indique dans chaque poule quelles positions se qualifient pour la phase suivante
 
 export function generatePools(participants) {
-  const minPoolSize = 3;
-  const maxPoolSize = 6;
 
   // filtre et melange les participants (on ignore ceux dont id === -1)
   const realParticipants = participants.filter((p) => p.id !== -1);
@@ -45,13 +43,13 @@ export function generatePools(participants) {
     const poolSize = i < r ? q + 1 : q;
     const slice = realParticipants.slice(startIndex, startIndex + poolSize);
     startIndex += poolSize;
-  
+
     // si une seule poule, elle doit directement s'appeler "Poule Finale"
     const poolLabel = nbPools === 1 ? "Poule Finale" : `Poule ${i + 1}`;
-  
+
     pools.push(buildPool(slice, poolLabel, qualifyingPositions));
   }
-  
+
 
   // si on a plusieurs poules, on genere une poule finale vide avec un libellé spécifique
   if (nbPools > 1) {

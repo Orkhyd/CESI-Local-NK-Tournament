@@ -20,7 +20,7 @@ export async function getCategoryByBracketId(bracketId) {
   return await rep.query(async (tx) => {
     const allCategories = await tx.scan({ prefix: "category/" }).entries().toArray();
 
-    for (const [key, value] of allCategories) {
+    for (const [_, value] of allCategories) {
       if (value.id === bracketId) {
         return value;
       }

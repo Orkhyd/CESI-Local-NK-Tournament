@@ -111,7 +111,7 @@ export async function getMatchesByParticipant(participantId) {
 
     } catch (error) {
       console.error(
-        `Error during scan/toArray with prefix "${matchPrefix}" for pool ${idPool}:`,
+        `Error during scan/toArray with prefix "${matchPrefix}" :`,
         error,
       );
       return [];
