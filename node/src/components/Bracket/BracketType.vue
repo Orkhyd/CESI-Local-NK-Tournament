@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted } from "vue";
 import { bracketService } from "@/replicache/services/Bracket/bracketService";
 import { getBracketByCategory } from "@/replicache/stores/Bracket/bracketStore";
 import Bracket from "./Bracket.vue";
@@ -75,7 +75,7 @@ const loadOrCreateBracket = async () => {
     }
 
     // crée un nouveau bracket
-    const bracketId = await bracketService.createBracket(props.category.id, props.participants);
+    await bracketService.createBracket(props.category.id, props.participants);
 
     // recup le bracket mis à jour
     bracket.value = await getBracketByCategory(props.category.id);

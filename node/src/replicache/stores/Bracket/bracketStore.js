@@ -5,7 +5,7 @@ export async function getBracketByCategory(categoryId) {
   return await rep.query(async (tx) => {
     const allBrackets = await tx.scan({ prefix: "bracket/" }).entries().toArray(); // 🔥 Correction ici
 
-    for (const [key, value] of allBrackets) {
+    for (const [_, value] of allBrackets) {
       if (value.categoryId === categoryId) {
         return value; // retourne le bracket trouvé
       }

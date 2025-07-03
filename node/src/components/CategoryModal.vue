@@ -214,8 +214,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
-import { VaModal, VaForm, VaInput, VaSelect, VaButton, VaDataTable, VaChip, VaAlert } from "vuestic-ui";
+import { ref, computed, watch } from "vue";
+import { VaModal, VaForm, VaInput, VaSelect, VaButton, VaDataTable, VaChip } from "vuestic-ui";
 import { genders, grades, categoriesAge, categoriesTypes, nationality } from "../replicache/models/constants";
 import { useCountryFlags } from "@/utils/countryFlags";
 

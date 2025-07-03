@@ -1,14 +1,26 @@
-import { fileURLToPath } from 'node:url'
-import { mergeConfig, defineConfig, configDefaults } from 'vitest/config'
-import viteConfig from './vite.config'
+// In node/vitest.config.js
 
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
-      environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'e2e/**'],
-      root: fileURLToPath(new URL('./', import.meta.url)),
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import path from 'path'; // Needed for path.resolve
+
+export default defineConfig({
+  plugins: [
+    vue(),
+  ],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    include: ['src/**/tests/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: [
+      // './src/setupTests.js', // Uncomment if you have a setup file
+    ],
+    css: true,
+  },
+  // ✅ THIS IS THE FIX: Add resolve.alias configuration
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'), // Make sure this path is correct
     },
-  }),
-)
+  },
+});
