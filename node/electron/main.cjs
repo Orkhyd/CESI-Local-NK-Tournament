@@ -1,36 +1,39 @@
-if (require('electron-squirrel-startup')) {
+/* main.cjs */
+
+// 1) Require core Electron APIs and other modules, _before_ any event logic
+const { app, BrowserWindow, ipcMain } = require('electron');
+const { started } = require("electron-squirrel-startup");
+const { updateElectronApp } = require('update-electron-app');
+const path = require('path');
+
+// Auto-update (production only)
+updateElectronApp({
+  repo: 'Orkhyd/CESI-Local-NK-Tournament',
+  updateInterval: '1 hour',
+  logger: console,
+  notifyUser: true,
+});
+
+
+// 2) Handle Windows Squirrel install/uninstall events early
+if (started) {
   app.quit();
+  process.exit(0);
 }
 
-const { app, BrowserWindow, ipcMain, screen } = require("electron");
-const path = require("path");
-const { updateElectronApp } = require('update-electron-app');
+console.log("✅ Electron Main Process démarré !");
 
-console.log("✅ electron Main Process démarré !");
-
-// Determine if we're in development or production
+// 3) Environment & State
 const isDev = !app.isPackaged;
+let openWindows = {};
 
-let openWindows = {}; // stocke les fenêtres ouvertes
-
-// Get correct preload path based on environment
-const getPreloadPath = () => {
-  if (isDev) {
-    // In dev, preload should be in node/src/preload/
-    return path.join(__dirname, "preload.js");
-  } else {
-    // In production, preload will be in the same directory as main
-    return path.join(__dirname, "preload.js");
-  }
-};
-
+// 4) Helpers
+const getPreloadPath = () => path.join(__dirname, 'preload.js');
 const getDistPath = () => {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'dist', 'index.html');
-  } else {
-    // In dev with node structure, dist will be in node/dist/
-    return path.join(__dirname, '../dist/index.html');
   }
+  return path.join(__dirname, '../dist/index.html');
 };
 
 function createWindow() {
@@ -44,137 +47,106 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
+  win.removeMenu();
 
-  // Load the correct URL based on environment
   if (isDev) {
-    win.loadURL("http://localhost:5173");
+    win.loadURL('http://localhost:5173');
   } else {
     win.loadFile(getDistPath());
   }
 }
 
+// 5) When the app is ready, it's safe to use screen and updater
 app.whenReady().then(() => {
+  // Require 'screen' after app is initialized
+  const { screen } = require('electron');
+
+  // Dynamically require the updater _only_ after app is ready
   createWindow();
 
-  // Auto-updater setup - only in production and after app is ready
-  if (!isDev) {
-    updateElectronApp({
-      repo: 'Orkhyd/CESI-Local-NK-Tournament',
-      updateInterval: '1 hour',
-      logger: console,
-      notifyUser: true, // Show update notifications to users
-    });
-  }
-});
-
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
-
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
-
-// ouvrir une fenetre de scorebaord pour un match
-ipcMain.on("open-match-window", (event, matchData) => {
-  const matchId = matchData.idMatch;
-
-  if (openWindows[matchId] && !openWindows[matchId].isDestroyed()) {
-    openWindows[matchId].focus();
-    return;
-  }
-
-  const matchWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      preload: getPreloadPath(),
-      contextIsolation: true,
-      enableRemoteModule: false,
-      nodeIntegration: false,
-    },
-  });
-
-  if (isDev) {
-    matchWindow.loadURL(`http://localhost:5173/#/match/${matchId}`);
-  } else {
-    matchWindow.loadFile(getDistPath(), { hash: `/match/${matchId}` });
-  }
-
-  openWindows[matchId] = matchWindow;
-
-  matchWindow.on("closed", () => {
-    delete openWindows[matchId];
-  });
-});
-
-ipcMain.on("open-fictive-match-window", () => {
-  const fictiveMatchId = "fictive-mode";
-
-  if (openWindows[fictiveMatchId]) {
-    BrowserWindow.getAllWindows().forEach(win => {
-      if (!win.isDestroyed()) win.close();
-    });
-    openWindows = {};
-  }
-
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-
-  const controlWindow = new BrowserWindow({
-    width: 800,
-    height: 700,
-    x: 0,
-    y: Math.floor((height - 600) / 2),
-    webPreferences: {
-      preload: getPreloadPath(),
-      contextIsolation: true
+  // -- IPC: Open a match window --
+  ipcMain.on('open-match-window', (event, matchData) => {
+    const matchId = matchData.idMatch;
+    if (openWindows[matchId] && !openWindows[matchId].isDestroyed()) {
+      openWindows[matchId].focus();
+      return;
     }
-  });
 
-  const displayWindow = new BrowserWindow({
-    width: 800,
-    height: 550,
-    x: width - 800,
-    y: Math.floor((height - 550) / 2),
-    webPreferences: {
-      preload: getPreloadPath(),
-      contextIsolation: true
+    const matchWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      webPreferences: {
+        preload: getPreloadPath(),
+        contextIsolation: true,
+        enableRemoteModule: false,
+        nodeIntegration: false,
+      },
+    });
+
+    if (isDev) {
+      matchWindow.loadURL(`http://localhost:5173/#/match/${matchId}`);
+    } else {
+      matchWindow.loadFile(getDistPath(), { hash: `/match/${matchId}` });
     }
+
+    openWindows[matchId] = matchWindow;
+    matchWindow.on('closed', () => delete openWindows[matchId]);
   });
 
-  if (isDev) {
-    // ✅ THIS IS THE FIX: Add '/#' to the URL for hash-based routing
-    controlWindow.loadURL('http://localhost:5173/#/fictive-control');
-    displayWindow.loadURL('http://localhost:5173/#/fictive-display');
-  } else {
-    // This part is correct for production
-    const distPath = getDistPath();
-    controlWindow.loadFile(distPath, { hash: '/fictive-control' });
-    displayWindow.loadFile(distPath, { hash: '/fictive-display' });
-  }
+  // -- IPC: Open dual fictive-match windows --
+  ipcMain.on('open-fictive-match-window', () => {
+    const fictiveMatchId = 'fictive-mode';
 
-  openWindows[fictiveMatchId] = { controlWindow, displayWindow };
+    // Close existing
+    if (openWindows[fictiveMatchId]) {
+      BrowserWindow.getAllWindows().forEach(win => { if (!win.isDestroyed()) win.close(); });
+      openWindows = {};
+    }
 
-  const closeAll = () => {
+    const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
+    const controlWindow = new BrowserWindow({
+      width: 800, height: 700,
+      x: 0, y: Math.floor((height - 600) / 2),
+      webPreferences: { preload: getPreloadPath(), contextIsolation: true }
+    });
+    const displayWindow = new BrowserWindow({
+      width: 800, height: 550,
+      x: width - 800, y: Math.floor((height - 550) / 2),
+      webPreferences: { preload: getPreloadPath(), contextIsolation: true }
+    });
+
+    if (isDev) {
+      controlWindow.loadURL('http://localhost:5173/#/fictive-control');
+      displayWindow.loadURL('http://localhost:5173/#/fictive-display');
+    } else {
+      const distPath = getDistPath();
+      controlWindow.loadFile(distPath, { hash: '/fictive-control' });
+      displayWindow.loadFile(distPath, { hash: '/fictive-display' });
+    }
+
+    openWindows[fictiveMatchId] = { controlWindow, displayWindow };
+
+    const closeAll = () => {
+      if (controlWindow && !controlWindow.isDestroyed()) controlWindow.close();
+      if (displayWindow && !displayWindow.isDestroyed()) displayWindow.close();
+      delete openWindows[fictiveMatchId];
+    };
+    controlWindow.on('closed', closeAll);
+    displayWindow.on('closed', closeAll);
+  });
+
+  // -- IPC: Close fictive windows --
+  ipcMain.on('close-fictive-windows', () => {
+    const id = 'fictive-mode';
+    if (!openWindows[id]) return;
+    const { controlWindow, displayWindow } = openWindows[id];
     if (controlWindow && !controlWindow.isDestroyed()) controlWindow.close();
     if (displayWindow && !displayWindow.isDestroyed()) displayWindow.close();
-    delete openWindows[fictiveMatchId];
-  };
-
-  controlWindow.on('closed', closeAll);
-  displayWindow.on('closed', closeAll);
+    delete openWindows[id];
+  });
 });
 
-ipcMain.on("close-fictive-windows", () => {
-  const fictiveMatchId = "fictive-mode";
-  if (openWindows[fictiveMatchId]) {
-    const { controlWindow, displayWindow } = openWindows[fictiveMatchId];
-    if (controlWindow && !controlWindow.isDestroyed()) controlWindow.close();
-    if (displayWindow && !displayWindow.isDestroyed()) displayWindow.close();
-    delete openWindows[fictiveMatchId];
-  }
-});
+// 6) Standard window-all-closed and activate handlers
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
