@@ -1,12 +1,9 @@
-/* main.cjs */
-
-// 1) Require core Electron APIs and other modules, _before_ any event logic
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { started } = require("electron-squirrel-startup");
 const { updateElectronApp } = require('update-electron-app');
 const path = require('path');
 
-// Auto-update (production only)
+// Auto-update
 updateElectronApp({
   repo: 'Orkhyd/CESI-Local-NK-Tournament',
   updateInterval: '1 hour',
@@ -14,8 +11,7 @@ updateElectronApp({
   notifyUser: true,
 });
 
-
-// 2) Handle Windows Squirrel install/uninstall events early
+// Handle Squirrel error
 if (started) {
   app.quit();
   process.exit(0);
@@ -23,11 +19,9 @@ if (started) {
 
 console.log("✅ Electron Main Process démarré !");
 
-// 3) Environment & State
 const isDev = !app.isPackaged;
 let openWindows = {};
 
-// 4) Helpers
 const getPreloadPath = () => path.join(__dirname, 'preload.js');
 const getDistPath = () => {
   if (app.isPackaged) {
@@ -56,15 +50,11 @@ function createWindow() {
   }
 }
 
-// 5) When the app is ready, it's safe to use screen and updater
 app.whenReady().then(() => {
-  // Require 'screen' after app is initialized
   const { screen } = require('electron');
 
-  // Dynamically require the updater _only_ after app is ready
   createWindow();
 
-  // -- IPC: Open a match window --
   ipcMain.on('open-match-window', (event, matchData) => {
     const matchId = matchData.idMatch;
     if (openWindows[matchId] && !openWindows[matchId].isDestroyed()) {
@@ -93,11 +83,9 @@ app.whenReady().then(() => {
     matchWindow.on('closed', () => delete openWindows[matchId]);
   });
 
-  // -- IPC: Open dual fictive-match windows --
   ipcMain.on('open-fictive-match-window', () => {
     const fictiveMatchId = 'fictive-mode';
 
-    // Close existing
     if (openWindows[fictiveMatchId]) {
       BrowserWindow.getAllWindows().forEach(win => { if (!win.isDestroyed()) win.close(); });
       openWindows = {};
@@ -136,7 +124,6 @@ app.whenReady().then(() => {
     displayWindow.on('closed', closeAll);
   });
 
-  // -- IPC: Close fictive windows --
   ipcMain.on('close-fictive-windows', () => {
     const id = 'fictive-mode';
     if (!openWindows[id]) return;
@@ -147,6 +134,5 @@ app.whenReady().then(() => {
   });
 });
 
-// 6) Standard window-all-closed and activate handlers
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
