@@ -4,7 +4,7 @@ const config = {
     extraResource: [
       './dist',
     ],
-    executableName: 'nippon-kempo-tournament',
+    executableName: 'Nippon Kempo Tournament',
     appBundleId: 'com.orkhyd.nippon-kempo-tournament',
     appCategoryType: 'public.app-category.sports',
   },
@@ -12,7 +12,7 @@ const config = {
     {
       name: '@electron-forge/maker-squirrel',
       config: {
-        name: 'nippon-kempo-tournament',
+        name: 'NipponKemponTournament',
         setupExe: 'Nippon-Kempo-Tournament-Setup.installer.exe',
       },
     },
