@@ -25,7 +25,7 @@ let openWindows = {};
 const getPreloadPath = () => path.join(__dirname, 'preload.js');
 const getDistPath = () => {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, 'dist', 'index.html');
+    return path.join(process.resourcesPath, 'app', 'dist', 'index.html');
   }
   return path.join(__dirname, '../dist/index.html');
 };
@@ -76,7 +76,13 @@ app.whenReady().then(() => {
     if (isDev) {
       matchWindow.loadURL(`http://localhost:5173/#/match/${matchId}`);
     } else {
-      matchWindow.loadFile(getDistPath(), { hash: `/match/${matchId}` });
+      matchWindow.loadFile(getDistPath());
+      // Puis naviguez vers la route après le chargement
+      matchWindow.webContents.once('did-finish-load', () => {
+        matchWindow.webContents.executeJavaScript(`
+          window.location.hash = '/match/${matchId}';
+        `);
+      });
     }
 
     openWindows[matchId] = matchWindow;
