@@ -38,9 +38,7 @@ export default {
     });
 
     replicacheInstance = rep;
-
     app.provide('replicache', rep);
   },
 };
-
 
