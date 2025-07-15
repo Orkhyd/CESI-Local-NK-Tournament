@@ -4,7 +4,7 @@
     "name": "Christophe, Florian, Marius et Pierre"
   },
   "description": "Nippon Kempo Tournament Management Application",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "main": "electron/main.cjs",
   "private": true,
   "type": "module",
