@@ -8,7 +8,7 @@ import vueParser from 'vue-eslint-parser'; // ✅ IMPORT THE VUE PARSER
 export default [
   {
     name: 'app/files-to-ignore',
-    ignores: ['**/dist/**', '**/dev-dist/**', '**/dist-ssr/**', '**/coverage/**', '**/*.test.js'],
+    ignores: ['**/dist/**', '**/dev-dist/**', '**/dist-ssr/**', '**/coverage/**', '**/*.test.js', '**/main.cjs', '**/preload.js'],
   },
 
   // Configuration for your Vue application code (runs in browser)
