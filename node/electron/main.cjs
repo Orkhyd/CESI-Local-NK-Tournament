@@ -68,11 +68,11 @@ function createWindow() {
 // === NETTOYAGE ===
 function cleanup() {
   mainWindow = null;
-  
+
   // Nettoyer heartbeats
   heartbeatIntervals.forEach((interval) => clearInterval(interval));
   heartbeatIntervals.clear();
-  
+
   // Fermer toutes les fenêtres
   Object.values(openWindows).forEach(window => {
     try {
@@ -89,7 +89,7 @@ function cleanup() {
       console.warn('⚠️ Error closing window:', error);
     }
   });
-  
+
   openWindows = {};
 }
 
@@ -119,7 +119,7 @@ function setupIpcHandlers() {
     return await requestMatchData(matchId);
   });
 
-  ipcMain.on('match-data-response', (event, response) => {
+  ipcMain.on('match-data-response', () => {
     // Géré par le Promise dans requestMatchData
   });
 
@@ -144,7 +144,7 @@ function setupIpcHandlers() {
 // === CRÉATION FENÊTRE DE MATCH ===
 function createMatchWindow(matchData) {
   const matchId = matchData.idMatch;
-  
+
   if (openWindows[matchId] && !openWindows[matchId].isDestroyed()) {
     openWindows[matchId].focus();
     return;
@@ -172,7 +172,7 @@ function createMatchWindow(matchData) {
   }
 
   openWindows[matchId] = matchWindow;
-  
+
   matchWindow.on('closed', () => {
     delete openWindows[matchId];
     stopHeartbeat(matchId);
@@ -192,7 +192,7 @@ function createMatchWindow(matchData) {
 // === CRÉATION FENÊTRES FICTIVES ===
 function createFictiveWindows() {
   const fictiveMatchId = 'fictive-mode';
-  
+
   if (openWindows[fictiveMatchId]) {
     closeFictiveWindows();
   }
@@ -200,28 +200,28 @@ function createFictiveWindows() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
   const controlWindow = new BrowserWindow({
-    width: 800, 
+    width: 800,
     height: 700,
-    x: 0, 
+    x: 0,
     y: Math.floor((height - 600) / 2),
     parent: mainWindow,
     modal: false,
-    webPreferences: { 
-      preload: getPreloadPath(), 
+    webPreferences: {
+      preload: getPreloadPath(),
       contextIsolation: true,
       partition: SHARED_PARTITION
     }
   });
 
   const displayWindow = new BrowserWindow({
-    width: 800, 
+    width: 800,
     height: 550,
-    x: width - 800, 
+    x: width - 800,
     y: Math.floor((height - 550) / 2),
     parent: mainWindow,
     modal: false,
-    webPreferences: { 
-      preload: getPreloadPath(), 
+    webPreferences: {
+      preload: getPreloadPath(),
       contextIsolation: true,
       partition: SHARED_PARTITION
     }
@@ -255,22 +255,22 @@ function closeFictiveWindows() {
   if (!fictiveWindows) return;
 
   const { controlWindow, displayWindow } = fictiveWindows;
-  
+
   if (controlWindow && !controlWindow.isDestroyed()) {
     controlWindow.close();
   }
-  
+
   if (displayWindow && !displayWindow.isDestroyed()) {
     displayWindow.close();
   }
-  
+
   delete openWindows['fictive-mode'];
 }
 
 // === COMMUNICATION MATCH DATA ===
 function broadcastMatchUpdate(matchData) {
   const matchId = matchData.idMatch;
-  
+
   // Envoyer à la fenêtre de match
   if (openWindows[matchId] && !openWindows[matchId].isDestroyed()) {
     openWindows[matchId].webContents.send('match-data-update', {
@@ -280,7 +280,7 @@ function broadcastMatchUpdate(matchData) {
       timestamp: Date.now()
     });
   }
-  
+
   // Envoyer aux fenêtres fictives
   const fictiveWindows = openWindows['fictive-mode'];
   if (fictiveWindows) {
@@ -325,13 +325,13 @@ function startHeartbeat(matchId, interval = 1000) {
   if (heartbeatIntervals.has(matchId)) {
     clearInterval(heartbeatIntervals.get(matchId));
   }
-  
+
   const heartbeatInterval = setInterval(() => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('heartbeat-request', matchId);
     }
   }, interval);
-  
+
   heartbeatIntervals.set(matchId, heartbeatInterval);
   return true;
 }
