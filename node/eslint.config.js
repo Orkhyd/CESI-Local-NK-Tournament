@@ -59,6 +59,7 @@ export default [
     ],
     languageOptions: {
       globals: {
+        ...globals.browser,
         ...globals.node,
       },
       // No specific parser needed for plain CJS/ESM Node files

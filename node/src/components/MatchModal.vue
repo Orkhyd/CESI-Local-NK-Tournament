@@ -170,6 +170,7 @@
 </template>
 
 <script setup>
+// Script setup pour la modale de gestion du combat (fenêtre principale)
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { getMatchById } from '@/replicache/stores/matchStore';
 import { matchService } from '@/replicache/services/matchService';
@@ -180,7 +181,6 @@ import { useCountryFlags } from '@/utils/countryFlags';
 import { useToast } from "vuestic-ui";
 
 const { getFlag } = useCountryFlags();
-
 const toast = useToast();
 
 const props = defineProps({
@@ -189,44 +189,187 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'update']);
 
+// Variables réactives
 const isOpen = ref(true);
 const match = ref(null);
 const player1 = ref(null);
 const player2 = ref(null);
 
-// scores des combattants
+// Scores des combattants
 const ipponsPlayer1 = ref(0);
 const ipponsPlayer2 = ref(0);
 const keikokusPlayer1 = ref(0);
 const keikokusPlayer2 = ref(0);
 
-// desactivation des counter score pour pas spam
+// Variables pour la gestion de l'interface
 const isCounterDisabledP1 = ref(false);
 const isCounterDisabledP2 = ref(false);
-
-// var pour gérer la modale de confirmation
 const showWinnerConfirmation = ref(false);
 const selectedWinner = ref(null);
+
+// Variables pour la communication avec les fenêtres enfants
+let unsubscribeMatch;
+let timerInterval;
+let heartbeatCleanup;
+let dataRequestCleanup;
+
+// === SYSTÈME DE COMMUNICATION AVEC LES FENÊTRES ENFANTS ===
+
+// Nettoyer les données pour éviter les erreurs de clonage
+const cleanDataForTransmission = (data) => {
+  try {
+    // Méthode 1: JSON.parse(JSON.stringify()) pour nettoyer les références circulaires
+    return JSON.parse(JSON.stringify(data));
+  } catch (error) {
+    console.warn('⚠️ JSON stringify failed, using manual cleaning:', error);
+    
+    // Méthode 2: Nettoyage manuel si JSON.stringify échoue
+    if (typeof data !== 'object' || data === null) {
+      return data;
+    }
+    
+    const cleaned = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'function' || value instanceof Promise) {
+        // Ignorer les fonctions et promesses
+        continue;
+      } else if (typeof value === 'object' && value !== null) {
+        try {
+          cleaned[key] = JSON.parse(JSON.stringify(value));
+        } catch {
+          // Si l'objet ne peut pas être sérialisé, le remplacer par null
+          cleaned[key] = null;
+        }
+      } else {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  }
+};
+
+// Diffuser les données mises à jour vers toutes les fenêtres enfants
+const broadcastMatchUpdate = () => {
+  if (window.electron && match.value) {
+    try {
+      const rawData = {
+        ...match.value,
+        ipponsPlayer1: ipponsPlayer1.value,
+        ipponsPlayer2: ipponsPlayer2.value,
+        keikokusPlayer1: keikokusPlayer1.value,
+        keikokusPlayer2: keikokusPlayer2.value,
+        timestamp: Date.now()
+      };
+      
+      // Nettoyer les données avant transmission
+      const cleanedData = cleanDataForTransmission(rawData);
+      
+      console.log('📤 Broadcasting cleaned match update:', cleanedData);
+      window.electron.broadcastMatchUpdate(cleanedData);
+    } catch (error) {
+      console.error('❌ Error in broadcastMatchUpdate:', error);
+    }
+  }
+};
+
+// Répondre aux demandes de données des fenêtres enfants
+const handleDataRequest = async (matchId) => {
+  console.log(`📡 Data requested for match: ${matchId}`);
+  
+  if (matchId === props.matchId && match.value) {
+    try {
+      // Récupérer les données les plus fraîches
+      const freshMatch = await getMatchById(props.matchId);
+      
+      const rawResponseData = {
+        ...freshMatch,
+        ipponsPlayer1: ipponsPlayer1.value,
+        ipponsPlayer2: ipponsPlayer2.value,
+        keikokusPlayer1: keikokusPlayer1.value,
+        keikokusPlayer2: keikokusPlayer2.value,
+        player1Data: player1.value,
+        player2Data: player2.value,
+        timestamp: Date.now()
+      };
+      
+      // Nettoyer les données avant transmission
+      const responseData = cleanDataForTransmission(rawResponseData);
+      
+      console.log('📤 Sending cleaned match data response:', responseData);
+      window.electron.sendMatchDataResponse(matchId, responseData);
+    } catch (error) {
+      console.error('❌ Error getting fresh match data:', error);
+      window.electron.sendMatchDataResponse(matchId, null);
+    }
+  }
+};
+
+// Gérer les demandes de heartbeat
+const handleHeartbeatRequest = async (matchId) => {
+  if (matchId === props.matchId) {
+    console.log('💓 Heartbeat request received, sending fresh data');
+    await handleDataRequest(matchId);
+  }
+};
+
+// === COMPUTED PROPERTIES ===
 
 const isConfirmDisabled = computed(() => {
   return idWinner.value === null && selectedWinner.value === null;
 });
 
+const isAddTimeDisabled = computed(() => {
+  if (match.value?.timer?.currentTime > 0) {
+    return match?.value?.timer?.currentTime + 5 > 180;
+  } else if (match.value?.timer?.additionalTime !== -1) {
+    return match?.value?.timer?.additionalTime + 5 > 60;
+  }
+  return true;
+});
 
-// permett de désélectionner l'autre checkbox quand on en coche une
+const idWinner = computed(() => {
+  if (ipponsPlayer1.value > ipponsPlayer2.value) return match.value?.idPlayer1;
+  if (ipponsPlayer2.value > ipponsPlayer1.value) return match.value?.idPlayer2;
+  return null;
+});
+
+const player1Name = computed(() => (player1.value?.firstName + ' ' + player1.value?.lastName) || 'Bye');
+const player2Name = computed(() => (player2.value?.firstName + ' ' + player2.value?.lastName) || 'Bye');
+
+const getCountry = (natId) => nationality.find(country => country.id === Number(natId));
+const player1Nationality = computed(() => getCountry(player1.value?.nationalityId));
+const player2Nationality = computed(() => getCountry(player2.value?.nationalityId));
+
+const formattedTime = computed(() => {
+  if (!match.value?.timer) return "0:00";
+
+  if (match.value.timer.currentTime !== 0) {
+    const minutes = Math.floor(match.value.timer.currentTime / 60);
+    const seconds = match.value.timer.currentTime % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  if (match.value.timer.additionalTime === -1) return "0:00";
+
+  const minutes = Math.floor(match.value.timer.additionalTime / 60);
+  const seconds = match.value.timer.additionalTime % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+});
+
+// === MÉTHODES DE GESTION DU COMBAT ===
+
 const clearOtherCheckbox = (otherId) => {
   if (selectedWinner.value === otherId || (otherId === null && selectedWinner.value !== -1)) {
     selectedWinner.value = null;
   }
 };
 
-// désactiver temporairement les compteurs
 const disableCounters = (player) => {
   if (player === 1) {
     isCounterDisabledP1.value = true;
     setTimeout(() => {
       isCounterDisabledP1.value = false;
-    }, 2000); // désactivation pendant 2 secondes
+    }, 2000);
   } else if (player === 2) {
     isCounterDisabledP2.value = true;
     setTimeout(() => {
@@ -235,16 +378,13 @@ const disableCounters = (player) => {
   }
 };
 
-
-// fction pour confirmer définitivement le vainqueur
 const confirmWinner = async () => {
   try {
     const finalWinner = selectedWinner.value || idWinner.value;
-    const player1Name = `${player1.value?.firstName} ${player1.value?.lastName}`;
-    const player2Name = `${player2.value?.firstName} ${player2.value?.lastName}`;
+    const player1NameStr = `${player1.value?.firstName} ${player1.value?.lastName}`;
+    const player2NameStr = `${player2.value?.firstName} ${player2.value?.lastName}`;
 
     if (match.value?.idMatchType === 1 && finalWinner === -1) {
-      // cas du match nul en poule
       await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
         ipponsPlayer1: ipponsPlayer1.value,
         ipponsPlayer2: ipponsPlayer2.value,
@@ -254,15 +394,14 @@ const confirmWinner = async () => {
       });
 
       toast.init({
-        message: `🏳️ Match nul entre ${player1Name} et ${player2Name}`,
+        message: `🏳️ Match nul entre ${player1NameStr} et ${player2NameStr}`,
         color: "warning",
         position: "top-center",
         icon: "sports_score",
       });
     } else {
-      // cas normal avec vainqueur
-      const winnerName = finalWinner === match.value?.idPlayer1 ? player1Name : player2Name;
-      const loserName = finalWinner === match.value?.idPlayer1 ? player2Name : player1Name;
+      const winnerName = finalWinner === match.value?.idPlayer1 ? player1NameStr : player2NameStr;
+      const loserName = finalWinner === match.value?.idPlayer1 ? player2NameStr : player1NameStr;
 
       await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
         ipponsPlayer1: ipponsPlayer1.value,
@@ -279,6 +418,9 @@ const confirmWinner = async () => {
         icon: "military_tech",
       });
     }
+
+    // Diffuser la mise à jour finale
+    broadcastMatchUpdate();
 
     emit('update');
     showWinnerConfirmation.value = false;
@@ -297,93 +439,71 @@ const confirmWinner = async () => {
   }
 };
 
-const isAddTimeDisabled = computed(() => {
-  if (match.value?.timer?.currentTime > 0) {
-    return match?.value?.timer?.currentTime + 5 > 180; // dépasse 180s en temps réglementaire
-  } else if (match.value?.timer?.additionalTime !== -1) {
-    return match?.value?.timer?.additionalTime + 5 > 60; // dépasse 60s en temps additionnel
-  }
-  return true; // si on ne peut pas ajouter de temps
-});
-
-
-// fonction pour gérer le clic sur le bouton "Déclarer vainqueur"
 const handleWinnerDeclaration = () => {
-  if (idWinner.value) {
-    // si un vainqueur est clair, affiche la confirmation normale
-    showWinnerConfirmation.value = true;
-  } else {
-    // si le score est égal, affiche la modale de sélection
-    showWinnerConfirmation.value = true;
-  }
+  showWinnerConfirmation.value = true;
 };
 
-// determinee le vainqueur en fonction des scores
-const idWinner = computed(() => {
-  if (ipponsPlayer1.value > ipponsPlayer2.value) return match.value?.idPlayer1;
-  if (ipponsPlayer2.value > ipponsPlayer1.value) return match.value?.idPlayer2;
-  return null;
-});
-
-// infos des combattants
-const player1Name = computed(() => (player1.value?.firstName + ' ' + player1.value?.lastName) || 'Bye');
-const player2Name = computed(() => (player2.value?.firstName + ' ' + player2.value?.lastName) || 'Bye');
-
-// gestion des drapeaux et nationalités
-const getCountry = (natId) => nationality.find(country => country.id === Number(natId));
-
-const player1Nationality = computed(() => getCountry(player1.value?.nationalityId));
-const player2Nationality = computed(() => getCountry(player2.value?.nationalityId));
-
-// ferme la modale et stoppe le timer
 const closeModal = () => {
   isOpen.value = false;
   stopTimer();
   emit('close');
 };
 
-// gère la fermeture de la modale
 const handleModalValueUpdate = (value) => {
   if (!value) closeModal();
 };
 
-// ouvre le scoreboard du match
 const openScoreboard = () => {
   if (window.electron && window.electron.openMatchWindow) {
-    const matchData = JSON.parse(JSON.stringify(match.value));
-    window.electron.openMatchWindow(matchData);
+    try {
+      const rawMatchData = {
+        ...match.value,
+        ipponsPlayer1: ipponsPlayer1.value,
+        ipponsPlayer2: ipponsPlayer2.value,
+        keikokusPlayer1: keikokusPlayer1.value,
+        keikokusPlayer2: keikokusPlayer2.value,
+        player1Data: player1.value,
+        player2Data: player2.value,
+        timestamp: Date.now()
+      };
+      
+      // Nettoyer les données avant transmission
+      const matchData = cleanDataForTransmission(rawMatchData);
+      
+      console.log('🚀 Opening scoreboard with cleaned data:', matchData);
+      window.electron.openMatchWindow(matchData);
+    } catch (error) {
+      console.error('❌ Error opening scoreboard:', error);
+    }
   }
 };
 
+// === GESTION DU TIMER ===
 
-// gestion du timer
-let timerInterval = null;
-
-// démarre le timer
 const startTimer = async () => {
   await matchService.startTimer(match.value.idMatch);
+  broadcastMatchUpdate();
 };
 
-// stoppe le timer
 const stopTimer = async () => {
   await matchService.stopTimer(match.value.idMatch);
+  broadcastMatchUpdate();
 };
 
-// reinit le timer en fonction de l'état actuel
 const resetTimer = async () => {
   if (match.value?.timer.currentTime === 0 && match.value.timer.additionalTime !== -1) {
     await matchService.setAdditionalTime(match.value.idMatch, 60);
   } else {
     await matchService.resetTimer(match.value.idMatch);
-    await matchService.setAdditionalTime(match.value.idMatch, -1); // Remet le temps additionnel à -1
+    await matchService.setAdditionalTime(match.value.idMatch, -1);
   }
+  broadcastMatchUpdate();
 };
 
-
-// ajouute ou enlève du temps sur le timer
 const addTime = async (seconds) => {
   if (match.value?.timer.currentTime === 0 && match.value.timer.additionalTime === -1) {
     await matchService.addTime(match.value.idMatch, seconds);
+    broadcastMatchUpdate();
     return;
   }
 
@@ -396,31 +516,14 @@ const addTime = async (seconds) => {
     if (newTime < 0) return;
     await matchService.addTime(match.value.idMatch, seconds);
   }
+  broadcastMatchUpdate();
 };
 
-// active le temps additionnel
 const setAdditionalTime = async (seconds) => {
   await matchService.setAdditionalTime(match.value.idMatch, seconds);
+  broadcastMatchUpdate();
 };
 
-// fotmatte le temps pour l'affichage
-const formattedTime = computed(() => {
-  if (!match.value?.timer) return "0:00";
-
-  if (match.value.timer.currentTime !== 0) {
-    const minutes = Math.floor(match.value.timer.currentTime / 60);
-    const seconds = match.value.timer.currentTime % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
-
-  if (match.value.timer.additionalTime === -1) return "0:00";
-
-  const minutes = Math.floor(match.value.timer.additionalTime / 60);
-  const seconds = match.value.timer.additionalTime % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-});
-
-// genere les initiales d'un combattant pour son avatar
 function avatarText(fullName) {
   if (!fullName) return '?';
   const parts = fullName.split(' ');
@@ -429,80 +532,163 @@ function avatarText(fullName) {
     : fullName.charAt(0).toUpperCase();
 }
 
-// déclare une variable pour stocker la fonction de désabonnement au match
-let unsubscribeMatch;
+// === LIFECYCLE HOOKS ===
 
-// charge les données du match au montage du composant
 onMounted(async () => {
-  match.value = await getMatchById(props.matchId);
-  player1.value = await getParticipantById(match.value.idPlayer1);
-  player2.value = await getParticipantById(match.value.idPlayer2);
+  console.log('🚀 Modal component mounted for match:', props.matchId);
+  
+  try {
+    // Charger les données du match
+    match.value = await getMatchById(props.matchId);
+    player1.value = await getParticipantById(match.value.idPlayer1);
+    player2.value = await getParticipantById(match.value.idPlayer2);
 
-  ipponsPlayer1.value = match.value.ipponsPlayer1;
-  ipponsPlayer2.value = match.value.ipponsPlayer2;
-  keikokusPlayer1.value = match.value.keikokusPlayer1;
-  keikokusPlayer2.value = match.value.keikokusPlayer2;
+    // Initialiser les scores
+    ipponsPlayer1.value = match.value.ipponsPlayer1;
+    ipponsPlayer2.value = match.value.ipponsPlayer2;
+    keikokusPlayer1.value = match.value.keikokusPlayer1;
+    keikokusPlayer2.value = match.value.keikokusPlayer2;
 
-  if (match.value.timer.additionalTime === undefined || match.value.timer.additionalTime === null) {
-    match.value.timer.additionalTime = -1;
-  }
-
-  unsubscribeMatch = rep.subscribe(
-    async (tx) => await tx.get(`match/${props.matchId}`),
-    async (updatedMatch) => {
-      if (updatedMatch) {
-        match.value = updatedMatch;
-        player1.value = await getParticipantById(updatedMatch.idPlayer1);
-        player2.value = await getParticipantById(updatedMatch.idPlayer2);
-        ipponsPlayer1.value = updatedMatch.ipponsPlayer1;
-        ipponsPlayer2.value = updatedMatch.ipponsPlayer2;
-        keikokusPlayer1.value = updatedMatch.keikokusPlayer1;
-        keikokusPlayer2.value = updatedMatch.keikokusPlayer2;
-      }
+    if (match.value.timer.additionalTime === undefined || match.value.timer.additionalTime === null) {
+      match.value.timer.additionalTime = -1;
     }
-  );
 
-  timerInterval = setInterval(async () => {
-    if (match.value?.timer.isRunning) {
-      if (match.value.timer.currentTime === 0) {
-        if (match.value.timer.additionalTime > -1) {
-          const newAdditionalTime = match.value.timer.additionalTime - 1;
-          if (newAdditionalTime >= 0) {
-            await matchService.setAdditionalTime(match.value.idMatch, newAdditionalTime);
+    // === CONFIGURATION DE LA COMMUNICATION ===
+    
+    if (window.electron) {
+      // Écouter les demandes de données des fenêtres enfants
+      dataRequestCleanup = window.electron.onMatchDataRequest(handleDataRequest);
+      
+      // Écouter les demandes de heartbeat
+      heartbeatCleanup = window.electron.onHeartbeat(handleHeartbeatRequest);
+      
+      console.log('✅ Communication handlers set up');
+    }
+
+    // === ABONNEMENT AUX CHANGEMENTS REPLICACHE ===
+    
+    unsubscribeMatch = rep.subscribe(
+      async (tx) => await tx.get(`match/${props.matchId}`),
+      async (updatedMatch) => {
+        if (updatedMatch) {
+          const oldMatch = match.value;
+          match.value = updatedMatch;
+          
+          // Mettre à jour les participants si nécessaire
+          if (!oldMatch || oldMatch.idPlayer1 !== updatedMatch.idPlayer1) {
+            player1.value = await getParticipantById(updatedMatch.idPlayer1);
+          }
+          if (!oldMatch || oldMatch.idPlayer2 !== updatedMatch.idPlayer2) {
+            player2.value = await getParticipantById(updatedMatch.idPlayer2);
+          }
+          
+          // Mettre à jour les scores locaux
+          ipponsPlayer1.value = updatedMatch.ipponsPlayer1;
+          ipponsPlayer2.value = updatedMatch.ipponsPlayer2;
+          keikokusPlayer1.value = updatedMatch.keikokusPlayer1;
+          keikokusPlayer2.value = updatedMatch.keikokusPlayer2;
+          
+          // Diffuser aux fenêtres enfants
+          broadcastMatchUpdate();
+        }
+      }
+    );
+
+    // === TIMER INTERNE ===
+    
+    timerInterval = setInterval(async () => {
+      if (match.value?.timer.isRunning) {
+        if (match.value.timer.currentTime === 0) {
+          if (match.value.timer.additionalTime > -1) {
+            const newAdditionalTime = match.value.timer.additionalTime - 1;
+            if (newAdditionalTime >= 0) {
+              await matchService.setAdditionalTime(match.value.idMatch, newAdditionalTime);
+            } else {
+              await matchService.stopTimer(match.value.idMatch);
+            }
           } else {
             await matchService.stopTimer(match.value.idMatch);
           }
         } else {
-          await matchService.stopTimer(match.value.idMatch);
+          const newTime = match.value.timer.currentTime - 1;
+          if (newTime >= 0) {
+            await matchService.addTime(match.value.idMatch, -1);
+          }
         }
-      } else {
-        const newTime = match.value.timer.currentTime - 1;
-        if (newTime >= 0) {
-          await matchService.addTime(match.value.idMatch, -1);
-        }
+        // Diffuser les mises à jour du timer
+        broadcastMatchUpdate();
       }
-    }
-  }, 1000);
+    }, 1000);
+
+    console.log('✅ Modal setup complete');
+    
+  } catch (error) {
+    console.error('❌ Error setting up modal:', error);
+  }
 });
 
-// nettoie les abonnements lors du démontage du composant
 onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval);
-  if (unsubscribeMatch) unsubscribeMatch();
+  console.log('🧹 Cleaning up modal component');
+  
+  // Nettoyer les intervals
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
+  // Nettoyer les subscriptions Replicache
+  if (unsubscribeMatch) {
+    unsubscribeMatch();
+    unsubscribeMatch = null;
+  }
+  
+  // Nettoyer les handlers de communication
+  if (dataRequestCleanup) {
+    dataRequestCleanup();
+    dataRequestCleanup = null;
+  }
+  
+  if (heartbeatCleanup) {
+    heartbeatCleanup();
+    heartbeatCleanup = null;
+  }
+  
+  console.log('✅ Modal cleanup complete');
 });
 
-// met a jour en direct les scores du match
+// === WATCHERS POUR AUTO-SYNC ===
+
+// Watcher pour les changements de score - diffuse automatiquement
 watch([ipponsPlayer1, ipponsPlayer2, keikokusPlayer1, keikokusPlayer2], async () => {
-  await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
-    ipponsPlayer1: ipponsPlayer1.value,
-    ipponsPlayer2: ipponsPlayer2.value,
-    keikokusPlayer1: keikokusPlayer1.value,
-    keikokusPlayer2: keikokusPlayer2.value,
-  });
-
-  // A VOIR SI ON LAISSE CA
-  //stopTimer(); // arrete le timer quand un point ou faute est marqué
+  try {
+    await matchService.updateMatch(match.value.idMatch, match.value.idMatchType, {
+      ipponsPlayer1: ipponsPlayer1.value,
+      ipponsPlayer2: ipponsPlayer2.value,
+      keikokusPlayer1: keikokusPlayer1.value,
+      keikokusPlayer2: keikokusPlayer2.value,
+    });
+    
+    // Diffuser immédiatement les changements
+    broadcastMatchUpdate();
+    
+  } catch (error) {
+    console.error('❌ Error updating match scores:', error);
+  }
+}, { 
+  // Options du watcher
+  flush: 'post' // S'exécute après les mises à jour du DOM
 });
+
+// Watcher pour détecter les changements de timer
+watch(() => match.value?.timer, (newTimer, oldTimer) => {
+  if (newTimer && oldTimer && 
+      (newTimer.currentTime !== oldTimer.currentTime || 
+       newTimer.additionalTime !== oldTimer.additionalTime ||
+       newTimer.isRunning !== oldTimer.isRunning)) {
+    // Diffuser les changements de timer
+    broadcastMatchUpdate();
+  }
+}, { deep: true });
 
 </script>
 
