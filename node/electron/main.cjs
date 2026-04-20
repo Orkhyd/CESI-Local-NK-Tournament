@@ -10,6 +10,7 @@ const SHARED_PARTITION = 'persist:nk-tournament';
 // === VARIABLES GLOBALES ===
 let mainWindow = null;
 let openWindows = {};
+let scoreboardWindow = null;
 let heartbeatIntervals = new Map();
 
 // === AUTO-UPDATE ===
@@ -69,6 +70,11 @@ function createWindow() {
 function cleanup() {
   mainWindow = null;
 
+  if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+    scoreboardWindow.close();
+    scoreboardWindow = null;
+  }
+
   // Nettoyer heartbeats
   heartbeatIntervals.forEach((interval) => clearInterval(interval));
   heartbeatIntervals.clear();
@@ -95,6 +101,11 @@ function cleanup() {
 
 // === GESTIONNAIRE D'ÉVÉNEMENTS IPC ===
 function setupIpcHandlers() {
+  // Ouvrir scoreboard persistant
+  ipcMain.on('open-scoreboard', () => {
+    createScoreboardWindow();
+  });
+
   // Ouvrir fenêtre de match
   ipcMain.on('open-match-window', (event, matchData) => {
     createMatchWindow(matchData);
@@ -139,6 +150,41 @@ function setupIpcHandlers() {
     openWindows: Object.keys(openWindows),
     heartbeats: Array.from(heartbeatIntervals.keys())
   }));
+}
+
+// === CRÉATION SCOREBOARD PERSISTANT ===
+function createScoreboardWindow() {
+  if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+    scoreboardWindow.focus();
+    return;
+  }
+
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
+  scoreboardWindow = new BrowserWindow({
+    width: 1280,
+    height: 720,
+    x: width - 1280,
+    y: 0,
+    webPreferences: {
+      preload: getPreloadPath(),
+      contextIsolation: true,
+      enableRemoteModule: false,
+      nodeIntegration: false,
+      partition: SHARED_PARTITION,
+    },
+  });
+
+  if (isDev) {
+    scoreboardWindow.loadURL('http://localhost:5173/#/scoreboard');
+  } else {
+    scoreboardWindow.loadFile(getDistPath(), { hash: '/scoreboard' });
+    scoreboardWindow.removeMenu();
+  }
+
+  scoreboardWindow.on('closed', () => {
+    scoreboardWindow = null;
+  });
 }
 
 // === CRÉATION FENÊTRE DE MATCH ===
@@ -274,6 +320,16 @@ function broadcastMatchUpdate(matchData) {
   // Envoyer à la fenêtre de match
   if (openWindows[matchId] && !openWindows[matchId].isDestroyed()) {
     openWindows[matchId].webContents.send('match-data-update', {
+      matchId: matchId,
+      data: matchData,
+      type: 'UPDATE',
+      timestamp: Date.now()
+    });
+  }
+
+  // Envoyer au scoreboard persistant
+  if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+    scoreboardWindow.webContents.send('match-data-update', {
       matchId: matchId,
       data: matchData,
       type: 'UPDATE',

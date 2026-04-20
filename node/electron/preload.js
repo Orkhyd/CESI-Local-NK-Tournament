@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electron", {
   // === MÉTHODES ORIGINALES ===
+  openScoreboard: () => ipcRenderer.send("open-scoreboard"),
   openMatchWindow: (matchData) => ipcRenderer.send("open-match-window", matchData),
   openFictiveMatchWindow: () => ipcRenderer.send("open-fictive-match-window"),
   closeFictiveWindows: () => ipcRenderer.send("close-fictive-windows"),
