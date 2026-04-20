@@ -5,7 +5,7 @@ const path = require('path');
 
 // === CONFIGURATION ===
 const isDev = !app.isPackaged;
-const SHARED_PARTITION = `persist:main-${process.pid}`;
+const SHARED_PARTITION = 'persist:nk-tournament';
 
 // === VARIABLES GLOBALES ===
 let mainWindow = null;
