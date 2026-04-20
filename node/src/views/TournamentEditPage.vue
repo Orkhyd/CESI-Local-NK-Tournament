@@ -204,7 +204,7 @@ const confirmImport = async (selectedItems) => {
     const p = selectedItems[index];
     const formattedParticipant = {
       ...p,
-      birthDate: p.birthDate && !isNaN(new Date(p.birthDate)) ? new Date(p.birthDate) : null,
+      birthDate: p.birthDate || null,
       genderId: {
         text: genders.find((g) => g.id === Number(p.genderId))?.nom || "Inconnu",
         value: Number(p.genderId),
@@ -312,7 +312,7 @@ const handleSaveParticipant = async (participantData, silent = false) => {
       ...participantData,
       birthDate: participantData.birthDate instanceof Date && !isNaN(participantData.birthDate)
         ? participantData.birthDate.toISOString().split("T")[0]
-        : null,
+        : (typeof participantData.birthDate === "string" && participantData.birthDate ? participantData.birthDate : null),
       genderId: participantData.genderId?.value || null,
       nationalityId: participantData.nationalityId || null,
       gradeId: participantData.gradeId?.value || null,
