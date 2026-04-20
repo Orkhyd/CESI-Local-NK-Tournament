@@ -32,22 +32,27 @@
 
         <!-- classement -->
         <div class="standings" v-if="sortedStandings.length > 0">
-          <h4>Classement</h4>
+          <div class="standings-header">
+            <h4>Classement</h4>
+            <VaPopover message="Victoire = 2 pts | Nul = 1 pt | Defaite = 0 pt | Departage : difference d'ippons, puis victoire directe" placement="top">
+              <VaButton preset="plain" icon="help_outline" size="small" color="secondary" />
+            </VaPopover>
+          </div>
           <table>
             <thead>
               <tr>
-                <th>#</th>
+                <th title="Position dans le classement">#</th>
                 <th>Participant</th>
-                <th>MJ/MT</th>
-                <th>MG</th>
-                <th>MN</th>
-                <th>MP</th>
-                <th>IP</th>
-                <th>IC</th>
-                <th>DI</th>
-                <th>KP</th>
-                <th>KC</th>
-                <th>Pts</th>
+                <th title="Matchs Joues / Matchs Total programmes">MJ/MT</th>
+                <th title="Matchs Gagnes (2 points par victoire)">MG</th>
+                <th title="Matchs Nuls (1 point par match nul)">MN</th>
+                <th title="Matchs Perdus (0 point)">MP</th>
+                <th title="Ippons Pour (ippons marques)">IP</th>
+                <th title="Ippons Contre (ippons encaisses)">IC</th>
+                <th title="Difference d'Ippons (IP - IC) - critere de departage">DI</th>
+                <th title="Keikoku Pour (penalites infligees a l'adversaire)">KP</th>
+                <th title="Keikoku Contre (penalites recues)">KC</th>
+                <th title="Points totaux (Victoire=2, Nul=1, Defaite=0)">Pts</th>
               </tr>
             </thead>
             <tbody>
@@ -412,9 +417,8 @@ const getMatchHistory = (participantId) => {
     }));
 };
 
-// fonction edit : ouvre editeur de match si match pas fini
+// fonction edit : ouvre editeur de match
 function editMatch(match) {
-  if (match.idWinner) return; // si match fini, on ne modifie pas
   emit('edit-match', match);
 }
 
@@ -518,6 +522,12 @@ function getCompletedMatchCount() {
   color: #666;
 }
 
+.standings-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* tableau du classement, largeur complete et fusion des bordures */
 .standings table {
   width: 100%;
@@ -576,12 +586,10 @@ function getCompletedMatchCount() {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* style specifique pour les matchs termine, bordure a gauche, fond modifie et desactivation des interractions */
+/* style specifique pour les matchs termine, bordure a gauche et fond modifie */
 .match-card.completed {
   border-left: 4px solid #00796b;
   background: #e0f7fa;
-  pointer-events: none;
-  cursor: not-allowed;
 }
 
 /* entete du match, taille de police augmentee, poids de police, marge inferieure, couleur et alignement centre */
