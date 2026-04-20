@@ -132,7 +132,7 @@ export const poolManagerService = {
 
   // supp une instance de PoolManager et ses poules
   deletePoolManager: async (poolManagerId) => {
-    const poules = await poolService.getPoulesByPoolManagerId(poolManagerId);
+    const poules = await getPoulesByPoolManagerId(poolManagerId);
     for (const poule of poules) {
       await poolService.deletePool(poule.id);
     }

@@ -32,6 +32,12 @@ export async function checkAndCompletePool(poolId) {
     return;
   }
 
+  // si la poule est deja marquee complete, ne pas retraiter
+  // (evite les doublons dans la Poule Finale lors de corrections de score)
+  if (pool.isComplete) {
+    return;
+  }
+
   // recuperer le classement de la poule terminee
   const participants = pool.participants || [];
   const ranking = determinePoolRanking(participants, poolMatches);
