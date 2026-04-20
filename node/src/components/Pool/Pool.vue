@@ -1,5 +1,5 @@
 <template>
-  <div class="pool-container">
+  <div class="pool-container" :class="{ 'pool-locked': pool.isComplete }">
     <!-- entete de la poule -->
     <div class="pool-header">
       <h3>{{ pool.label }}</h3>
@@ -417,8 +417,9 @@ const getMatchHistory = (participantId) => {
     }));
 };
 
-// fonction edit : ouvre editeur de match
+// fonction edit : ouvre editeur de match si la poule n est pas terminee
 function editMatch(match) {
+  if (props.pool.isComplete) return;
   emit('edit-match', match);
 }
 
@@ -590,6 +591,13 @@ function getCompletedMatchCount() {
 .match-card.completed {
   border-left: 4px solid #00796b;
   background: #e0f7fa;
+}
+
+/* quand toute la poule est terminee, toutes les cartes sont verrouillees */
+.pool-locked .match-card {
+  pointer-events: none;
+  cursor: not-allowed;
+  opacity: 0.85;
 }
 
 /* entete du match, taille de police augmentee, poids de police, marge inferieure, couleur et alignement centre */
