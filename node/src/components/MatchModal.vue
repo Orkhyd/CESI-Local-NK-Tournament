@@ -149,7 +149,7 @@
 
             <!-- option pour déclarer un match nul (uniquement en mode poule) -->
             <div v-if="match?.idMatchType === 1" class="draw-option">
-              <VaCheckbox v-model="selectedWinner" :true-value="-1" :false-value="null"
+              <VaCheckbox v-model="selectedWinner" true-value="draw" :false-value="null"
                 @update:model-value="clearOtherCheckbox(null)" label="Match nul (égalité)">
               </VaCheckbox>
             </div>
@@ -357,7 +357,7 @@ const formattedTime = computed(() => {
 // === MÉTHODES DE GESTION DU COMBAT ===
 
 const clearOtherCheckbox = (otherId) => {
-  if (selectedWinner.value === otherId || (otherId === null && selectedWinner.value !== -1)) {
+  if (selectedWinner.value === otherId || (otherId === null && selectedWinner.value !== 'draw')) {
     selectedWinner.value = null;
   }
 };
@@ -378,7 +378,8 @@ const disableCounters = (player) => {
 
 const confirmWinner = async () => {
   try {
-    const finalWinner = selectedWinner.value || idWinner.value;
+    const rawWinner = selectedWinner.value || idWinner.value;
+    const finalWinner = rawWinner === 'draw' ? -1 : rawWinner;
     const player1NameStr = `${player1.value?.firstName} ${player1.value?.lastName}`;
     const player2NameStr = `${player2.value?.firstName} ${player2.value?.lastName}`;
 

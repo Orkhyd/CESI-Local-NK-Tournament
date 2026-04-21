@@ -13,8 +13,8 @@
               <MatchCard :match="match" :disabled="match.idWinner !== null" :participants="participants"
                 @updateBracket="loadRounds" :id="'match-' + match.idMatch"
                 :ref="round.label === 'Finale' ? 'finaleMatchCard matchRefs' : 'matchRefs'" :class="[
-                  { 'disabled-match': isDisabled },
-                  isPetiteFinale ? 'petite-finale-match' : '',
+                  { 'disabled-match': match.idWinner !== null },
+                  match.idMatch.startsWith('PF-') ? 'petite-finale-match' : '',
                   (round.label === 'Finale & Petite-Finale' && !match.idMatch.startsWith('PF-')) ? 'match-finale' : ''
                 ]" />
             </template>

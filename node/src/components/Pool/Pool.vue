@@ -1,5 +1,5 @@
 <template>
-  <div class="pool-container" :class="{ 'pool-locked': pool.isComplete }">
+  <div class="pool-container" :class="{ 'pool-locked': pool.isComplete }" v-bind="$attrs">
     <!-- entete de la poule -->
     <div class="pool-header">
       <h3>{{ pool.label }}</h3>
@@ -34,8 +34,23 @@
         <div class="standings" v-if="sortedStandings.length > 0">
           <div class="standings-header">
             <h4>Classement</h4>
-            <VaPopover message="Victoire = 2 pts | Nul = 1 pt | Defaite = 0 pt | Departage : difference d'ippons, puis victoire directe" placement="top">
+            <VaPopover placement="top" :close-on-content-click="false">
               <VaButton preset="plain" icon="help_outline" size="small" color="secondary" />
+              <template #body>
+                <div class="ranking-help">
+                  <div class="ranking-help-title">Systeme de points</div>
+                  <div class="ranking-help-row"><span class="rh-win">V</span> Victoire = 2 pts</div>
+                  <div class="ranking-help-row"><span class="rh-draw">N</span> Nul = 1 pt</div>
+                  <div class="ranking-help-row"><span class="rh-lose">P</span> Defaite = 0 pt</div>
+                  <div class="ranking-help-title" style="margin-top:8px;">Departage (ordre officiel NK)</div>
+                  <div class="ranking-help-row"><b>1.</b> Points</div>
+                  <div class="ranking-help-row"><b>2.</b> Match direct gagne (si 2 joueurs a egalite)</div>
+                  <div class="ranking-help-row"><b>3.</b> Meilleure difference d'ippons (IP - IC)</div>
+                  <div class="ranking-help-row"><b>4.</b> Plus d'ippons marques</div>
+                  <div class="ranking-help-row"><b>5.</b> Moins de penalites recues (keikokus)</div>
+                  <div class="ranking-help-row"><b>6.</b> Egalite : match(s) de departage requis</div>
+                </div>
+              </template>
             </VaPopover>
           </div>
           <table>
@@ -50,22 +65,24 @@
                 <th title="Ippons Pour (ippons marques)">IP</th>
                 <th title="Ippons Contre (ippons encaisses)">IC</th>
                 <th title="Difference d'Ippons (IP - IC) - critere de departage">DI</th>
-                <th title="Keikoku Pour (penalites infligees a l'adversaire)">KP</th>
-                <th title="Keikoku Contre (penalites recues)">KC</th>
-                <th title="Points totaux (Victoire=2, Nul=1, Defaite=0)">Pts</th>
+                <th title="Keikoku Pour (pénalités reçues par ce joueur : moins = mieux, critère de départage n°5)">KP</th>
+                <th title="Keikoku Contre (pénalités reçues par l'adversaire)">KC</th>
+                <th title="Points totaux : Victoire = 2 pts | Nul = 1 pt | Défaite = 0 pt&#10;Départage (ordre officiel) :&#10;  1. Points&#10;  2. Match direct (si 2 joueurs à égalité)&#10;  3. Meilleure différence d'ippons (IP - IC)&#10;  4. Plus d'ippons marqués&#10;  5. Moins de pénalités reçues (keikokus)&#10;  6. Égalité -> match(s) supplémentaire(s)">Pts</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(standing) in sortedStandings" :key="standing.participant.id" class="ligne-participant"
                 :class="[{ 'same-rank': sortedStandings.filter(s => s.rank === standing.rank).length > 1 }]">
-                <td>
+                <td class="rank-cell">
                   <span class="rank" :class="{ 'qualified-first': standing.position === 1 }">
                     {{ standing.position }}
-                    <!-- affiche l icône d'alerte si plusieurs joueurs partagent la première place -->
-                    <VaIcon v-if="standing.position === 1 && sortedStandings.filter(s => s.position === 1).length > 1"
-                      name="warning" class="alert-icon"
-                      title="La place du joueur dans le classement n'est pas réelle car il est a égalité avec un/d'autres joueur(s)." />
                   </span>
+                  <VaIcon
+                    v-if="standing.tiebreakInfo"
+                    :name="standing.tiebreakInfo.isEqual ? 'warning' : 'info'"
+                    :class="standing.tiebreakInfo.isEqual ? 'alert-icon alert-icon--equal' : 'alert-icon alert-icon--tiebreak'"
+                    :title="standing.tiebreakInfo.label"
+                  />
                 </td>
 
 
@@ -188,6 +205,7 @@
 </template>
 
 <script setup>
+defineOptions({ inheritAttrs: false });
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { getMatchesByPool } from '@/replicache/stores/matchStore';
 import { nationality } from '@/replicache/models/constants';
@@ -232,11 +250,11 @@ async function fetchPoolMatches() {
   // separe les matchs additionnels en terminés et non terminés
   const additionalMatchesFinished = rawMatches
     .filter(match => match.idMatch.includes('%ADDITIONNAL-MATCH') && match.idWinner !== null)
-    .sort((a, b) => a.createdAt - b.createdAt); // trie les terminés par ordre de création
+    .sort((a, b) => a.createdAt - b.createdAt);
 
   const additionalMatchesPending = rawMatches
     .filter(match => match.idMatch.includes('%ADDITIONNAL-MATCH') && match.idWinner === null)
-    .sort((a, b) => a.createdAt - b.createdAt); // trie les non terminés par ordre de création
+    .sort((a, b) => a.createdAt - b.createdAt);
 
   // applique l'algorithme d'équilibrage uniquement aux matchs normaux
   // const sortedNormalMatches = balanceMatchOrder(normalMatches);
@@ -529,6 +547,46 @@ function getCompletedMatchCount() {
   gap: 4px;
 }
 
+:deep(.va-popover__content),
+:deep(.va-dropdown__content) {
+  --va-popover-content-background-color: #ffffff;
+  --va-popover-content-box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  --va-box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+  outline: none !important;
+}
+
+.ranking-help {
+  min-width: 300px;
+  padding: 8px 4px;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.ranking-help-title {
+  font-weight: 700;
+  color: #0c2432;
+  margin-bottom: 2px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ranking-help-row {
+  padding: 1px 0;
+  color: #1a1a1a;
+}
+
+.rh-win  { display: inline-block; width: 16px; height: 16px; line-height: 16px; text-align: center; border-radius: 50%; background: #2e7d32; color: white; font-size: 0.7rem; font-weight: bold; margin-right: 4px; }
+.rh-draw { display: inline-block; width: 16px; height: 16px; line-height: 16px; text-align: center; border-radius: 50%; background: #f57c00; color: white; font-size: 0.7rem; font-weight: bold; margin-right: 4px; }
+.rh-lose { display: inline-block; width: 16px; height: 16px; line-height: 16px; text-align: center; border-radius: 50%; background: #c62828; color: white; font-size: 0.7rem; font-weight: bold; margin-right: 4px; }
+
 /* tableau du classement, largeur complete et fusion des bordures */
 .standings table {
   width: 100%;
@@ -775,12 +833,23 @@ function getCompletedMatchCount() {
   font-size: 0.9em;
 }
 
-.alert-icon {
-  color: red;
-  margin-left: 4px;
-  width: 2px;
-  height: 2px;
+.rank-cell {
+  white-space: nowrap;
+}
 
+.alert-icon {
+  font-size: 12px !important;
+  cursor: help;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.alert-icon--equal {
+  color: #e65100;
+}
+
+.alert-icon--tiebreak {
+  color: #1976d2;
 }
 
 .additional-match {

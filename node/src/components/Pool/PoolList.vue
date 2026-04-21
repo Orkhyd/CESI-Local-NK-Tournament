@@ -55,7 +55,10 @@
       :pool-manager-id="poolManagerId"
       :all-pools="allPoolsForConfig"
       :all-category-participants="props.participants"
+      :category="props.category"
+      :tournament-id="props.tournamentId"
       @saved="onConfigSaved"
+      @participants-changed="loadOrCreatePoolManager"
     />
 
   </div>
@@ -75,6 +78,10 @@ import { getMatchesByPool } from "@/replicache/stores/matchStore";
 import pagemap from 'pagemap';
 
 const props = defineProps({
+  tournamentId: {
+    type: String,
+    default: null,
+  },
   participants: {
     type: Array,
     required: true,
@@ -105,10 +112,11 @@ const loadOrCreatePoolManager = async () => {
   try {
     const existingPoolManager = await getPoolManagerByCategory(props.category.id);
 
+    const isNew = !existingPoolManager;
     if (existingPoolManager) {
       poolManagerId.value = existingPoolManager.id;
     } else {
-      poolManagerId.value = await poolManagerService.createPoolManager(props.category.id, props.participants);
+      poolManagerId.value = await poolManagerService.createPoolManager(props.category.id);
     }
 
     const poules = await getPoulesByPoolManagerId(poolManagerId.value);
@@ -127,6 +135,10 @@ const loadOrCreatePoolManager = async () => {
         pools: poules,
       },
     ];
+
+    if (isNew || poules.length === 0) {
+      configModalOpen.value = true;
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des poules:', error);
     alert('Erreur lors du chargement des poules');
