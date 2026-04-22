@@ -149,7 +149,7 @@
 
             <!-- option pour déclarer un match nul (uniquement en mode poule) -->
             <div v-if="match?.idMatchType === 1" class="draw-option">
-              <VaCheckbox v-model="selectedWinner" :true-value="-1" :false-value="null"
+              <VaCheckbox v-model="selectedWinner" true-value="draw" :false-value="null"
                 @update:model-value="clearOtherCheckbox(null)" label="Match nul (égalité)">
               </VaCheckbox>
             </div>
@@ -258,16 +258,14 @@ const broadcastMatchUpdate = () => {
         ipponsPlayer2: ipponsPlayer2.value,
         keikokusPlayer1: keikokusPlayer1.value,
         keikokusPlayer2: keikokusPlayer2.value,
+        player1Data: player1.value,
+        player2Data: player2.value,
         timestamp: Date.now()
       };
-      
-      // Nettoyer les données avant transmission
       const cleanedData = cleanDataForTransmission(rawData);
-      
-      console.log('📤 Broadcasting cleaned match update:', cleanedData);
       window.electron.broadcastMatchUpdate(cleanedData);
     } catch (error) {
-      console.error('❌ Error in broadcastMatchUpdate:', error);
+      console.error('Error in broadcastMatchUpdate:', error);
     }
   }
 };
@@ -359,7 +357,7 @@ const formattedTime = computed(() => {
 // === MÉTHODES DE GESTION DU COMBAT ===
 
 const clearOtherCheckbox = (otherId) => {
-  if (selectedWinner.value === otherId || (otherId === null && selectedWinner.value !== -1)) {
+  if (selectedWinner.value === otherId || (otherId === null && selectedWinner.value !== 'draw')) {
     selectedWinner.value = null;
   }
 };
@@ -380,7 +378,8 @@ const disableCounters = (player) => {
 
 const confirmWinner = async () => {
   try {
-    const finalWinner = selectedWinner.value || idWinner.value;
+    const rawWinner = selectedWinner.value || idWinner.value;
+    const finalWinner = rawWinner === 'draw' ? -1 : rawWinner;
     const player1NameStr = `${player1.value?.firstName} ${player1.value?.lastName}`;
     const player2NameStr = `${player2.value?.firstName} ${player2.value?.lastName}`;
 
@@ -454,27 +453,10 @@ const handleModalValueUpdate = (value) => {
 };
 
 const openScoreboard = () => {
-  if (window.electron && window.electron.openMatchWindow) {
-    try {
-      const rawMatchData = {
-        ...match.value,
-        ipponsPlayer1: ipponsPlayer1.value,
-        ipponsPlayer2: ipponsPlayer2.value,
-        keikokusPlayer1: keikokusPlayer1.value,
-        keikokusPlayer2: keikokusPlayer2.value,
-        player1Data: player1.value,
-        player2Data: player2.value,
-        timestamp: Date.now()
-      };
-      
-      // Nettoyer les données avant transmission
-      const matchData = cleanDataForTransmission(rawMatchData);
-      
-      console.log('🚀 Opening scoreboard with cleaned data:', matchData);
-      window.electron.openMatchWindow(matchData);
-    } catch (error) {
-      console.error('❌ Error opening scoreboard:', error);
-    }
+  if (window.electron?.openScoreboard) {
+    window.electron.openScoreboard();
+    // diffuser immediatement les donnees du combat en cours vers le scoreboard
+    broadcastMatchUpdate();
   }
 };
 
@@ -620,10 +602,11 @@ onMounted(async () => {
       }
     }, 1000);
 
-    console.log('✅ Modal setup complete');
-    
+    // diffuser immediatement pour mettre a jour le scoreboard persistant deja ouvert
+    broadcastMatchUpdate();
+
   } catch (error) {
-    console.error('❌ Error setting up modal:', error);
+    console.error('Error setting up modal:', error);
   }
 });
 

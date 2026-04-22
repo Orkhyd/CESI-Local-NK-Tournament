@@ -5,6 +5,16 @@
       <!-- bouton Accueil (icône seule) -->
       <VaButton @click="goToHomePage" class="home-button" color="primary" icon="home" />
 
+      <!-- bouton scoreboard persistant -->
+      <VaButton
+        v-if="isElectron"
+        @click="openScoreboard"
+        icon="scoreboard"
+        color="secondary"
+        class="scoreboard-button"
+        title="Ouvrir le scoreboard sur l'ecran deporte"
+      />
+
       <!-- checkbbox pour afficher/cacher la sidebar -->
       <VaCheckbox v-model="showSidebar" class="toggle-sidebar" label="Afficher les catégories" />
 
@@ -210,6 +220,14 @@ const getGradeRange = (minGradeId, maxGradeId) => {
   return minGrade && maxGrade ? `${minGrade.nom} → ${maxGrade.nom}` : "Non défini";
 };
 
+// detection electron
+const isElectron = !!window.electron;
+
+// ouvre le scoreboard persistant
+const openScoreboard = () => {
+  window.electron?.openScoreboard();
+};
+
 // retour à l'accueil
 const goToHomePage = () => {
   router.push("/home-page");
@@ -245,7 +263,11 @@ onMounted(async () => {
 }
 
 .home-button {
-  margin-right: 30px;
+  margin-right: 16px;
+}
+
+.scoreboard-button {
+  margin-right: 16px;
 }
 
 .page-title {

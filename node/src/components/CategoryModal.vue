@@ -120,7 +120,7 @@
                                 :filter-method="customFilteringFn" v-model:sort-by="sortBy" :allow-select-all="false"
                                 v-model:sorting-order="sortingOrder" select-mode="multiple" :stickyHeader=true
                                 v-model="selectedParticipants" items-track-by="id" :row-bind="getRowBind"
-                                :selectable="isRowSelectable" @row:click="toggleSelection"
+                                :selectable="true" @row:click="toggleSelection"
                                 no-data-html="Aucun participant trouvé" virtual-scroller>
 
                                 <template #cell(status)="{ row }">
@@ -852,11 +852,14 @@ const participantColumns = [
 }
 
 .participants-summary {
-    height: 50px;
+    min-height: 50px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-around;
+    gap: 8px;
     margin-top: 10px;
+    padding: 8px 0;
 }
 
 .flex.justify-between.items-center {
@@ -908,8 +911,16 @@ const participantColumns = [
 
 .participants-list {
     flex-grow: 1;
-    min-height: 300px;
-    height: 400px !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.participants-list .va-data-table {
+    flex-grow: 1;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .select-section {

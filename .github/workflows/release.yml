@@ -48,7 +48,6 @@ jobs:
         working-directory: ./node
         env:
           VITE_APP_MDP: ${{ secrets.VITE_APP_MDP }}
-          VITE_REPLICACHE_LICENSE_KEY : ${{ secrets.VITE_REPLICACHE_LICENSE_KEY }}
         run: npm run build:safe
         timeout-minutes: 10
         

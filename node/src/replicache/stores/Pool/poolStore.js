@@ -32,6 +32,12 @@ export async function checkAndCompletePool(poolId) {
     return;
   }
 
+  // si la poule est deja marquee complete, ne pas retraiter
+  // (evite les doublons dans la Poule Finale lors de corrections de score)
+  if (pool.isComplete) {
+    return;
+  }
+
   // recuperer le classement de la poule terminee
   const participants = pool.participants || [];
   const ranking = determinePoolRanking(participants, poolMatches);
@@ -67,11 +73,11 @@ export async function checkAndCompletePool(poolId) {
 
   // seuls les participants classés à la première place se qualifient.
   // on élimine donc tous ceux qui ne sont pas à la première place.
-  ranking.forEach(async (p) => {
+  for (const p of ranking) {
     if (p.rank !== 1) {
       await ParticipantService.eliminateParticipant(p.participant.id);
     }
-  });
+  }
 
   // recuperer toutes les poules du poolManager pour determiner si c'est la poule finale
   const poolManagerId = pool.poolManagerId;

@@ -16,6 +16,7 @@ export const ParticipantService = {
       genderId: data.genderId,
       gradeId: data.gradeId,
     });
+    return id;
   },
 
   // modif des infos d un participant
