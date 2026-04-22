@@ -1,7 +1,7 @@
 // genere des poules de 3 a 6 combattants de facon equilibree
 // et indique dans chaque poule quelles positions se qualifient pour la phase suivante
 
-export function generatePools(participants) {
+export function generatePools(participants, forcedNbPools = null) {
 
   // filtre et melange les participants (on ignore ceux dont id === -1)
   const realParticipants = participants.filter((p) => p.id !== -1);
@@ -10,9 +10,11 @@ export function generatePools(participants) {
   const total = realParticipants.length;
   if (total === 0) return { structure: [] };
 
-  // determine le nombre de poules en fonction du total (entre 3 et 36 participants)
+  // determine le nombre de poules
   let nbPools;
-  if (total <= 5) {
+  if (forcedNbPools !== null && Number.isInteger(forcedNbPools) && forcedNbPools >= 1) {
+    nbPools = Math.min(forcedNbPools, total); // pas plus de poules que de participants
+  } else if (total <= 5) {
     nbPools = 1;
   } else if (total <= 8) {
     nbPools = 2;

@@ -46,8 +46,8 @@
     </div>
 
     <!-- modal de chargement pendant l'export PDF -->
-    <VaModal v-model="isImporting" hide-default-actions class="loading-modal" no-esc-dismiss="true"
-      no-outside-dismiss="true">
+    <VaModal v-model="isImporting" hide-default-actions class="loading-modal" :no-esc-dismiss="true"
+      :no-outside-dismiss="true">
       <VaInnerLoading :loading="true">
         <div class="loading-content">
           <br><br><br><br>

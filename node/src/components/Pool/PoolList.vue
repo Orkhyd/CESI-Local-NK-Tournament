@@ -1,5 +1,19 @@
 <template>
   <div class="pool-list-scroll" ref="poolListScroll">
+
+    <!-- barre d actions -->
+    <div class="pool-actions-bar">
+      <VaButton
+        icon="tune"
+        color="primary"
+        size="small"
+        @click="openConfigModal"
+        :disabled="loading"
+      >
+        Configurer les poules
+      </VaButton>
+    </div>
+
     <!-- loading -->
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
@@ -26,14 +40,27 @@
 
     <!-- affichage de la poule finale -->
     <div v-if="finalPool" class="final-pool-container pool-pdf">
-      <h2 class="final-pool-title">🏆 Poule Finale 🏆</h2>
+      <h2 class="final-pool-title">Poule Finale</h2>
       <Pool :pool="finalPool" class="final-pool" @edit-match="showMatchEditor" :refresh-matches="refreshMatches"
         :search-participant="props.searchParticipant" :participants="props.participants" />
     </div>
 
-
     <!-- modal du match -->
     <MatchModal v-if="matchEditorOpen" :matchId="currentMatchId" @close="closeMatchEditor" />
+
+    <!-- modal de configuration des poules -->
+    <PoolConfigModal
+      v-if="configModalOpen && poolManagerId"
+      v-model="configModalOpen"
+      :pool-manager-id="poolManagerId"
+      :all-pools="allPoolsForConfig"
+      :all-category-participants="props.participants"
+      :category="props.category"
+      :tournament-id="props.tournamentId"
+      @saved="onConfigSaved"
+      @participants-changed="loadOrCreatePoolManager"
+    />
+
   </div>
   <canvas id="minimap"></canvas>
 </template>
@@ -41,6 +68,7 @@
 <script setup>
 import { ref, onMounted, computed, watchEffect, nextTick } from 'vue';
 import Pool from './Pool.vue';
+import PoolConfigModal from './PoolConfigModal.vue';
 import MatchModal from '@/components/MatchModal.vue';
 import { poolManagerService } from '@/replicache/services/Pool/poolManagerService';
 import { getPoolManagerByCategory } from '@/replicache/stores/Pool/poolManagerStore';
@@ -50,6 +78,10 @@ import { getMatchesByPool } from "@/replicache/stores/matchStore";
 import pagemap from 'pagemap';
 
 const props = defineProps({
+  tournamentId: {
+    type: String,
+    default: null,
+  },
   participants: {
     type: Array,
     required: true,
@@ -70,6 +102,8 @@ const poolManagerId = ref(null);
 const matchEditorOpen = ref(false);
 const currentMatchId = ref(null);
 const refreshMatches = ref(0);
+const configModalOpen = ref(false);
+const allPoolsForConfig = ref([]);
 
 // charge ou crée un poolmanager et récupère les phases
 const loadOrCreatePoolManager = async () => {
@@ -78,10 +112,11 @@ const loadOrCreatePoolManager = async () => {
   try {
     const existingPoolManager = await getPoolManagerByCategory(props.category.id);
 
+    const isNew = !existingPoolManager;
     if (existingPoolManager) {
       poolManagerId.value = existingPoolManager.id;
     } else {
-      poolManagerId.value = await poolManagerService.createPoolManager(props.category.id, props.participants);
+      poolManagerId.value = await poolManagerService.createPoolManager(props.category.id);
     }
 
     const poules = await getPoulesByPoolManagerId(poolManagerId.value);
@@ -92,12 +127,18 @@ const loadOrCreatePoolManager = async () => {
       return numA - numB;
     });
 
+    allPoolsForConfig.value = poules;
+
     phases.value = [
       {
         label: 'Phase 1 (Poules initiales)',
         pools: poules,
       },
     ];
+
+    if (isNew || poules.length === 0) {
+      configModalOpen.value = true;
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des poules:', error);
     alert('Erreur lors du chargement des poules');
@@ -139,6 +180,16 @@ const showMatchEditor = (match) => {
 const closeMatchEditor = () => {
   matchEditorOpen.value = false;
   currentMatchId.value = null;
+  refreshMatches.value++;
+  loadOrCreatePoolManager();
+};
+
+const openConfigModal = () => {
+  configModalOpen.value = true;
+};
+
+const onConfigSaved = () => {
+  configModalOpen.value = false;
   refreshMatches.value++;
   loadOrCreatePoolManager();
 };
@@ -212,6 +263,12 @@ watchEffect(async () => {
   overflow-y: auto;
   padding: 1rem;
   box-sizing: border-box;
+}
+
+.pool-actions-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 
 .main-title {

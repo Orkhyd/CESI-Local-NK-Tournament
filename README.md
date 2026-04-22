@@ -35,7 +35,6 @@ npm install
 Il faut créer un fichier `.env` à la racine pour stocker les variables d'environnement, et que tu mettes ton mot de passe de l'appli:
 ```
 VITE_APP_MDP= met_ici_ton_motdepasse
-VITE_REPLICACHE_LICENSE_KEY= ici_ta_license_replicache
 ```
 
 ### Lancer l'application

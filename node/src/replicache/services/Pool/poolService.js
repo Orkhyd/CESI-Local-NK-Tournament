@@ -1,4 +1,6 @@
 import { replicacheInstance as rep } from "@/replicache/replicache";
+import { getMatchesByPool } from "@/replicache/stores/matchStore";
+import { matchService } from "@/replicache/services/matchService";
 
 export const poolService = {
   // crée une poule
@@ -19,8 +21,12 @@ export const poolService = {
     await rep.mutate.updatePool({ id: idPool, ...updates });
   },
 
-  // supp une poule
+  // supp une poule et tous ses matchs
   deletePool: async (idPool) => {
+    const matches = await getMatchesByPool(idPool);
+    for (const match of matches) {
+      await matchService.deleteMatch(match.idMatch);
+    }
     await rep.mutate.deletePool({ id: idPool });
   },
 };
