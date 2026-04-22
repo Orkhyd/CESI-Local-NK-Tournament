@@ -44,7 +44,7 @@
 
 
 <script setup>
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, watch, onMounted } from "vue";
 import VueApexCharts from "vue3-apexcharts";
 import { getBracketByCategory } from '@/replicache/stores/Bracket/bracketStore';
 import { getRoundsByBracket } from '@/replicache/stores/Bracket/roundStore';
@@ -52,7 +52,6 @@ import { getPoolManagerByCategory } from '@/replicache/stores/Pool/poolManagerSt
 import { getPoulesByPoolManagerId } from '@/replicache/stores/Pool/poolStore';
 import { getMatchesByRound, getMatchesByPool } from '@/replicache/stores/matchStore';
 import Podium from "./Podium.vue";
-import { genders } from '@/replicache/models/constants.js';
 
 
 defineOptions({ components: { apexchart: VueApexCharts, Podium } });

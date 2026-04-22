@@ -550,7 +550,7 @@ const parseDate = (raw) => {
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
     return isNaN(new Date(s + 'T12:00:00')) ? null : s;
   }
-  const m = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+  const m = s.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
   if (m) {
     const iso = `${m[3]}-${m[2]}-${m[1]}`;
     return isNaN(new Date(iso + 'T12:00:00')) ? null : iso;
@@ -612,7 +612,7 @@ const handleConfirmImport = async (selected) => {
         allTournamentParticipants.value.push({ id: newId, ...formatted });
       }
       successCount++;
-    } catch (e) {
+    } catch (_e) {
       toast({ message: `${p.firstName} ${p.lastName} impossible à importer`, color: 'danger', position: 'top-center' });
     }
   }

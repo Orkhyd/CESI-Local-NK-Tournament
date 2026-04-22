@@ -163,7 +163,7 @@ const parseDate = (raw) => {
     return isNaN(d) ? null : s;
   }
 
-  const match = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+  const match = s.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
   if (match) {
     const iso = `${match[3]}-${match[2]}-${match[1]}`;
     const d = new Date(iso + "T12:00:00");
