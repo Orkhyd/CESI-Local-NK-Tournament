@@ -6,9 +6,12 @@
       <!-- entête -->
       <div class="header">
         <h1>Gestion du combat</h1>
-        <button class="scoreboard-btn" @click="openScoreboard">
-          <va-icon name="scoreboard" size="40px" title="Ouvrir le scoreboard du match." />
-        </button>
+        <VaTooltip v-if="isElectron" placement="bottom" :text="scoreboardTooltipText">
+          <button class="scoreboard-btn" @click="openScoreboard">
+            <va-icon name="monitor" size="32px" />
+            <span class="scoreboard-indicator" :class="scoreboardIndicatorClass"></span>
+          </button>
+        </VaTooltip>
       </div>
 
       <!-- combattants -->
@@ -178,10 +181,14 @@ import { nationality } from '@/replicache/models/constants';
 import { getParticipantById } from '@/replicache/stores/participantStore';
 import { replicacheInstance as rep } from '@/replicache/replicache';
 import { useCountryFlags } from '@/utils/countryFlags';
+import { useScoreboardStatus } from '@/composables/useScoreboardStatus';
 import { useToast } from "vuestic-ui";
 
 const { getFlag } = useCountryFlags();
 const toast = useToast();
+const { scoreboardStatus, sendMatchToScoreboard } = useScoreboardStatus();
+
+const isElectron = !!window.electron;
 
 const props = defineProps({
   matchId: { type: String, required: true },
@@ -453,28 +460,38 @@ const handleModalValueUpdate = (value) => {
   if (!value) closeModal();
 };
 
-const openScoreboard = () => {
-  if (window.electron && window.electron.openMatchWindow) {
-    try {
-      const rawMatchData = {
-        ...match.value,
-        ipponsPlayer1: ipponsPlayer1.value,
-        ipponsPlayer2: ipponsPlayer2.value,
-        keikokusPlayer1: keikokusPlayer1.value,
-        keikokusPlayer2: keikokusPlayer2.value,
-        player1Data: player1.value,
-        player2Data: player2.value,
-        timestamp: Date.now()
-      };
-      
-      // Nettoyer les données avant transmission
-      const matchData = cleanDataForTransmission(rawMatchData);
-      
-      console.log('🚀 Opening scoreboard with cleaned data:', matchData);
-      window.electron.openMatchWindow(matchData);
-    } catch (error) {
-      console.error('❌ Error opening scoreboard:', error);
-    }
+// Computed pour l'indicateur visuel du bouton scoreboard
+const scoreboardIndicatorClass = computed(() => {
+  const { isOpen, currentMatchId } = scoreboardStatus.value;
+  if (!isOpen) return 'indicator-closed';
+  if (currentMatchId === props.matchId) return 'indicator-this-match';
+  return 'indicator-other-match';
+});
+
+const scoreboardTooltipText = computed(() => {
+  const { isOpen, currentMatchId } = scoreboardStatus.value;
+  if (!isOpen) return 'Ouvrir le scoreboard pour ce combat';
+  if (currentMatchId === props.matchId) return 'Scoreboard actif sur ce combat';
+  return 'Scoreboard actif sur un autre combat — cliquer pour remplacer';
+});
+
+const openScoreboard = async () => {
+  if (!window.electron) return;
+  try {
+    const rawMatchData = {
+      ...match.value,
+      ipponsPlayer1: ipponsPlayer1.value,
+      ipponsPlayer2: ipponsPlayer2.value,
+      keikokusPlayer1: keikokusPlayer1.value,
+      keikokusPlayer2: keikokusPlayer2.value,
+      player1Data: player1.value,
+      player2Data: player2.value,
+      timestamp: Date.now()
+    };
+    const matchData = cleanDataForTransmission(rawMatchData);
+    await sendMatchToScoreboard(matchData);
+  } catch (error) {
+    console.error('❌ Error opening scoreboard:', error);
   }
 };
 
@@ -714,10 +731,35 @@ watch(() => match.value?.timer, (newTimer, oldTimer) => {
 }
 
 .scoreboard-btn {
-  background: transparent;
-  border: none;
+  background: #f0f4ff;
+  border: 2px solid #d0d8f0;
+  border-radius: 10px;
   cursor: pointer;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 1;
+  transition: background 0.2s, border-color 0.2s;
+  position: relative;
 }
+
+.scoreboard-btn:hover {
+  background: #dce6ff;
+  border-color: #99aadd;
+}
+
+.scoreboard-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.indicator-closed { background: #aaa; }
+.indicator-this-match { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.indicator-other-match { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
 
 .confirmation-container {
   text-align: center;

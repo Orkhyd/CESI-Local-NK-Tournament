@@ -122,6 +122,13 @@
             <!-- entete du match -->
             <div class="match-header">
               Match
+              <VaTooltip v-if="isElectron && !match.idWinner" placement="top" :text="scoreboardBtnTooltip(match)">
+                <button class="match-scoreboard-btn"
+                  :class="{ 'active': scoreboardStatus.currentMatchId === match.idMatch && scoreboardStatus.isOpen }"
+                  @click.stop="handleSendToScoreboard(match, $event)">
+                  <va-icon name="monitor" size="16px" />
+                </button>
+              </VaTooltip>
             </div>
 
             <!-- corps du match -->
@@ -190,6 +197,10 @@ import { determinePoolRanking } from "@/functions/determinePoolRanking"
 import ParticipantDetails from "../ParticipantDetails.vue"
 import { matchService } from '@/replicache/services/matchService';
 import { useCountryFlags } from '@/utils/countryFlags';
+import { useScoreboardStatus } from '@/composables/useScoreboardStatus';
+
+const { scoreboardStatus, sendMatchToScoreboard } = useScoreboardStatus();
+const isElectron = !!window.electron;
 
 // def props
 const props = defineProps({
@@ -418,6 +429,32 @@ function editMatch(match) {
   emit('edit-match', match);
 }
 
+// Envoyer un match au scoreboard persistant
+async function handleSendToScoreboard(match, event) {
+  event.stopPropagation();
+  if (!window.electron) return;
+
+  const p1 = props.pool.participants.find(p => p.id === match.idPlayer1);
+  const p2 = props.pool.participants.find(p => p.id === match.idPlayer2);
+
+  const matchData = {
+    ...match,
+    player1Data: p1 || null,
+    player2Data: p2 || null,
+    timestamp: Date.now()
+  };
+
+  await sendMatchToScoreboard(matchData);
+}
+
+// Tooltip du bouton scoreboard pour un match donné
+function scoreboardBtnTooltip(match) {
+  const { isOpen, currentMatchId } = scoreboardStatus.value;
+  if (!isOpen) return 'Envoyer ce combat au scoreboard';
+  if (currentMatchId === match.idMatch) return 'Ce combat est déjà dans le scoreboard';
+  return 'Remplacer le combat dans le scoreboard';
+}
+
 // fonction recup initials d'un participant
 function getInitials(participant) {
   if (!participant) return '';
@@ -591,6 +628,34 @@ function getCompletedMatchCount() {
   margin-bottom: 12px;
   color: #333;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.match-scoreboard-btn {
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px 5px;
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.match-scoreboard-btn:hover {
+  opacity: 1;
+  background: #e8f0ff;
+}
+
+.match-scoreboard-btn.active {
+  opacity: 1;
+  background: #d4edda;
+  border-color: #22c55e;
+  color: #16a34a;
 }
 
 /* corps du match, utilisation de css grid pour une structure fixe */

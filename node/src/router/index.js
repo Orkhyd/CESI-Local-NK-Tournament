@@ -4,6 +4,7 @@ import HomePage from '../views/HomePage.vue';
 import TournamentEditPage from '../views/TournamentEditPage.vue';
 import TournamentManagePage from '../views/TournamentManagePage.vue';
 import MatchScoreboardPage from '../views/MatchScoreboardPage.vue';
+import ScoreboardPage from '../views/ScoreboardPage.vue';
 import MatchScoreboardFictifPage from '@/views/MatchScoreboardFictifPage.vue';
 import MatchScoreboardFictifAdminPage from '@/views/MatchScoreboardFictifAdminPage.vue';
 
@@ -23,6 +24,7 @@ const router = createRouter({
     { path: "/tournament/non-started/:id", component: TournamentEditPage },
     { path: "/tournament/started/:id", component: TournamentManagePage },
     { path: "/match/:id", component: MatchScoreboardPage },
+    { path: "/scoreboard", component: ScoreboardPage },
     {
       path: '/fictive-control',
       component: MatchScoreboardFictifAdminPage
