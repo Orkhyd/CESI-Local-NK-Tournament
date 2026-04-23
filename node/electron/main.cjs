@@ -55,19 +55,18 @@ function createWindow() {
 
 
   // Charger l'application
+  mainWindow.removeMenu();
+
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
   } else {
     mainWindow.loadFile(getDistPath());
-    mainWindow.removeMenu();
   }
 
   // Gérer la fermeture
   mainWindow.on('closed', () => {
     cleanup();
   });
-
-  mainWindow.removeMenu();
 }
 
 // === NETTOYAGE ===
@@ -233,11 +232,12 @@ function createMatchWindow(matchData) {
     },
   });
 
+  matchWindow.removeMenu();
+
   if (isDev) {
     matchWindow.loadURL(`http://localhost:5173/#/match/${matchId}`);
   } else {
     matchWindow.loadFile(getDistPath(), { hash: `/match/${matchId}` });
-    mainWindow.removeMenu();
   }
 
   openWindows[matchId] = matchWindow;
@@ -285,11 +285,12 @@ function createScoreboardWindow() {
     },
   });
 
+  scoreboardWindow.removeMenu();
+
   if (isDev) {
     scoreboardWindow.loadURL('http://localhost:5173/#/scoreboard');
   } else {
     scoreboardWindow.loadFile(getDistPath(), { hash: '/scoreboard' });
-    scoreboardWindow.removeMenu();
   }
 
   // Envoyer les données initiales si un match est déjà sélectionné
@@ -352,14 +353,15 @@ function createFictiveWindows() {
     }
   });
 
+  controlWindow.removeMenu();
+  displayWindow.removeMenu();
+
   if (isDev) {
     controlWindow.loadURL('http://localhost:5173/#/fictive-control');
     displayWindow.loadURL('http://localhost:5173/#/fictive-display');
   } else {
     controlWindow.loadFile(getDistPath(), { hash: '/fictive-control' });
     displayWindow.loadFile(getDistPath(), { hash: '/fictive-display' });
-    controlWindow.removeMenu();
-    displayWindow.removeMenu();
   }
 
   openWindows[fictiveMatchId] = { controlWindow, displayWindow };
