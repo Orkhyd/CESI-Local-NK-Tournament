@@ -123,11 +123,11 @@
             <div class="match-header">
               Match
               <VaTooltip v-if="isElectron && !match.idWinner" placement="top" :text="scoreboardBtnTooltip(match)">
-                <button class="match-scoreboard-btn"
-                  :class="{ 'active': scoreboardStatus.currentMatchId === match.idMatch && scoreboardStatus.isOpen }"
-                  @click.stop="handleSendToScoreboard(match, $event)">
-                  <va-icon name="monitor" size="16px" />
-                </button>
+                <VaButton
+                  :class="{ 'scoreboard-active': scoreboardStatus.currentMatchId === match.idMatch && scoreboardStatus.isOpen }"
+                  @click.stop="handleSendToScoreboard(match, $event)"
+                  preset="secondary" size="small" round icon="tv"
+                />
               </VaTooltip>
             </div>
 
@@ -634,28 +634,8 @@ function getCompletedMatchCount() {
   gap: 8px;
 }
 
-.match-scoreboard-btn {
-  background: transparent;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 2px 5px;
-  display: flex;
-  align-items: center;
-  opacity: 0.5;
-  transition: opacity 0.2s, background 0.2s;
-}
-
-.match-scoreboard-btn:hover {
-  opacity: 1;
-  background: #e8f0ff;
-}
-
-.match-scoreboard-btn.active {
-  opacity: 1;
-  background: #d4edda;
-  border-color: #22c55e;
-  color: #16a34a;
+.scoreboard-active {
+  color: #16a34a !important;
 }
 
 /* corps du match, utilisation de css grid pour une structure fixe */

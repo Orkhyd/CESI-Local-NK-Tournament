@@ -7,10 +7,12 @@
       <div class="header">
         <h1>Gestion du combat</h1>
         <VaTooltip v-if="isElectron" placement="bottom" :text="scoreboardTooltipText">
-          <button class="scoreboard-btn" @click="openScoreboard">
-            <va-icon name="monitor" size="32px" />
-            <span class="scoreboard-indicator" :class="scoreboardIndicatorClass"></span>
-          </button>
+          <VaButton
+            @click="openScoreboard"
+            preset="secondary"
+            icon="tv"
+            :color="scoreboardBtnColor"
+          />
         </VaTooltip>
       </div>
 
@@ -460,19 +462,19 @@ const handleModalValueUpdate = (value) => {
   if (!value) closeModal();
 };
 
-// Computed pour l'indicateur visuel du bouton scoreboard
-const scoreboardIndicatorClass = computed(() => {
+// Couleur du bouton scoreboard selon l'état
+const scoreboardBtnColor = computed(() => {
   const { isOpen, currentMatchId } = scoreboardStatus.value;
-  if (!isOpen) return 'indicator-closed';
-  if (currentMatchId === props.matchId) return 'indicator-this-match';
-  return 'indicator-other-match';
+  if (!isOpen) return 'secondary';
+  if (currentMatchId === props.matchId) return 'success';
+  return 'warning';
 });
 
 const scoreboardTooltipText = computed(() => {
   const { isOpen, currentMatchId } = scoreboardStatus.value;
   if (!isOpen) return 'Ouvrir le scoreboard pour ce combat';
   if (currentMatchId === props.matchId) return 'Scoreboard actif sur ce combat';
-  return 'Scoreboard actif sur un autre combat — cliquer pour remplacer';
+  return 'Scoreboard actif sur un autre combat, cliquer pour remplacer';
 });
 
 const openScoreboard = async () => {
@@ -730,36 +732,6 @@ watch(() => match.value?.timer, (newTimer, oldTimer) => {
   margin-bottom: 16px;
 }
 
-.scoreboard-btn {
-  background: #f0f4ff;
-  border: 2px solid #d0d8f0;
-  border-radius: 10px;
-  cursor: pointer;
-  padding: 6px 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  opacity: 1;
-  transition: background 0.2s, border-color 0.2s;
-  position: relative;
-}
-
-.scoreboard-btn:hover {
-  background: #dce6ff;
-  border-color: #99aadd;
-}
-
-.scoreboard-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-.indicator-closed { background: #aaa; }
-.indicator-this-match { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
-.indicator-other-match { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
 
 .confirmation-container {
   text-align: center;

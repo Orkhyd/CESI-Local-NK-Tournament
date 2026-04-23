@@ -64,11 +64,11 @@
     <!-- bouton scoreboard (Electron seulement, match non terminé) -->
     <div v-if="isElectron && !isDisabled" class="scoreboard-btn-wrapper">
       <VaTooltip placement="top" :text="scoreboardBtnTooltip">
-        <button class="card-scoreboard-btn"
-          :class="{ 'active': scoreboardStatus.currentMatchId === match.idMatch && scoreboardStatus.isOpen }"
-          @click.stop="handleSendToScoreboard($event)">
-          <va-icon name="monitor" size="14px" />
-        </button>
+        <VaButton
+          :class="{ 'scoreboard-active': scoreboardStatus.currentMatchId === match.idMatch && scoreboardStatus.isOpen }"
+          @click.stop="handleSendToScoreboard($event)"
+          preset="secondary" size="small" round icon="tv"
+        />
       </VaTooltip>
     </div>
 
@@ -442,28 +442,8 @@ const scoreboardBtnTooltip = computed(() => {
   margin-top: 4px;
 }
 
-.card-scoreboard-btn {
-  background: transparent;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  cursor: pointer;
-  padding: 2px 5px;
-  display: flex;
-  align-items: center;
-  opacity: 0.45;
-  transition: opacity 0.2s, background 0.2s;
-}
-
-.card-scoreboard-btn:hover {
-  opacity: 1;
-  background: #e8f0ff;
-}
-
-.card-scoreboard-btn.active {
-  opacity: 1;
-  background: #d4edda;
-  border-color: #22c55e;
-  color: #16a34a;
+.scoreboard-active {
+  color: #16a34a !important;
 }
 
 /* style du chrono */
