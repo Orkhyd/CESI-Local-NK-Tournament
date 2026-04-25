@@ -1,11 +1,32 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+// Récupérer les infos de l'app de façon synchrone (pour countryFlags.js)
+const appInfo = (() => {
+  try {
+    return ipcRenderer.sendSync('get-app-info');
+  } catch (e) {
+    return { isDev: true, resourcesPath: null };
+  }
+})();
+
 contextBridge.exposeInMainWorld("electron", {
   // === MÉTHODES ORIGINALES ===
   openScoreboard: () => ipcRenderer.send("open-scoreboard"),
   openMatchWindow: (matchData) => ipcRenderer.send("open-match-window", matchData),
   openFictiveMatchWindow: () => ipcRenderer.send("open-fictive-match-window"),
   closeFictiveWindows: () => ipcRenderer.send("close-fictive-windows"),
+
+  // === INFORMATIONS APP ===
+  appInfo: appInfo,
+
+  // === SCOREBOARD PERSISTANT ===
+  setScoreboardMatch: (matchData) => ipcRenderer.send('set-scoreboard-match', matchData),
+  getScoreboardStatus: () => ipcRenderer.invoke('get-scoreboard-status'),
+  onScoreboardStatusChanged: (callback) => {
+    const handler = (event, data) => callback(data);
+    ipcRenderer.on('scoreboard-status-changed', handler);
+    return () => ipcRenderer.removeListener('scoreboard-status-changed', handler);
+  },
   
   // === SYSTÈME DE COMMUNICATION MATCH DATA ===
   

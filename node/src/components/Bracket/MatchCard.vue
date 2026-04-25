@@ -61,6 +61,17 @@
       </template>
     </VaModal>
 
+    <!-- bouton scoreboard (Electron seulement, match non terminé) -->
+    <div v-if="isElectron && !isDisabled" class="scoreboard-btn-wrapper">
+      <VaTooltip placement="top" :text="scoreboardBtnTooltip">
+        <VaButton
+          :class="{ 'scoreboard-active': scoreboardStatus.currentMatchId === match.idMatch && scoreboardStatus.isOpen }"
+          @click.stop="handleSendToScoreboard($event)"
+          preset="secondary" size="small" round icon="tv"
+        />
+      </VaTooltip>
+    </div>
+
     <!--  match (uniquement si le match est actif) -->
     <MatchModal v-if="isModalOpen" :matchId="match.idMatch" @close="closeMatchModal" @update="refreshBracket" />
   </div>
@@ -72,6 +83,10 @@ import MatchModal from "../MatchModal.vue";
 import { nationality } from "@/replicache/models/constants"
 import ParticipantDetails from "../ParticipantDetails.vue";
 import { useCountryFlags } from "@/utils/countryFlags";
+import { useScoreboardStatus } from "@/composables/useScoreboardStatus";
+
+const { scoreboardStatus, sendMatchToScoreboard } = useScoreboardStatus();
+const isElectron = !!window.electron;
 
 const props = defineProps({
   match: {
@@ -179,6 +194,27 @@ const getCountry = (natId) => {
 };
 
 const { getFlag } = useCountryFlags();
+
+async function handleSendToScoreboard(event) {
+  event.stopPropagation();
+  if (!window.electron) return;
+
+  const matchData = {
+    ...props.match,
+    player1Data: props.match.player1 || null,
+    player2Data: props.match.player2 || null,
+    timestamp: Date.now()
+  };
+
+  await sendMatchToScoreboard(matchData);
+}
+
+const scoreboardBtnTooltip = computed(() => {
+  const { isOpen, currentMatchId } = scoreboardStatus.value;
+  if (!isOpen) return 'Envoyer ce combat au scoreboard';
+  if (currentMatchId === props.match.idMatch) return 'Ce combat est déjà dans le scoreboard';
+  return 'Remplacer le combat dans le scoreboard';
+});
 
 </script>
 
@@ -398,6 +434,16 @@ const { getFlag } = useCountryFlags();
 /* llignement des Keikokus pour le joueur du bas */
 .player:last-child .keikoku {
   align-self: flex-start;
+}
+
+.scoreboard-btn-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.scoreboard-active {
+  color: #16a34a !important;
 }
 
 /* style du chrono */

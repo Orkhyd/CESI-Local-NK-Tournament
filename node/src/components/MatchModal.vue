@@ -6,9 +6,14 @@
       <!-- entête -->
       <div class="header">
         <h1>Gestion du combat</h1>
-        <button class="scoreboard-btn" @click="openScoreboard">
-          <va-icon name="scoreboard" size="40px" title="Ouvrir le scoreboard du match." />
-        </button>
+        <VaTooltip v-if="isElectron" placement="bottom" :text="scoreboardTooltipText">
+          <VaButton
+            @click="openScoreboard"
+            preset="secondary"
+            icon="tv"
+            :color="scoreboardBtnColor"
+          />
+        </VaTooltip>
       </div>
 
       <!-- combattants -->
@@ -178,10 +183,14 @@ import { nationality } from '@/replicache/models/constants';
 import { getParticipantById } from '@/replicache/stores/participantStore';
 import { replicacheInstance as rep } from '@/replicache/replicache';
 import { useCountryFlags } from '@/utils/countryFlags';
+import { useScoreboardStatus } from '@/composables/useScoreboardStatus';
 import { useToast } from "vuestic-ui";
 
 const { getFlag } = useCountryFlags();
 const toast = useToast();
+const { scoreboardStatus, sendMatchToScoreboard } = useScoreboardStatus();
+
+const isElectron = !!window.electron;
 
 const props = defineProps({
   matchId: { type: String, required: true },
@@ -452,11 +461,38 @@ const handleModalValueUpdate = (value) => {
   if (!value) closeModal();
 };
 
-const openScoreboard = () => {
-  if (window.electron?.openScoreboard) {
-    window.electron.openScoreboard();
-    // diffuser immediatement les donnees du combat en cours vers le scoreboard
-    broadcastMatchUpdate();
+// Couleur du bouton scoreboard selon l'état
+const scoreboardBtnColor = computed(() => {
+  const { isOpen, currentMatchId } = scoreboardStatus.value;
+  if (!isOpen) return 'secondary';
+  if (currentMatchId === props.matchId) return 'success';
+  return 'warning';
+});
+
+const scoreboardTooltipText = computed(() => {
+  const { isOpen, currentMatchId } = scoreboardStatus.value;
+  if (!isOpen) return 'Ouvrir le scoreboard pour ce combat';
+  if (currentMatchId === props.matchId) return 'Scoreboard actif sur ce combat';
+  return 'Scoreboard actif sur un autre combat, cliquer pour remplacer';
+});
+
+const openScoreboard = async () => {
+  if (!window.electron) return;
+  try {
+    const rawMatchData = {
+      ...match.value,
+      ipponsPlayer1: ipponsPlayer1.value,
+      ipponsPlayer2: ipponsPlayer2.value,
+      keikokusPlayer1: keikokusPlayer1.value,
+      keikokusPlayer2: keikokusPlayer2.value,
+      player1Data: player1.value,
+      player2Data: player2.value,
+      timestamp: Date.now()
+    };
+    const matchData = cleanDataForTransmission(rawMatchData);
+    await sendMatchToScoreboard(matchData);
+  } catch (error) {
+    console.error('❌ Error opening scoreboard:', error);
   }
 };
 
@@ -696,11 +732,6 @@ watch(() => match.value?.timer, (newTimer, oldTimer) => {
   margin-bottom: 16px;
 }
 
-.scoreboard-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
 
 .confirmation-container {
   text-align: center;
