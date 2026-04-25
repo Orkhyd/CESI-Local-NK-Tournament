@@ -94,17 +94,13 @@ const selectedImportItems = ref([]);
 // ref pour la recherche
 const searchQuery = ref("");
 
-// fnction de comparaison basée sur prénom, nom et date de naissance
+// comparaison basee sur prenom, nom et date de naissance (format YYYY-MM-DD)
 function isDuplicate(item) {
-  return props.registeredParticipants.some(reg => {
-    const regBirth = new Date(reg.birthDate).toISOString().split('T')[0];
-    const itemBirth = new Date(item.birthDate).toISOString().split('T')[0];
-    return (
-      reg.firstName.trim().toLowerCase() === item.firstName.trim().toLowerCase() &&
-      reg.lastName.trim().toLowerCase() === item.lastName.trim().toLowerCase() &&
-      regBirth === itemBirth
-    );
-  });
+  return props.registeredParticipants.some(reg =>
+    reg.firstName.trim().toLowerCase() === item.firstName.trim().toLowerCase() &&
+    reg.lastName.trim().toLowerCase() === item.lastName.trim().toLowerCase() &&
+    (reg.birthDate || "") === (item.birthDate || "")
+  );
 }
 
 // filtrer les participants non duplicata

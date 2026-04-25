@@ -5,11 +5,12 @@ const path = require('path');
 
 // === CONFIGURATION ===
 const isDev = !app.isPackaged;
-const SHARED_PARTITION = `persist:main-${process.pid}`;
+const SHARED_PARTITION = 'persist:nk-tournament';
 
 // === VARIABLES GLOBALES ===
 let mainWindow = null;
 let openWindows = {};
+let scoreboardWindow = null;
 let heartbeatIntervals = new Map();
 let scoreboardWindow = null;
 let currentScoreboardMatchId = null;
@@ -73,6 +74,11 @@ function createWindow() {
 function cleanup() {
   mainWindow = null;
 
+  if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+    scoreboardWindow.close();
+    scoreboardWindow = null;
+  }
+
   // Nettoyer heartbeats
   heartbeatIntervals.forEach((interval) => clearInterval(interval));
   heartbeatIntervals.clear();
@@ -107,6 +113,11 @@ function cleanup() {
 
 // === GESTIONNAIRE D'ÉVÉNEMENTS IPC ===
 function setupIpcHandlers() {
+  // Ouvrir scoreboard persistant
+  ipcMain.on('open-scoreboard', () => {
+    createScoreboardWindow();
+  });
+
   // Ouvrir fenêtre de match
   ipcMain.on('open-match-window', (event, matchData) => {
     createMatchWindow(matchData);
@@ -207,6 +218,41 @@ function broadcastScoreboardStatus() {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('scoreboard-status-changed', status);
   }
+}
+
+// === CRÉATION SCOREBOARD PERSISTANT ===
+function createScoreboardWindow() {
+  if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+    scoreboardWindow.focus();
+    return;
+  }
+
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
+  scoreboardWindow = new BrowserWindow({
+    width: 1280,
+    height: 720,
+    x: width - 1280,
+    y: 0,
+    webPreferences: {
+      preload: getPreloadPath(),
+      contextIsolation: true,
+      enableRemoteModule: false,
+      nodeIntegration: false,
+      partition: SHARED_PARTITION,
+    },
+  });
+
+  if (isDev) {
+    scoreboardWindow.loadURL('http://localhost:5173/#/scoreboard');
+  } else {
+    scoreboardWindow.loadFile(getDistPath(), { hash: '/scoreboard' });
+    scoreboardWindow.removeMenu();
+  }
+
+  scoreboardWindow.on('closed', () => {
+    scoreboardWindow = null;
+  });
 }
 
 // === CRÉATION FENÊTRE DE MATCH ===

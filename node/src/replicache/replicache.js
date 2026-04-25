@@ -33,7 +33,6 @@ export default {
   install: (app) => {
     const rep = new Replicache({
       name: 'replicache',
-      licenseKey: import.meta.env.VITE_REPLICACHE_LICENSE_KEY,
       mutators,
     });
 

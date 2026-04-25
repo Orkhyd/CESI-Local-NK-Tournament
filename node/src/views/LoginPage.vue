@@ -14,6 +14,7 @@
         <VaInput
           v-model="password"
           :type="showPassword ? 'text' : 'password'"
+          autocomplete="current-password"
           label="Mot de passe"
           placeholder="Entrez votre mot de passe"
           class="password-input"

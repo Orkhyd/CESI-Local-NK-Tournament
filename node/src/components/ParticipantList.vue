@@ -107,23 +107,30 @@ const filterText = ref("");
 
 // filtrage participants
 const filteredParticipants = computed(() => {
-  if (!filterText.value) return props.participants.map(p => ({
+  const mapped = props.participants.map(p => ({
     ...p,
     status: p.categoryId === -1 ? "Non attribué" : "Attribué",
   }));
 
+  if (!filterText.value) return mapped;
+
   const searchLower = filterText.value.toLowerCase();
 
-  return props.participants
-    .map((p) => ({
-      ...p,
-      status: p.categoryId === -1 ? "Non attribué" : "Attribué",
-    }))
-    .filter((p) =>
-      Object.values(p).some((val) =>
-        val?.toString().toLowerCase().includes(searchLower)
-      )
-    );
+  return mapped.filter((p) => {
+    const nationalityName = getCountry(p.nationalityId)?.name || "";
+    const fields = [
+      p.firstName,
+      p.lastName,
+      p.birthDate,
+      p.gender,
+      p.grade,
+      p.clubName,
+      p.weight?.toString(),
+      p.status,
+      nationalityName,
+    ];
+    return fields.some(val => val?.toLowerCase().includes(searchLower));
+  });
 });
 
 // stockage participant suppr
@@ -145,6 +152,27 @@ const deleteConfirmed = () => {
   }
 };
 
+// convertit une date en format YYYY-MM-DD quelle que soit la saisie
+// accepte : YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY
+const parseDate = (raw) => {
+  if (!raw) return null;
+  const s = raw.trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const d = new Date(s + "T12:00:00");
+    return isNaN(d) ? null : s;
+  }
+
+  const match = s.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+  if (match) {
+    const iso = `${match[3]}-${match[2]}-${match[1]}`;
+    const d = new Date(iso + "T12:00:00");
+    return isNaN(d) ? null : iso;
+  }
+
+  return null;
+};
+
 // import csv
 const importFromCSV = (event) => {
   const file = event.target.files[0];
@@ -152,37 +180,62 @@ const importFromCSV = (event) => {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    const content = e.target.result;
-    const rows = content.split("\n").map(row => row.replace(/\r$/, "").split(";"));
+    const raw = e.target.result.replace(/^\uFEFF/, ""); // supprime le BOM UTF-8 si present
+    const rows = raw.split("\n").map(row => row.replace(/\r$/, "").split(";"));
 
     const headers = ["firstName", "lastName", "birthDate", "genderId", "gradeId", "clubName", "weight", "nationalityId"];
     const fileHeaders = rows.shift().map(h => h.replace(/"/g, "").trim());
 
     if (JSON.stringify(fileHeaders) !== JSON.stringify(headers)) {
-      toast.init({ message: "Format incorrect : Assurez vous d avoir les bonnes colonnes.", color: "danger", position: 'top-center' });
+      toast.init({
+        message: "Format incorrect : colonnes attendues : prenom ; nom ; dateNaissance (JJ/MM/AAAA) ; genre ; grade ; club ; poids ; nationalite",
+        color: "danger",
+        position: "top-center",
+        duration: 6000,
+      });
       csvInput.value.value = "";
       return;
     }
 
-    const participants = rows.map(row => {
-      if (row.length !== headers.length) return null;
+    const invalidDates = [];
+    const participants = rows.map((row, i) => {
+      if (row.length !== headers.length || row.every(c => c.replace(/"/g, "").trim() === "")) return null;
+
+      const cell = (idx) => row[idx].replace(/"/g, "").trim();
+      const birthRaw = cell(2);
+      const birthDate = parseDate(birthRaw);
+
+      if (birthRaw && !birthDate) {
+        invalidDates.push({ line: i + 2, value: birthRaw, name: `${cell(0)} ${cell(1)}` });
+      }
 
       return {
-        firstName: row[0].replace(/"/g, "").trim(),
-        lastName: row[1].replace(/"/g, "").trim(),
-        birthDate: row[2].replace(/"/g, "").trim(),
-        genderId: Number(row[3].replace(/"/g, "")) || null,
-        gradeId: Number(row[4].replace(/"/g, "")) || null,
-        clubName: row[5].replace(/"/g, "").trim(),
-        weight: Number(row[6].replace(/"/g, "")) || null,
-        nationalityId: Number(row[7].replace(/"/g, "")) || null,
+        firstName: cell(0),
+        lastName: cell(1),
+        birthDate,
+        genderId: Number(cell(3)) || null,
+        gradeId: Number(cell(4)) || null,
+        clubName: cell(5),
+        weight: Number(cell(6).replace(",", ".")) || null,
+        nationalityId: Number(cell(7)) || null,
       };
     }).filter(p => p);
 
     if (!participants.length) {
-      toast.init({ message: "Format incorrect : Assurez vous d'avoir les bonnes colonnes.", color: "danger", position: 'top-center' });
+      toast.init({ message: "Le fichier ne contient aucune ligne valide.", color: "danger", position: "top-center" });
       csvInput.value.value = "";
       return;
+    }
+
+    if (invalidDates.length) {
+      const details = invalidDates.slice(0, 3).map(e => `ligne ${e.line} (${e.name}) : "${e.value}"`).join(", ");
+      const more = invalidDates.length > 3 ? ` et ${invalidDates.length - 3} autre(s)` : "";
+      toast.init({
+        message: `${invalidDates.length} date(s) non reconnue(s) — format attendu JJ/MM/AAAA ou AAAA-MM-JJ. ${details}${more}`,
+        color: "warning",
+        position: "top-center",
+        duration: 8000,
+      });
     }
 
     emit("import-participant", participants);
