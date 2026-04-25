@@ -12,6 +12,9 @@ let mainWindow = null;
 let openWindows = {};
 let scoreboardWindow = null;
 let heartbeatIntervals = new Map();
+let scoreboardWindow = null;
+let currentScoreboardMatchId = null;
+const matchDataCache = {};
 
 // === AUTO-UPDATE ===
 updateElectronApp({
@@ -53,11 +56,12 @@ function createWindow() {
 
 
   // Charger l'application
+  mainWindow.removeMenu();
+
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
   } else {
     mainWindow.loadFile(getDistPath());
-    mainWindow.removeMenu();
   }
 
   // Gérer la fermeture
@@ -78,6 +82,14 @@ function cleanup() {
   // Nettoyer heartbeats
   heartbeatIntervals.forEach((interval) => clearInterval(interval));
   heartbeatIntervals.clear();
+
+  // Fermer le scoreboard persistant
+  try {
+    if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+      scoreboardWindow.close();
+    }
+  } catch (e) { /* ignore */ }
+  scoreboardWindow = null;
 
   // Fermer toutes les fenêtres
   Object.values(openWindows).forEach(window => {
@@ -143,13 +155,69 @@ function setupIpcHandlers() {
     stopHeartbeat(matchId);
   });
 
-
   ipcMain.handle('get-window-info', () => ({
     partition: SHARED_PARTITION,
     pid: process.pid,
     openWindows: Object.keys(openWindows),
     heartbeats: Array.from(heartbeatIntervals.keys())
   }));
+
+  // === SCOREBOARD PERSISTANT ===
+
+  // Ouvrir/focaliser le scoreboard persistant
+  ipcMain.on('open-scoreboard', (event) => {
+    if (!scoreboardWindow || scoreboardWindow.isDestroyed()) {
+      createScoreboardWindow();
+    } else {
+      scoreboardWindow.focus();
+    }
+    broadcastScoreboardStatus();
+  });
+
+  // Définir le match affiché dans le scoreboard persistant
+  ipcMain.on('set-scoreboard-match', (event, matchData) => {
+    currentScoreboardMatchId = matchData.idMatch;
+    matchDataCache[matchData.idMatch] = matchData;
+
+    if (!scoreboardWindow || scoreboardWindow.isDestroyed()) {
+      createScoreboardWindow();
+      // les données seront envoyées après dom-ready dans createScoreboardWindow
+    } else {
+      scoreboardWindow.webContents.send('match-data-update', {
+        matchId: currentScoreboardMatchId,
+        data: matchData,
+        type: 'SET_MATCH',
+        timestamp: Date.now()
+      });
+      scoreboardWindow.focus();
+    }
+    broadcastScoreboardStatus();
+  });
+
+  // Récupérer le statut actuel du scoreboard
+  ipcMain.handle('get-scoreboard-status', () => ({
+    isOpen: !!(scoreboardWindow && !scoreboardWindow.isDestroyed()),
+    currentMatchId: currentScoreboardMatchId
+  }));
+
+  // Informations sur l'app (chemin resources, mode dev) — synchrone
+  ipcMain.on('get-app-info', (event) => {
+    event.returnValue = {
+      isDev,
+      resourcesPath: app.isPackaged ? process.resourcesPath : null
+    };
+  });
+}
+
+// Notifier toutes les fenêtres renderers du changement de statut du scoreboard
+function broadcastScoreboardStatus() {
+  const status = {
+    isOpen: !!(scoreboardWindow && !scoreboardWindow.isDestroyed()),
+    currentMatchId: currentScoreboardMatchId
+  };
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('scoreboard-status-changed', status);
+  }
 }
 
 // === CRÉATION SCOREBOARD PERSISTANT ===
@@ -210,14 +278,16 @@ function createMatchWindow(matchData) {
     },
   });
 
+  matchWindow.removeMenu();
+
   if (isDev) {
     matchWindow.loadURL(`http://localhost:5173/#/match/${matchId}`);
   } else {
     matchWindow.loadFile(getDistPath(), { hash: `/match/${matchId}` });
-    mainWindow.removeMenu();
   }
 
   openWindows[matchId] = matchWindow;
+  matchDataCache[matchId] = matchData;
 
   matchWindow.on('closed', () => {
     delete openWindows[matchId];
@@ -226,12 +296,68 @@ function createMatchWindow(matchData) {
 
   matchWindow.webContents.once('dom-ready', () => {
     setTimeout(() => {
+      const dataToSend = matchDataCache[matchId] || matchData;
       matchWindow.webContents.send('match-data-update', {
         matchId: matchId,
-        data: matchData,
+        data: dataToSend,
         type: 'INITIAL_DATA'
       });
-    }, 1000);
+    }, 200);
+  });
+}
+
+// === CRÉATION DU SCOREBOARD PERSISTANT ===
+function createScoreboardWindow() {
+  if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+    scoreboardWindow.focus();
+    return;
+  }
+
+  const { width } = screen.getPrimaryDisplay().workAreaSize;
+
+  scoreboardWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    x: width - 800,
+    y: 0,
+    parent: mainWindow,
+    modal: false,
+    webPreferences: {
+      preload: getPreloadPath(),
+      contextIsolation: true,
+      enableRemoteModule: false,
+      nodeIntegration: false,
+      partition: SHARED_PARTITION,
+    },
+  });
+
+  scoreboardWindow.removeMenu();
+
+  if (isDev) {
+    scoreboardWindow.loadURL('http://localhost:5173/#/scoreboard');
+  } else {
+    scoreboardWindow.loadFile(getDistPath(), { hash: '/scoreboard' });
+  }
+
+  // Envoyer les données initiales si un match est déjà sélectionné
+  if (currentScoreboardMatchId && matchDataCache[currentScoreboardMatchId]) {
+    const cachedData = matchDataCache[currentScoreboardMatchId];
+    scoreboardWindow.webContents.once('dom-ready', () => {
+      setTimeout(() => {
+        if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+          scoreboardWindow.webContents.send('match-data-update', {
+            matchId: currentScoreboardMatchId,
+            data: cachedData,
+            type: 'INITIAL_DATA'
+          });
+        }
+      }, 300);
+    });
+  }
+
+  scoreboardWindow.on('closed', () => {
+    scoreboardWindow = null;
+    broadcastScoreboardStatus();
   });
 }
 
@@ -273,14 +399,15 @@ function createFictiveWindows() {
     }
   });
 
+  controlWindow.removeMenu();
+  displayWindow.removeMenu();
+
   if (isDev) {
     controlWindow.loadURL('http://localhost:5173/#/fictive-control');
     displayWindow.loadURL('http://localhost:5173/#/fictive-display');
   } else {
     controlWindow.loadFile(getDistPath(), { hash: '/fictive-control' });
     displayWindow.loadFile(getDistPath(), { hash: '/fictive-display' });
-    controlWindow.removeMenu();
-    displayWindow.removeMenu();
   }
 
   openWindows[fictiveMatchId] = { controlWindow, displayWindow };
@@ -317,7 +444,10 @@ function closeFictiveWindows() {
 function broadcastMatchUpdate(matchData) {
   const matchId = matchData.idMatch;
 
-  // Envoyer à la fenêtre de match
+  // Mettre à jour le cache
+  matchDataCache[matchId] = matchData;
+
+  // Envoyer à la fenêtre de match spécifique
   if (openWindows[matchId] && !openWindows[matchId].isDestroyed()) {
     openWindows[matchId].webContents.send('match-data-update', {
       matchId: matchId,
@@ -327,8 +457,8 @@ function broadcastMatchUpdate(matchData) {
     });
   }
 
-  // Envoyer au scoreboard persistant
-  if (scoreboardWindow && !scoreboardWindow.isDestroyed()) {
+  // Envoyer au scoreboard persistant si ce match est actuellement affiché
+  if (scoreboardWindow && !scoreboardWindow.isDestroyed() && currentScoreboardMatchId === matchId) {
     scoreboardWindow.webContents.send('match-data-update', {
       matchId: matchId,
       data: matchData,
@@ -354,6 +484,11 @@ function broadcastMatchUpdate(matchData) {
 }
 
 async function requestMatchData(matchId) {
+  // Vérifier le cache en premier (réponse immédiate)
+  if (matchDataCache[matchId]) {
+    return matchDataCache[matchId];
+  }
+
   if (!mainWindow || mainWindow.isDestroyed()) {
     return null;
   }
