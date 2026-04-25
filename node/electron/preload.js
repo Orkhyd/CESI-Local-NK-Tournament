@@ -20,7 +20,6 @@ contextBridge.exposeInMainWorld("electron", {
   appInfo: appInfo,
 
   // === SCOREBOARD PERSISTANT ===
-  openScoreboard: () => ipcRenderer.send('open-scoreboard'),
   setScoreboardMatch: (matchData) => ipcRenderer.send('set-scoreboard-match', matchData),
   getScoreboardStatus: () => ipcRenderer.invoke('get-scoreboard-status'),
   onScoreboardStatusChanged: (callback) => {
