@@ -9,49 +9,26 @@
 
   <!-- Scoreboard actif -->
   <div v-else class="scoreboard">
-    <!-- Ligne 1 : Joueur 1, fond rouge -->
-    <div class="scoreboard-row row-red">
+    <!-- Lignes des joueurs -->
+    <div v-for="p in playersData" :key="p.num" :class="['scoreboard-row', p.colorClass]">
       <div class="row-content">
         <div class="flag">
           <div class="flag-placeholder">
-            <div v-if="!isFlag1Loaded" class="spinner"></div>
+            <div v-if="!flagsLoaded[p.num]" class="spinner"></div>
           </div>
-          <img v-show="isFlag1Loaded" @load="isFlag1Loaded = true" :src="getFlag(player1Nationality)"
-            alt="Drapeau Joueur 1" />
+          <img v-show="flagsLoaded[p.num]" @load="onFlagLoad(p.num)" :src="getFlag(p.nationality)"
+            :alt="'Drapeau Joueur ' + p.num" />
         </div>
         <div class="player-info">
           <div class="player-name">
-            {{ player1 ? player1.firstName + ' ' + player1.lastName : 'En attente' }}
+            {{ p.player ? p.player.firstName + ' ' + p.player.lastName : 'En attente' }}
           </div>
-          <div class="club-name">{{ player1?.clubName || '' }}</div>
+          <div class="club-name">{{ p.player?.clubName || '' }}</div>
         </div>
       </div>
       <div class="score-info">
-        <div class="ippons">{{ match ? match.ipponsPlayer1 : 0 }}</div>
-        <div class="keikokus-player-1">{{ match ? match.keikokusPlayer1 : 0 }}</div>
-      </div>
-    </div>
-
-    <!-- Ligne 2 : Joueur 2, fond blanc -->
-    <div class="scoreboard-row row-white">
-      <div class="row-content">
-        <div class="flag">
-          <div class="flag-placeholder">
-            <div v-if="!isFlag2Loaded" class="spinner"></div>
-          </div>
-          <img v-show="isFlag2Loaded" @load="isFlag2Loaded = true" :src="getFlag(player2Nationality)"
-            alt="Drapeau Joueur 2" />
-        </div>
-        <div class="player-info">
-          <div class="player-name">
-            {{ player2 ? player2.firstName + ' ' + player2.lastName : 'En attente' }}
-          </div>
-          <div class="club-name">{{ player2?.clubName || '' }}</div>
-        </div>
-      </div>
-      <div class="score-info">
-        <div class="ippons">{{ match ? match.ipponsPlayer2 : 0 }}</div>
-        <div class="keikokus-player-2">{{ match ? match.keikokusPlayer2 : 0 }}</div>
+        <div class="ippons">{{ p.ippons }}</div>
+        <div :class="['keikokus', p.keikokuClass]">{{ p.keikokus }}</div>
       </div>
     </div>
 
@@ -83,8 +60,8 @@ const match = ref(null);
 const player1 = ref(null);
 const player2 = ref(null);
 const isWaiting = ref(true);
-const isFlag1Loaded = ref(false);
-const isFlag2Loaded = ref(false);
+const flagsLoaded = ref({ 1: false, 2: false });
+const onFlagLoad = (num) => { flagsLoaded.value[num] = true; };
 
 let updateCleanup;
 
@@ -94,6 +71,23 @@ const getCountry = (natId) => nationality.find(c => c.id === Number(natId));
 
 const player1Nationality = computed(() => getCountry(player1.value?.nationalityId));
 const player2Nationality = computed(() => getCountry(player2.value?.nationalityId));
+
+const playersData = computed(() => {
+  const players = {
+    1: { color: 'row-red', player: player1.value, nationality: player1Nationality.value },
+    2: { color: 'row-white', player: player2.value, nationality: player2Nationality.value }
+  };
+  
+  return [1, 2].map(num => ({
+    num,
+    colorClass: players[num].color,
+    keikokuClass: `keikokus-player-${num}`,
+    player: players[num].player,
+    nationality: players[num].nationality,
+    ippons: match.value ? match.value[`ipponsPlayer${num}`] : 0,
+    keikokus: match.value ? match.value[`keikokusPlayer${num}`] : 0,
+  }));
+});
 
 const progressPercent = computed(() => {
   if (!match.value?.timer) return 0;
@@ -124,8 +118,7 @@ const handleMatchUpdate = (updateData) => {
 
   // Si nouveau match (matchId différent), réinitialiser les drapeaux
   if (match.value && match.value.idMatch !== data.idMatch) {
-    isFlag1Loaded.value = false;
-    isFlag2Loaded.value = false;
+    flagsLoaded.value = { 1: false, 2: false };
   }
 
   match.value = data;
@@ -383,21 +376,19 @@ watch(
   font-weight: bold;
 }
 
-.keikokus-player-1 {
+.keikokus {
   flex: 0;
   display: flex;
-  align-items: flex-end;
   margin-bottom: 10px;
   justify-content: flex-end;
   font-size: clamp(2rem, 6vw, 10rem);
 }
 
+.keikokus-player-1 {
+  align-items: flex-end;
+}
+
 .keikokus-player-2 {
-  flex: 0;
-  display: flex;
   align-items: flex-start;
-  margin-bottom: 10px;
-  justify-content: flex-end;
-  font-size: clamp(2rem, 6vw, 10rem);
 }
 </style>
