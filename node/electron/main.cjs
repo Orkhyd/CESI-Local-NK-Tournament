@@ -10,7 +10,6 @@ const SHARED_PARTITION = 'persist:nk-tournament';
 // === VARIABLES GLOBALES ===
 let mainWindow = null;
 let openWindows = {};
-let scoreboardWindow = null;
 let heartbeatIntervals = new Map();
 let scoreboardWindow = null;
 let currentScoreboardMatchId = null;
